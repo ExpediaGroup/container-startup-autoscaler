@@ -76,7 +76,7 @@ the sandbox scripts:
 https://github.com/ExpediaGroup/container-startup-autoscaler/assets/76996781/fcea0175-4f09-43d3-9bad-de5aed8806f2
 
 ## Docker Images
-Versioned multi-arch Docker images are available via [Docker Hub](https://hub.docker.com/r/expediagroup/csa).
+Versioned multi-arch Docker images are available via [Docker Hub](https://hub.docker.com/r/expediagroup/container-startup-autoscaler/tags).
 
 ## Helm Chart
 A CSA Helm chart is available - please see its [README.md](charts/container-startup-autoscaler/README.md) for more
