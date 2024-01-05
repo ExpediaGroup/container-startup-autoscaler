@@ -1,0 +1,1 @@
+See [CHANGELOG.md](https://github.com/ExpediaGroup/container-startup-autoscaler/tree/main/charts/container-startup-autoscaler/CHANGELOG.md) for details on this chart release.

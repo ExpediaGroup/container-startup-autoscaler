@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: "{{ include "csa.name.namespace" . }}"
+  name: "{{ include "csa.name.release" . }}"
+  {{- include "csa.label.deployment" . | indent 2 }}
+  {{- include "csa.annotation.deployment" . | indent 2 }}
+spec:
+  replicas: {{ include "csa.deployment.replicas" . }}
+  strategy:
+    type: Recreate
+  selector:
+    {{- include "csa.selector.deployment" . | indent 4 }}
+  template:
+    metadata:
+      {{- include "csa.label.pod" . | indent 6 }}
+      {{- include "csa.annotation.pod" . | indent 6 }}
+    spec:
+      serviceAccountName: "{{ include "csa.name.release" . }}"
+      terminationGracePeriodSeconds: {{ include "csa.pod.terminationGracePeriodSeconds" . }}
+      {{- if .Values.pod.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml .Values.pod.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: "{{ include "csa.name.app" . }}"
+          image: "{{ include "csa.container.imageTag" . }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080 # Metrics
+            - containerPort: 8081 # Probes
+            - containerPort: 8082 # pprof
+          {{- include "csa.container.args" . | indent 10}}
+          resources:
+            requests:
+              cpu: {{ .Values.container.cpu | quote }}
+              memory: {{ .Values.container.memory | quote }}
+            limits:
+              cpu: {{ .Values.container.cpu | quote }}
+              memory: {{ .Values.container.memory | quote }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+              scheme: HTTP
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3

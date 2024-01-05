@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  namespace: "{{ include "csa.name.namespace" . }}"
+  name: "{{ include "csa.name.release" . }}"
+  {{- include "csa.label.clusterrole" . | indent 2 }}
+  {{- include "csa.annotation.clusterrole" . | indent 2 }}
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "patch", "update", "watch"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch", "update"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "create", "patch", "update"]
