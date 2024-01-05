@@ -379,7 +379,7 @@ func TestDeploymentScaleWhenUnknownResources(t *testing.T) {
 	maybeLogErrAndFailNow(t, kubeCreateNamespace(namespace))
 
 	annotations := csaQuantityAnnotations{
-		cpuStartup:                "250m",
+		cpuStartup:                "200m",
 		cpuPostStartupRequests:    "50m",
 		cpuPostStartupLimits:      "50m",
 		memoryStartup:             "200M",
@@ -561,8 +561,8 @@ func TestValidationFailure(t *testing.T) {
 
 	annotations := csaQuantityAnnotations{
 		cpuStartup:                "50m",
-		cpuPostStartupRequests:    "250m",
-		cpuPostStartupLimits:      "250m",
+		cpuPostStartupRequests:    "200m",
+		cpuPostStartupLimits:      "200m",
 		memoryStartup:             "200M",
 		memoryPostStartupRequests: "150M",
 		memoryPostStartupLimits:   "150M",
@@ -580,7 +580,7 @@ func TestValidationFailure(t *testing.T) {
 	}
 
 	for _, statusAnn := range podStatusAnn {
-		assert.Contains(t, statusAnn.Status, "cpu post-startup requests (250m) is greater than startup value (50m)")
+		assert.Contains(t, statusAnn.Status, "cpu post-startup requests (200m) is greater than startup value (50m)")
 		require.NotEmpty(t, statusAnn.LastUpdated)
 
 		require.Equal(t, podcommon.StateBoolUnknown, statusAnn.States.StartupProbe)
@@ -615,7 +615,7 @@ func testWorkflow(
 	maybeLogErrAndFailNow(t, kubeCreateNamespace(namespace))
 
 	annotations := csaQuantityAnnotations{
-		cpuStartup:                "250m",
+		cpuStartup:                "200m",
 		cpuPostStartupRequests:    "50m",
 		cpuPostStartupLimits:      "50m",
 		memoryStartup:             "200M",

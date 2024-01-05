@@ -141,13 +141,17 @@ func csaWaitStatus(
 	var retPod *v1.Pod
 	retStatusAnn := podcommon.StatusAnnotation{}
 	started := time.Now()
+	lastStatusAnnJson := ""
 	getAgain := true
 
 	for {
 		if int(time.Now().Sub(started).Seconds()) > timeoutSecs {
 			return retPod,
 				retStatusAnn,
-				errors.Errorf("waiting for csa status '%s' for pod '%s/%s' timed out", waitMsgContains, podNamespace, podName)
+				errors.Errorf(
+					"waiting for csa status '%s' for pod '%s/%s' timed out - last status '%s'",
+					waitMsgContains, podNamespace, podName, lastStatusAnnJson,
+				)
 		}
 
 		pod, err := kubeGetPod(podNamespace, podName, true)
@@ -169,7 +173,8 @@ func csaWaitStatus(
 				errors.Wrapf(err, "unable to convert csa status for pod '%s/%s'", podNamespace, podName)
 		}
 
-		//fmt.Println(statusAnn.Json())
+		lastStatusAnnJson = statusAnn.Json()
+		//fmt.Println(lastStatusAnnJson)
 
 		if strings.Contains(statusAnn.Status, waitMsgContains) {
 			// TODO(wt) 'In-place Update of Pod Resources' implementation bug
