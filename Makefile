@@ -40,7 +40,7 @@ test-run-int-verbose: ## Runs integration tests with verbose logging
 
 .PHONY: test-run-helm
 test-run-helm: ## Runs Helm tests
-	docker run -ti --rm -v ${ROOT_DIR}charts:/apps helmunittest/helm-unittest:3.12.3-0.3.5 container-startup-autoscaler
+	docker run -t --rm -v ${ROOT_DIR}charts:/apps helmunittest/helm-unittest:3.12.3-0.3.5 container-startup-autoscaler
 
 ## ------------------
 ## Go Modules

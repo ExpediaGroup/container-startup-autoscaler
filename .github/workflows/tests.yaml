@@ -47,8 +47,8 @@ jobs:
 
       - name: Test
         env:
-          MAX_PARALLELISM: 5
-        run: make test-run-int
+          MAX_PARALLELISM: 4
+        run: make test-run-int-verbose
 
   helm:
     name: Run Helm tests
