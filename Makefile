@@ -17,6 +17,7 @@
 .DEFAULT_GOAL:=help
 SHELL:=/bin/bash
 ROOT_DIR:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+HELM_TESTS_SNAPSHOT_DIR=${ROOT_DIR}charts/container-startup-autoscaler/tests/__snapshot__
 
 .PHONY: help
 help: ## Displays this help
@@ -40,7 +41,11 @@ test-run-int-verbose: ## Runs integration tests with verbose logging
 
 .PHONY: test-run-helm
 test-run-helm: ## Runs Helm tests
+	rm -rf ${HELM_TESTS_SNAPSHOT_DIR}
+	mkdir ${HELM_TESTS_SNAPSHOT_DIR}
+	chmod 666 ${HELM_TESTS_SNAPSHOT_DIR}
 	docker run -t --rm -v ${ROOT_DIR}charts:/apps helmunittest/helm-unittest:3.12.3-0.3.5 container-startup-autoscaler
+	rm -rf ${HELM_TESTS_SNAPSHOT_DIR}
 
 ## ------------------
 ## Go Modules
