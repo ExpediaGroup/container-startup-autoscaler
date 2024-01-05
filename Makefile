@@ -17,6 +17,8 @@
 .DEFAULT_GOAL:=help
 SHELL:=/bin/bash
 ROOT_DIR:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
+
+INT_TESTS_TIMEOUT=30m
 HELM_TESTS_SNAPSHOT_DIR=${ROOT_DIR}charts/container-startup-autoscaler/tests/__snapshot__
 
 .PHONY: help
@@ -33,11 +35,11 @@ test-run-unit: ## Runs unit tests
 
 .PHONY: test-run-int
 test-run-int: ## Runs integration tests
-	go test -count=1 ./test/integration/...
+	go test -count=1 -timeout ${INT_TESTS_TIMEOUT} ./test/integration/...
 
 .PHONY: test-run-int-verbose
 test-run-int-verbose: ## Runs integration tests with verbose logging
-	go test -count=1 -v ./test/integration/...
+	go test -count=1 -timeout ${INT_TESTS_TIMEOUT} -v ./test/integration/...
 
 .PHONY: test-run-helm
 test-run-helm: ## Runs Helm tests
