@@ -213,8 +213,8 @@ func kubeGetEventMessages(namespace string, podName string, reason string) ([]st
 			"--output=custom-columns=MESSAGE:.message",
 			"--kubeconfig", kindKubeconfig,
 		),
-		fmt.Sprintf("getting scaling events for pod '%s' in namespace '%s'...", podName, namespace),
-		fmt.Sprintf("unable to get scaling events for pod '%s' in namespace '%s'...", podName, namespace),
+		fmt.Sprintf("getting '%s' events for pod '%s' in namespace '%s'...", reason, podName, namespace),
+		fmt.Sprintf("unable to get '%s' events for pod '%s' in namespace '%s'...", reason, podName, namespace),
 		false,
 	)
 	if err != nil {

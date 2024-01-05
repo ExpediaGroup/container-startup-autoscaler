@@ -203,7 +203,7 @@ func TestMain(m *testing.M) {
 		}
 	}
 
-	maxParallelism := "5"
+	maxParallelism := "4"
 	reuseCluster := false
 	installMetricsServer := false
 	keepCsa := false

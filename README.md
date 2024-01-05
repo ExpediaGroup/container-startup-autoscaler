@@ -520,7 +520,7 @@ A number of environment variable-based configuration options are available:
 
 | Name                     | Default | Description                                                           |
 |--------------------------|---------|-----------------------------------------------------------------------|
-| `MAX_PARALLELISM`        | `5`     | The maximum number of tests that can run in parallel.                 |
+| `MAX_PARALLELISM`        | `4`     | The maximum number of tests that can run in parallel.                 |
 | `REUSE_CLUSTER`          | `false` | Whether to reuse an existing CSA kind cluster (if it already exists). |
 | `INSTALL_METRICS_SERVER` | `false` | Whether to install metrics-server.                                    |
 | `KEEP_CSA`               | `false` | Whether to keep the CSA installation after tests finish.              |
