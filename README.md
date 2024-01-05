@@ -73,7 +73,7 @@ non-production Kubernetes clusters.
 A [local sandbox](#running-locally) is provided for previewing CSA - this video shows fundamental CSA operation using
 the sandbox scripts:
 
-TODO(wt) add video.
+https://github.com/ExpediaGroup/container-startup-autoscaler/assets/76996781/fcea0175-4f09-43d3-9bad-de5aed8806f2
 
 ## Docker Images
 Versioned multi-arch Docker images are available via [Docker Hub](https://hub.docker.com/r/expediagroup/csa).
