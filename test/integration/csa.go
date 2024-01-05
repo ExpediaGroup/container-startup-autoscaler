@@ -41,7 +41,7 @@ const (
 )
 
 const (
-	csaStatusWaitMillis                            = 1000
+	csaStatusWaitMillis                            = 500
 	csaStatusMessageStartupCommanded               = "Startup resources commanded"
 	csaStatusMessageStartupCommandedUnknownRes     = "Startup resources commanded (unknown resources applied)"
 	csaStatusMessagePostStartupCommanded           = "Post-startup resources commanded"

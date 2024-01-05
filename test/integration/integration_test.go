@@ -379,12 +379,12 @@ func TestDeploymentScaleWhenUnknownResources(t *testing.T) {
 	maybeLogErrAndFailNow(t, kubeCreateNamespace(namespace))
 
 	annotations := csaQuantityAnnotations{
-		cpuStartup:                "100m",
-		cpuPostStartupRequests:    "75m",
-		cpuPostStartupLimits:      "75m",
-		memoryStartup:             "125M",
-		memoryPostStartupRequests: "100M",
-		memoryPostStartupLimits:   "100M",
+		cpuStartup:                "250m",
+		cpuPostStartupRequests:    "50m",
+		cpuPostStartupLimits:      "50m",
+		memoryStartup:             "200M",
+		memoryPostStartupRequests: "150M",
+		memoryPostStartupLimits:   "150M",
 	}
 
 	config := echoDeploymentConfigStandard(
@@ -560,12 +560,12 @@ func TestValidationFailure(t *testing.T) {
 	maybeLogErrAndFailNow(t, kubeCreateNamespace(namespace))
 
 	annotations := csaQuantityAnnotations{
-		cpuStartup:                "100m",
-		cpuPostStartupRequests:    "75m",
-		cpuPostStartupLimits:      "75m",
-		memoryStartup:             "125M",
-		memoryPostStartupRequests: "100M",
-		memoryPostStartupLimits:   "100M",
+		cpuStartup:                "50m",
+		cpuPostStartupRequests:    "250m",
+		cpuPostStartupLimits:      "250m",
+		memoryStartup:             "200M",
+		memoryPostStartupRequests: "150M",
+		memoryPostStartupLimits:   "150M",
 	}
 
 	config := echoDeploymentConfigStandardStartup(namespace, 2, annotations)
@@ -580,7 +580,7 @@ func TestValidationFailure(t *testing.T) {
 	}
 
 	for _, statusAnn := range podStatusAnn {
-		assert.Contains(t, statusAnn.Status, "cpu post-startup requests (150m) is greater than startup value (100m)")
+		assert.Contains(t, statusAnn.Status, "cpu post-startup requests (250m) is greater than startup value (50m)")
 		require.NotEmpty(t, statusAnn.LastUpdated)
 
 		require.Equal(t, podcommon.StateBoolUnknown, statusAnn.States.StartupProbe)
@@ -615,12 +615,12 @@ func testWorkflow(
 	maybeLogErrAndFailNow(t, kubeCreateNamespace(namespace))
 
 	annotations := csaQuantityAnnotations{
-		cpuStartup:                "100m",
-		cpuPostStartupRequests:    "75m",
-		cpuPostStartupLimits:      "75m",
-		memoryStartup:             "125M",
-		memoryPostStartupRequests: "100M",
-		memoryPostStartupLimits:   "100M",
+		cpuStartup:                "250m",
+		cpuPostStartupRequests:    "50m",
+		cpuPostStartupLimits:      "50m",
+		memoryStartup:             "200M",
+		memoryPostStartupRequests: "150M",
+		memoryPostStartupLimits:   "150M",
 	}
 
 	workloadJson, replicas := workloadJsonReplicasFunc(annotations)
