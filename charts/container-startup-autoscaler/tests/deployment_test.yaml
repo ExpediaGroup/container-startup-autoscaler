@@ -1,0 +1,272 @@
+suite: test deployment
+templates:
+  - deployment.yaml
+release:
+  namespace: release-namespace
+  name: release-name
+chart:
+  version: 1.2.3
+  appVersion: 3.2.1
+
+tests:
+  - it: defaults correct
+    asserts:
+      - hasDocuments:
+          count: 1
+      - containsDocument:
+          apiVersion: apps/v1
+          kind: Deployment
+          namespace: release-namespace
+          name: release-name
+      - equal:
+          path: metadata.labels
+          value:
+            helm.sh/chart: container-startup-autoscaler-1.2.3
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: container-startup-autoscaler
+            app.kubernetes.io/instance: release-name
+            app.kubernetes.io/version: 3.2.1
+      - notExists:
+          path: metadata.annotations
+      - equal:
+          path: spec.replicas
+          value: 2
+      - equal:
+          path: spec.strategy
+          value:
+            type: Recreate
+      - equal:
+          path: spec.selector
+          value:
+            matchLabels:
+              app.kubernetes.io/instance: release-name
+              app.kubernetes.io/name: container-startup-autoscaler
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            helm.sh/chart: container-startup-autoscaler-1.2.3
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: container-startup-autoscaler
+            app.kubernetes.io/instance: release-name
+            app.kubernetes.io/version: 3.2.1
+      - notExists:
+          path: spec.template.metadata.annotations
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: release-name
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 15
+      - notExists:
+          path: spec.template.spec.imagePullSecrets
+      - lengthEqual:
+          path: spec.template.spec.containers
+          count: 1
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: container-startup-autoscaler
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: expediagroup/container-startup-autoscaler:3.2.1
+      - lengthEqual:
+          path: spec.template.spec.containers[0].ports
+          count: 3
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - --leader-election-enabled
+            - "true"
+            - --leader-election-resource-namespace
+            - "release-namespace"
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 250m
+              memory: 250M
+            limits:
+              cpu: 250m
+              memory: 250M
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /healthz
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.scheme
+          value: HTTP
+
+  - it: csa all overridden
+    set:
+      csa:
+        cacheSyncPeriodMins: "1"
+        gracefulShutdownTimeoutSecs: "2"
+        requeueDurationSecs: "3"
+        maxConcurrentReconciles: "4"
+        standardRetryAttempts: "5"
+        standardRetryDelaySecs: "6"
+        scaleWhenUnknownResources: "true"
+        logV: "7"
+        logAddCaller: "true"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - --leader-election-enabled
+            - "true"
+            - --leader-election-resource-namespace
+            - "release-namespace"
+            - --cache-sync-period-mins
+            - "1"
+            - --graceful-shutdown-timeout-secs
+            - "2"
+            - --requeue-duration-secs
+            - "3"
+            - --max-concurrent-reconciles
+            - "4"
+            - --standard-retry-attempts
+            - "5"
+            - --standard-retry-delay-secs
+            - "6"
+            - --scale-when-unknown-resources
+            - "true"
+            - --log-v
+            - "7"
+            - --log-add-caller
+            - "true"
+
+  - it: csa one overridden
+    set:
+      csa.cacheSyncPeriodMins: "1"
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 6
+      - equal:
+          path: spec.template.spec.containers[0].args[0]
+          value: --leader-election-enabled
+      - equal:
+          path: spec.template.spec.containers[0].args[1]
+          value: "true"
+      - equal:
+          path: spec.template.spec.containers[0].args[2]
+          value: --leader-election-resource-namespace
+      - equal:
+          path: spec.template.spec.containers[0].args[3]
+          value: "release-namespace"
+      - equal:
+          path: spec.template.spec.containers[0].args[4]
+          value: --cache-sync-period-mins
+      - equal:
+          path: spec.template.spec.containers[0].args[5]
+          value: "1"
+
+  - it: pod leaderElectionEnabled false
+    set:
+      pod.leaderElectionEnabled: false
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - --leader-election-enabled
+            - "false"
+            - --leader-election-resource-namespace
+            - "release-namespace"
+
+  - it: pod imagePullSecrets overridden
+    set:
+      pod.imagePullSecrets:
+        - name: secret-1
+        - name: secret-2
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.imagePullSecrets
+          count: 2
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0]
+          value:
+            name: secret-1
+      - equal:
+          path: spec.template.spec.imagePullSecrets[1]
+          value:
+            name: secret-2
+
+  - it: pod extraLabels overridden
+    set:
+      pod.extraLabels:
+        label-1: label-1-value
+        label-2: label-2-value
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels
+          value:
+            helm.sh/chart: container-startup-autoscaler-1.2.3
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: container-startup-autoscaler
+            app.kubernetes.io/instance: release-name
+            app.kubernetes.io/version: 3.2.1
+            label-1: label-1-value
+            label-2: label-2-value
+
+  - it: pod extraAnnotations overridden
+    set:
+      pod.extraAnnotations:
+        annotation-1: annotation-1-value
+        annotation-2: annotation-2-value
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            annotation-1: annotation-1-value
+            annotation-2: annotation-2-value
+
+  - it: container image overridden
+    set:
+      container.image: image
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: image:3.2.1
+
+  - it: container tag overridden
+    set:
+      container.tag: 9.9.9
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: 9.9.9
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/version"]
+          value: 9.9.9
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: expediagroup/container-startup-autoscaler:9.9.9
+
+  - it: container cpu overridden
+    set:
+      container.cpu: 999m
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 999m
+              memory: 250M
+            limits:
+              cpu: 999m
+              memory: 250M
+
+  - it: container memory overridden
+    set:
+      container.memory: 999M
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources
+          value:
+            requests:
+              cpu: 250m
+              memory: 999M
+            limits:
+              cpu: 250m
+              memory: 999M

@@ -1,0 +1,86 @@
+# csa specifies configuration items for CSA itself. All keys are optional; any key not specified will use defaults
+# set within CSA itself. All values should be strings.
+csa:
+  # cacheSyncPeriodMins specifies how frequently the informer should re-sync.
+  cacheSyncPeriodMins:
+
+  # gracefulShutdownTimeoutSecs specifies how long to allow busy workers to complete upon shutdown.
+  gracefulShutdownTimeoutSecs:
+
+  # requeueDurationSecs specifies how long to wait before requeuing a reconcile.
+  requeueDurationSecs:
+
+  # maxConcurrentReconciles specifies the maximum number of concurrent reconciles.
+  maxConcurrentReconciles:
+
+  # standardRetryAttempts specifies the maximum number of attempts for a standard retry.
+  standardRetryAttempts:
+
+  # standardRetryDelaySecs specifies the number of seconds to wait between standard retry attempts.
+  standardRetryDelaySecs:
+
+  # scaleWhenUnknownResources specifies whether to scale when unknown resources (i.e. other than those specified within
+  # annotations) are encountered.
+  scaleWhenUnknownResources:
+
+  # logV specifies log verbosity level (0: info, 1: debug, 2: trace) - 2 used if invalid.
+  logV:
+
+  # logAddCaller specifies whether to include the caller within logging output.
+  logAddCaller:
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+# pod specifies configuration items for rendering the CSA pod.
+pod:
+  # Mandatory. leaderElectionEnabled specifies whether to enable leader election. If true, 2 controller pods will be
+  # created; if false, 1 controller pod will be created.
+  leaderElectionEnabled: true
+
+  # Optional. imagePullSecrets allows container pull secrets to be specified.
+  # Configuration per https://kubernetes.io/docs/concepts/containers/images/#referring-to-an-imagepullsecrets-on-a-pod.
+  #
+  # Example usage:
+  #
+  # imagePullSecrets:
+  #   - name: my-secret
+  imagePullSecrets: []
+
+  # Optional. extraLabels allows additional pod labels to be specified.
+  #
+  # Example usage:
+  #
+  # extraLabels:
+  #   extra-label-1: extra-label-1-value
+  #   extra-label-2: extra-label-2-value
+  extraLabels: {}
+
+  # Optional. extraAnnotations allows additional pod annotations to be specified.
+  #
+  # Example usage:
+  #
+  # extraAnnotations:
+  #   extra-annotation-1: extra-annotation-1-value
+  #   extra-annotation-2: extra-annotation-2-value
+  extraAnnotations: {}
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+# container specifies configuration items for rendering the CSA container.
+container:
+
+  # Mandatory. image specifies the image to use.
+  image: expediagroup/container-startup-autoscaler
+
+  # Optional. tag overrides the image tag to use. This should only be specified for local testing as the chart is
+  # designed to be immutable (each new CSA release gets a new chart version with corresponding appVersion within
+  # Chart.yaml).
+  tag:
+
+  # Mandatory. cpu specifies the allocation for the container. This sets both 'requests' and 'limits' for a 'guaranteed'
+  # QoS.
+  cpu: 250m
+
+  # Mandatory. memory specifies the memory allocation for the container. This sets both 'requests' and 'limits' for a
+  # 'guaranteed' QoS.
+  memory: 250M

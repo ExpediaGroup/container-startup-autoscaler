@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  namespace: "{{ include "csa.name.namespace" . }}"
+  name: "{{ include "csa.name.release" . }}"
+  {{- include "csa.label.clusterrolebinding" . | indent 2 }}
+  {{- include "csa.annotation.clusterrolebinding" . | indent 2 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: "{{ include "csa.name.release" . }}"
+subjects:
+  - kind: ServiceAccount
+    namespace: "{{ include "csa.name.namespace" . }}"
+    name: "{{ include "csa.name.release" . }}"

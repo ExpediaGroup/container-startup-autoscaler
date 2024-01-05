@@ -1,0 +1,50 @@
+suite: test clusterrolebinding
+templates:
+  - clusterrolebinding.yaml
+release:
+  namespace: release-namespace
+  name: release-name
+chart:
+  version: 1.2.3
+  appVersion: 3.2.1
+
+tests:
+  - it: defaults correct
+    asserts:
+      - hasDocuments:
+          count: 1
+      - containsDocument:
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRoleBinding
+          namespace: release-namespace
+          name: release-name
+      - equal:
+          path: metadata.labels
+          value:
+            helm.sh/chart: container-startup-autoscaler-1.2.3
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: container-startup-autoscaler
+            app.kubernetes.io/instance: release-name
+            app.kubernetes.io/version: 3.2.1
+      - notExists:
+          path: metadata.annotations
+      - equal:
+          path: roleRef
+          value:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: release-name
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            namespace: release-namespace
+            name: release-name
+
+  - it: container tag overridden
+    set:
+      container.tag: 9.9.9
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/version"]
+          value: 9.9.9
