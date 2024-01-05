@@ -379,10 +379,10 @@ func TestDeploymentScaleWhenUnknownResources(t *testing.T) {
 	maybeLogErrAndFailNow(t, kubeCreateNamespace(namespace))
 
 	annotations := csaQuantityAnnotations{
-		cpuStartup:                "150m",
-		cpuPostStartupRequests:    "100m",
-		cpuPostStartupLimits:      "100m",
-		memoryStartup:             "150M",
+		cpuStartup:                "100m",
+		cpuPostStartupRequests:    "75m",
+		cpuPostStartupLimits:      "75m",
+		memoryStartup:             "125M",
 		memoryPostStartupRequests: "100M",
 		memoryPostStartupLimits:   "100M",
 	}
@@ -561,9 +561,9 @@ func TestValidationFailure(t *testing.T) {
 
 	annotations := csaQuantityAnnotations{
 		cpuStartup:                "100m",
-		cpuPostStartupRequests:    "150m",
-		cpuPostStartupLimits:      "150m",
-		memoryStartup:             "150M",
+		cpuPostStartupRequests:    "75m",
+		cpuPostStartupLimits:      "75m",
+		memoryStartup:             "125M",
 		memoryPostStartupRequests: "100M",
 		memoryPostStartupLimits:   "100M",
 	}
@@ -615,10 +615,10 @@ func testWorkflow(
 	maybeLogErrAndFailNow(t, kubeCreateNamespace(namespace))
 
 	annotations := csaQuantityAnnotations{
-		cpuStartup:                "150m",
-		cpuPostStartupRequests:    "100m",
-		cpuPostStartupLimits:      "100m",
-		memoryStartup:             "150M",
+		cpuStartup:                "100m",
+		cpuPostStartupRequests:    "75m",
+		cpuPostStartupLimits:      "75m",
+		memoryStartup:             "125M",
 		memoryPostStartupRequests: "100M",
 		memoryPostStartupLimits:   "100M",
 	}

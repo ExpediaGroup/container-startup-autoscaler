@@ -32,8 +32,8 @@ const (
 
 const (
 	echoServerNonTargetContainerName           = echoServerName + "-non-target"
-	echoServerNonTargetContainerCpuRequests    = "100m"
-	echoServerNonTargetContainerCpuLimits      = "100m"
+	echoServerNonTargetContainerCpuRequests    = "75m"
+	echoServerNonTargetContainerCpuLimits      = "75m"
 	echoServerNonTargetContainerMemoryRequests = "100M"
 	echoServerNonTargetContainerMemoryLimits   = "100M"
 	echoServerDefaultProbeInitialDelaySeconds  = 15
