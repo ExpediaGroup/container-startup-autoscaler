@@ -36,6 +36,7 @@ const (
 	echoServerNonTargetContainerCpuLimits      = "100m"
 	echoServerNonTargetContainerMemoryRequests = "100M"
 	echoServerNonTargetContainerMemoryLimits   = "100M"
+	echoServerDefaultProbeInitialDelaySeconds  = 15
 )
 
 // Deployment-----------------------------------------------------------------------------------------------------------
@@ -51,7 +52,7 @@ func echoDeploymentConfigStandardStartup(
 		annotations,
 		annotations.cpuStartup, annotations.cpuStartup,
 		annotations.memoryStartup, annotations.memoryStartup,
-		int32(10),
+		echoServerDefaultProbeInitialDelaySeconds,
 	)
 }
 
@@ -66,7 +67,7 @@ func echoDeploymentConfigStandardPostStartup(
 		annotations,
 		annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits,
 		annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits,
-		int32(10),
+		echoServerDefaultProbeInitialDelaySeconds,
 	)
 }
 
@@ -108,7 +109,7 @@ func echoStatefulSetConfigStandardStartup(
 		annotations,
 		annotations.cpuStartup, annotations.cpuStartup,
 		annotations.memoryStartup, annotations.memoryStartup,
-		int32(10),
+		echoServerDefaultProbeInitialDelaySeconds,
 	)
 }
 
@@ -123,7 +124,7 @@ func echoStatefulSetConfigStandardPostStartup(
 		annotations,
 		annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits,
 		annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits,
-		int32(10),
+		echoServerDefaultProbeInitialDelaySeconds,
 	)
 }
 
@@ -163,7 +164,7 @@ func echoDaemonSetConfigStandardStartup(
 		annotations,
 		annotations.cpuStartup, annotations.cpuStartup,
 		annotations.memoryStartup, annotations.memoryStartup,
-		int32(10),
+		echoServerDefaultProbeInitialDelaySeconds,
 	)
 }
 
@@ -176,7 +177,7 @@ func echoDaemonSetConfigStandardPostStartup(
 		annotations,
 		annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits,
 		annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits,
-		int32(10),
+		echoServerDefaultProbeInitialDelaySeconds,
 	)
 }
 

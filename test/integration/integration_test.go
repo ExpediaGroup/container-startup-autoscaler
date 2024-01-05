@@ -393,7 +393,7 @@ func TestDeploymentScaleWhenUnknownResources(t *testing.T) {
 		annotations,
 		"175m", "175m",
 		"175M", "175M",
-		int32(10),
+		echoServerDefaultProbeInitialDelaySeconds,
 	)
 	config.removeReadinessProbes()
 	maybeLogErrAndFailNow(t, kubeApplyYamlOrJsonResources(config.deploymentJson()))
