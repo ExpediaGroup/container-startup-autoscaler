@@ -36,7 +36,7 @@ const (
 	echoServerNonTargetContainerCpuLimits      = "50m"
 	echoServerNonTargetContainerMemoryRequests = "150M"
 	echoServerNonTargetContainerMemoryLimits   = "150M"
-	echoServerDefaultProbeInitialDelaySeconds  = 20
+	echoServerDefaultProbeInitialDelaySeconds  = 15
 )
 
 // Deployment-----------------------------------------------------------------------------------------------------------
