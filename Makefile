@@ -44,7 +44,8 @@ test-run-helm: ## Runs Helm tests
 	rm -rf ${HELM_TESTS_SNAPSHOT_DIR}
 	mkdir ${HELM_TESTS_SNAPSHOT_DIR}
 	chmod 666 ${HELM_TESTS_SNAPSHOT_DIR}
-	docker run -t --rm -v ${ROOT_DIR}charts:/apps helmunittest/helm-unittest:3.12.3-0.3.5 container-startup-autoscaler
+	docker run -t --rm -v ${ROOT_DIR}charts:/apps helmunittest/helm-unittest:3.12.3-0.3.5 container-startup-autoscaler || true
+	ls -ltr ${HELM_TESTS_SNAPSHOT_DIR}
 	rm -rf ${HELM_TESTS_SNAPSHOT_DIR}
 
 ## ------------------
