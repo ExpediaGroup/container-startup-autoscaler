@@ -18,6 +18,8 @@ package common
 
 import "fmt"
 
+// WrapErrorf returns an error with the supplied format that wraps err. The supplied format is appended with ': %w',
+// with %w as err.
 func WrapErrorf(err error, format string, a ...any) error {
 	wrapFormat := fmt.Sprintf("%s: %%w", format)
 	return fmt.Errorf(wrapFormat, append(a, err)...)
