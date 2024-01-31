@@ -37,14 +37,12 @@ func TestWrapErrorf(t *testing.T) {
 	t.Run("ChainWithFormatString", func(t *testing.T) {
 		errInner := WrapErrorf(errors.New("non-wrapped err message"), "errInner format (%s)", "errInner test")
 		errOuter := WrapErrorf(errInner, "errOuter format (%s)", "errOuter test")
-
 		assert.Equal(t, "errOuter format (errOuter test): errInner format (errInner test): non-wrapped err message", errOuter.Error())
 	})
 
 	t.Run("ChainWithoutFormatString", func(t *testing.T) {
 		errInner := WrapErrorf(errors.New("non-wrapped err message"), "errInner format")
 		errOuter := WrapErrorf(errInner, "errOuter format")
-
 		assert.Equal(t, "errOuter format: errInner format: non-wrapped err message", errOuter.Error())
 	})
 }
