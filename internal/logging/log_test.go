@@ -19,13 +19,13 @@ package logging
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
 	ccontext "github.com/ExpediaGroup/container-startup-autoscaler/internal/context"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
@@ -50,7 +50,6 @@ type wantLogRxConfig struct {
 	wantMsgRx        string
 	wantTargetNameRx string
 	wantTargetStates bool
-	wantStackTrace   bool
 }
 
 const (
@@ -116,7 +115,6 @@ func TestErrore(t *testing.T) {
 				wantMsgRx:        testErrorMsg,
 				wantTargetNameRx: testTargetContainerName,
 				wantTargetStates: true,
-				wantStackTrace:   true,
 			},
 		},
 	}
@@ -146,9 +144,8 @@ func TestErrorf(t *testing.T) {
 				args:   []any{testArg},
 			},
 			wantLogRxConfig: wantLogRxConfig{
-				wantLevelRx:    wantErrorLevelRx,
-				wantMsgRx:      wantFormatArgsMsgRx,
-				wantStackTrace: true,
+				wantLevelRx: wantErrorLevelRx,
+				wantMsgRx:   wantFormatArgsMsgRx,
 			},
 		},
 		{
@@ -164,7 +161,6 @@ func TestErrorf(t *testing.T) {
 				wantMsgRx:        wantFormatArgsMsgRx,
 				wantTargetNameRx: testTargetContainerName,
 				wantTargetStates: true,
-				wantStackTrace:   true,
 			},
 		},
 	}
@@ -188,7 +184,6 @@ func TestFatale(t *testing.T) {
 				wantMsgRx:        testErrorMsg + fatalSuffixRx,
 				wantTargetNameRx: testTargetContainerName,
 				wantTargetStates: true,
-				wantStackTrace:   true,
 			},
 		},
 	}
@@ -218,9 +213,8 @@ func TestFatalf(t *testing.T) {
 				args:   []any{testArg},
 			},
 			wantLogRxConfig: wantLogRxConfig{
-				wantLevelRx:    wantErrorLevelRx,
-				wantMsgRx:      wantFormatArgsMsgRx + fatalSuffixRx,
-				wantStackTrace: true,
+				wantLevelRx: wantErrorLevelRx,
+				wantMsgRx:   wantFormatArgsMsgRx + fatalSuffixRx,
 			},
 		},
 		{
@@ -236,7 +230,6 @@ func TestFatalf(t *testing.T) {
 				wantMsgRx:        wantFormatArgsMsgRx + fatalSuffixRx,
 				wantTargetNameRx: testTargetContainerName,
 				wantTargetStates: true,
-				wantStackTrace:   true,
 			},
 		},
 	}
@@ -326,17 +319,6 @@ func TestInfofNotLoggedForLevel(t *testing.T) {
 	assert.Empty(t, buffer.String())
 }
 
-func TestConfiguredLogger(t *testing.T) {
-	// Note: private functions should only be included in unit tests where strictly necessary.
-	t.Run("MoreThanOneErrPanic", func(t *testing.T) {
-		assert.PanicsWithError(
-			t,
-			"more than one err supplied",
-			func() { configuredLogger(testContextNoPodInfo(), errors.New("test1"), errors.New("test2")) },
-		)
-	})
-}
-
 func testContextPodInfo() context.Context {
 	buffer := &bytes.Buffer{}
 	Init(buffer, testV, testAddCaller)
@@ -395,9 +377,5 @@ func assertLog(t *testing.T, ctx context.Context, config wantLogRxConfig) {
 
 	if config.wantTargetStates {
 		assert.Regexp(t, fmt.Sprintf("\"%s\":\\{.+?\\}", KeyTargetContainerStates), log)
-	}
-
-	if config.wantStackTrace {
-		assert.Regexp(t, fmt.Sprintf("\"%s\":\\[.+?\\]", KeyStackTrace), log)
 	}
 }

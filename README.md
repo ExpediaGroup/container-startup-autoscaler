@@ -331,8 +331,7 @@ Each message includes a number of keys that originate from controller-runtime an
 - `targetname`: the name of the container to target.
 - `targetstates`: the states of the target container, per [status](#status).
 
-Regardless of configured logging verbosity, `error`-level messages are always displayed and additionally include a
-stack trace key (`stacktrace`), if available.
+Regardless of configured logging verbosity, `error`-level messages are always displayed.
 
 ## Metrics
 Additional CSA-specific metrics are registered to the Prometheus registry exposed by controller-runtime and exposed

@@ -17,11 +17,11 @@ limitations under the License.
 package pod
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -65,62 +65,62 @@ func (c *scaleConfig) StoreFromAnnotations(pod *v1.Pod) error {
 
 	value, err := c.kubeHelper.ExpectedAnnotationValueAs(pod, podcommon.AnnotationTargetContainerName, podcommon.TypeString)
 	if err != nil {
-		return errors.Wrapf(err, annErrFmt, podcommon.AnnotationTargetContainerName)
+		return common.WrapErrorf(err, annErrFmt, podcommon.AnnotationTargetContainerName)
 	}
 	targetContainerName := value.(string)
 
 	value, err = c.kubeHelper.ExpectedAnnotationValueAs(pod, podcommon.AnnotationCpuStartup, podcommon.TypeString)
 	if err != nil {
-		return errors.Wrapf(err, annErrFmt, podcommon.AnnotationCpuStartup)
+		return common.WrapErrorf(err, annErrFmt, podcommon.AnnotationCpuStartup)
 	}
 	cpuStartup, err := resource.ParseQuantity(value.(string))
 	if err != nil {
-		return errors.Wrapf(err, qParseErrFmt, podcommon.AnnotationCpuStartup, value)
+		return common.WrapErrorf(err, qParseErrFmt, podcommon.AnnotationCpuStartup, value)
 	}
 
 	value, err = c.kubeHelper.ExpectedAnnotationValueAs(pod, podcommon.AnnotationCpuPostStartupRequests, podcommon.TypeString)
 	if err != nil {
-		return errors.Wrapf(err, annErrFmt, podcommon.AnnotationCpuPostStartupRequests)
+		return common.WrapErrorf(err, annErrFmt, podcommon.AnnotationCpuPostStartupRequests)
 	}
 	cpuPostStartupRequests, err := resource.ParseQuantity(value.(string))
 	if err != nil {
-		return errors.Wrapf(err, qParseErrFmt, podcommon.AnnotationCpuPostStartupRequests, value)
+		return common.WrapErrorf(err, qParseErrFmt, podcommon.AnnotationCpuPostStartupRequests, value)
 	}
 
 	value, err = c.kubeHelper.ExpectedAnnotationValueAs(pod, podcommon.AnnotationCpuPostStartupLimits, podcommon.TypeString)
 	if err != nil {
-		return errors.Wrapf(err, annErrFmt, podcommon.AnnotationCpuPostStartupLimits)
+		return common.WrapErrorf(err, annErrFmt, podcommon.AnnotationCpuPostStartupLimits)
 	}
 	cpuPostStartupLimits, err := resource.ParseQuantity(value.(string))
 	if err != nil {
-		return errors.Wrapf(err, qParseErrFmt, podcommon.AnnotationCpuPostStartupLimits, value)
+		return common.WrapErrorf(err, qParseErrFmt, podcommon.AnnotationCpuPostStartupLimits, value)
 	}
 
 	value, err = c.kubeHelper.ExpectedAnnotationValueAs(pod, podcommon.AnnotationMemoryStartup, podcommon.TypeString)
 	if err != nil {
-		return errors.Wrapf(err, annErrFmt, podcommon.AnnotationMemoryStartup)
+		return common.WrapErrorf(err, annErrFmt, podcommon.AnnotationMemoryStartup)
 	}
 	memoryStartup, err := resource.ParseQuantity(value.(string))
 	if err != nil {
-		return errors.Wrapf(err, qParseErrFmt, podcommon.AnnotationMemoryStartup, value)
+		return common.WrapErrorf(err, qParseErrFmt, podcommon.AnnotationMemoryStartup, value)
 	}
 
 	value, err = c.kubeHelper.ExpectedAnnotationValueAs(pod, podcommon.AnnotationMemoryPostStartupRequests, podcommon.TypeString)
 	if err != nil {
-		return errors.Wrapf(err, annErrFmt, podcommon.AnnotationMemoryPostStartupRequests)
+		return common.WrapErrorf(err, annErrFmt, podcommon.AnnotationMemoryPostStartupRequests)
 	}
 	memoryPostStartupRequests, err := resource.ParseQuantity(value.(string))
 	if err != nil {
-		return errors.Wrapf(err, qParseErrFmt, podcommon.AnnotationMemoryPostStartupRequests, value)
+		return common.WrapErrorf(err, qParseErrFmt, podcommon.AnnotationMemoryPostStartupRequests, value)
 	}
 
 	value, err = c.kubeHelper.ExpectedAnnotationValueAs(pod, podcommon.AnnotationMemoryPostStartupLimits, podcommon.TypeString)
 	if err != nil {
-		return errors.Wrapf(err, annErrFmt, podcommon.AnnotationMemoryPostStartupLimits)
+		return common.WrapErrorf(err, annErrFmt, podcommon.AnnotationMemoryPostStartupLimits)
 	}
 	memoryPostStartupLimits, err := resource.ParseQuantity(value.(string))
 	if err != nil {
-		return errors.Wrapf(err, qParseErrFmt, podcommon.AnnotationMemoryPostStartupLimits, value)
+		return common.WrapErrorf(err, qParseErrFmt, podcommon.AnnotationMemoryPostStartupLimits, value)
 	}
 
 	c.targetContainerName = targetContainerName
@@ -143,7 +143,7 @@ func (c *scaleConfig) Validate() error {
 
 	// TODO(wt) only guaranteed post-startup configuration is possible at the moment (pod QoS is immutable)
 	if !c.cpuConfig.PostStartupRequests.Equal(c.cpuConfig.PostStartupLimits) {
-		return errors.Errorf(
+		return fmt.Errorf(
 			"cpu post-startup requests (%s) must equal post-startup limits (%s) - change in qos class is not yet permitted by kube",
 			c.cpuConfig.PostStartupRequests.String(),
 			c.cpuConfig.PostStartupLimits.String(),
@@ -152,7 +152,7 @@ func (c *scaleConfig) Validate() error {
 
 	// TODO(wt) only guaranteed post-startup configuration is possible at the moment (pod QoS is immutable)
 	if !c.memoryConfig.PostStartupRequests.Equal(c.memoryConfig.PostStartupLimits) {
-		return errors.Errorf(
+		return fmt.Errorf(
 			"memory post-startup requests (%s) must equal post-startup limits (%s) - change in qos class is not yet permitted by kube",
 			c.memoryConfig.PostStartupRequests.String(),
 			c.memoryConfig.PostStartupLimits.String(),
@@ -160,7 +160,7 @@ func (c *scaleConfig) Validate() error {
 	}
 
 	if c.cpuConfig.PostStartupRequests.Cmp(c.cpuConfig.Startup) == 1 {
-		return errors.Errorf(
+		return fmt.Errorf(
 			"cpu post-startup requests (%s) is greater than startup value (%s)",
 			c.cpuConfig.PostStartupRequests.String(),
 			c.cpuConfig.Startup.String(),
@@ -168,7 +168,7 @@ func (c *scaleConfig) Validate() error {
 	}
 
 	if c.memoryConfig.PostStartupRequests.Cmp(c.memoryConfig.Startup) == 1 {
-		return errors.Errorf(
+		return fmt.Errorf(
 			"memory post-startup requests (%s) is greater than startup value (%s)",
 			c.memoryConfig.PostStartupRequests.String(),
 			c.memoryConfig.Startup.String(),
@@ -177,7 +177,7 @@ func (c *scaleConfig) Validate() error {
 
 	// TODO(wt) reinstate once change in qos class is permitted by Kube
 	//if c.cpuConfig.PostStartupLimits.Cmp(c.cpuConfig.PostStartupRequests) == -1 {
-	//	return errors.Errorf(
+	//	return fmt.Errorf(
 	//		"cpu post-startup limits (%s) is less than post-startup requests (%s)",
 	//		c.cpuConfig.PostStartupLimits.String(),
 	//		c.cpuConfig.PostStartupRequests.String(),
@@ -185,7 +185,7 @@ func (c *scaleConfig) Validate() error {
 	//}
 	//
 	//if c.memoryConfig.PostStartupLimits.Cmp(c.memoryConfig.PostStartupRequests) == -1 {
-	//	return errors.Errorf(
+	//	return fmt.Errorf(
 	//		"memory post-startup limits (%s) is less than post-startup requests (%s)",
 	//		c.memoryConfig.PostStartupLimits.String(),
 	//		c.memoryConfig.PostStartupRequests.String(),

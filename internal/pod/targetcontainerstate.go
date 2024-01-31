@@ -18,10 +18,11 @@ package pod
 
 import (
 	"context"
+	"errors"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 )
 
@@ -44,7 +45,7 @@ func (s targetContainerState) States(ctx context.Context, pod *v1.Pod, config po
 	container, err := s.containerKubeHelper.Get(pod, config.GetTargetContainerName())
 	if err != nil {
 		return podcommon.NewStatesAllUnknown(),
-			errors.Wrap(err, "unable to get container")
+			common.WrapErrorf(err, "unable to get container")
 	}
 
 	ret := podcommon.NewStatesAllUnknown()
@@ -56,7 +57,7 @@ func (s targetContainerState) States(ctx context.Context, pod *v1.Pod, config po
 		if !s.shouldReturnError(ctx, err) {
 			return ret, nil
 		}
-		return ret, errors.Wrap(err, "unable to determine container state")
+		return ret, common.WrapErrorf(err, "unable to determine container state")
 	}
 
 	ret.Started, err = s.stateStarted(pod, config)
@@ -64,7 +65,7 @@ func (s targetContainerState) States(ctx context.Context, pod *v1.Pod, config po
 		if !s.shouldReturnError(ctx, err) {
 			return ret, nil
 		}
-		return ret, errors.Wrap(err, "unable to determine started state")
+		return ret, common.WrapErrorf(err, "unable to determine started state")
 	}
 
 	ret.Ready, err = s.stateReady(pod, config)
@@ -72,7 +73,7 @@ func (s targetContainerState) States(ctx context.Context, pod *v1.Pod, config po
 		if !s.shouldReturnError(ctx, err) {
 			return ret, nil
 		}
-		return ret, errors.Wrap(err, "unable to determine ready state")
+		return ret, common.WrapErrorf(err, "unable to determine ready state")
 	}
 
 	ret.Resources = s.stateResources(
@@ -85,7 +86,7 @@ func (s targetContainerState) States(ctx context.Context, pod *v1.Pod, config po
 		if !s.shouldReturnError(ctx, err) {
 			return ret, nil
 		}
-		return ret, errors.Wrap(err, "unable to determine allocated resources states")
+		return ret, common.WrapErrorf(err, "unable to determine allocated resources states")
 	}
 
 	ret.StatusResources, err = s.stateStatusResources(pod, container, config)
@@ -93,7 +94,7 @@ func (s targetContainerState) States(ctx context.Context, pod *v1.Pod, config po
 		if !s.shouldReturnError(ctx, err) {
 			return ret, nil
 		}
-		return ret, errors.Wrap(err, "unable to determine status resources states")
+		return ret, common.WrapErrorf(err, "unable to determine status resources states")
 	}
 
 	return ret, nil
@@ -121,7 +122,7 @@ func (s targetContainerState) stateReadinessProbe(container *v1.Container) podco
 func (s targetContainerState) stateContainer(pod *v1.Pod, config podcommon.ScaleConfig) (podcommon.StateContainer, error) {
 	state, err := s.containerKubeHelper.State(pod, config.GetTargetContainerName())
 	if err != nil {
-		return podcommon.StateContainerUnknown, errors.Wrap(err, "unable to get container state")
+		return podcommon.StateContainerUnknown, common.WrapErrorf(err, "unable to get container state")
 	}
 
 	if state.Running != nil {
@@ -143,7 +144,7 @@ func (s targetContainerState) stateContainer(pod *v1.Pod, config podcommon.Scale
 func (s targetContainerState) stateStarted(pod *v1.Pod, config podcommon.ScaleConfig) (podcommon.StateBool, error) {
 	started, err := s.containerKubeHelper.IsStarted(pod, config.GetTargetContainerName())
 	if err != nil {
-		return podcommon.StateBoolUnknown, errors.Wrap(err, "unable to get container ready status")
+		return podcommon.StateBoolUnknown, common.WrapErrorf(err, "unable to get container ready status")
 	}
 
 	if started {
@@ -157,7 +158,7 @@ func (s targetContainerState) stateStarted(pod *v1.Pod, config podcommon.ScaleCo
 func (s targetContainerState) stateReady(pod *v1.Pod, config podcommon.ScaleConfig) (podcommon.StateBool, error) {
 	ready, err := s.containerKubeHelper.IsReady(pod, config.GetTargetContainerName())
 	if err != nil {
-		return podcommon.StateBoolUnknown, errors.Wrap(err, "unable to get container ready status")
+		return podcommon.StateBoolUnknown, common.WrapErrorf(err, "unable to get container ready status")
 	}
 
 	if ready {
@@ -189,12 +190,12 @@ func (s targetContainerState) stateAllocatedResources(
 ) (podcommon.StateAllocatedResources, error) {
 	allocatedCpu, err := s.containerKubeHelper.AllocatedResources(pod, config.GetTargetContainerName(), v1.ResourceCPU)
 	if err != nil {
-		return podcommon.StateAllocatedResourcesUnknown, errors.Wrap(err, "unable to get allocated cpu resources")
+		return podcommon.StateAllocatedResourcesUnknown, common.WrapErrorf(err, "unable to get allocated cpu resources")
 	}
 
 	allocatedMemory, err := s.containerKubeHelper.AllocatedResources(pod, config.GetTargetContainerName(), v1.ResourceMemory)
 	if err != nil {
-		return podcommon.StateAllocatedResourcesUnknown, errors.Wrap(err, "unable to get allocated memory resources")
+		return podcommon.StateAllocatedResourcesUnknown, common.WrapErrorf(err, "unable to get allocated memory resources")
 	}
 
 	if allocatedCpu.IsZero() || allocatedMemory.IsZero() {
@@ -219,22 +220,22 @@ func (s targetContainerState) stateStatusResources(
 ) (podcommon.StateStatusResources, error) {
 	currentRequestsCpu, err := s.containerKubeHelper.CurrentRequests(pod, config.GetTargetContainerName(), v1.ResourceCPU)
 	if err != nil {
-		return podcommon.StateStatusResourcesUnknown, errors.Wrap(err, "unable to get status resources cpu requests")
+		return podcommon.StateStatusResourcesUnknown, common.WrapErrorf(err, "unable to get status resources cpu requests")
 	}
 
 	currentLimitsCpu, err := s.containerKubeHelper.CurrentLimits(pod, config.GetTargetContainerName(), v1.ResourceCPU)
 	if err != nil {
-		return podcommon.StateStatusResourcesUnknown, errors.Wrap(err, "unable to get status resources cpu limits")
+		return podcommon.StateStatusResourcesUnknown, common.WrapErrorf(err, "unable to get status resources cpu limits")
 	}
 
 	currentRequestsMemory, err := s.containerKubeHelper.CurrentRequests(pod, config.GetTargetContainerName(), v1.ResourceMemory)
 	if err != nil {
-		return podcommon.StateStatusResourcesUnknown, errors.Wrap(err, "unable to get status resources memory requests")
+		return podcommon.StateStatusResourcesUnknown, common.WrapErrorf(err, "unable to get status resources memory requests")
 	}
 
 	currentLimitsMemory, err := s.containerKubeHelper.CurrentLimits(pod, config.GetTargetContainerName(), v1.ResourceMemory)
 	if err != nil {
-		return podcommon.StateStatusResourcesUnknown, errors.Wrap(err, "unable to get status resources memory limits")
+		return podcommon.StateStatusResourcesUnknown, common.WrapErrorf(err, "unable to get status resources memory limits")
 	}
 
 	if currentRequestsCpu.IsZero() || currentLimitsCpu.IsZero() || currentRequestsMemory.IsZero() || currentLimitsMemory.IsZero() {
@@ -287,17 +288,17 @@ func (s targetContainerState) isPostStartupConfigApplied(container *v1.Container
 // shouldReturnError reports whether to return an error after examining the type of the supplied err. Certain errors
 // should not propagate since they are likely transient in nature i.e. 'resolved' in future reconciles.
 func (s targetContainerState) shouldReturnError(ctx context.Context, err error) bool {
-	if errors.Is(err, ContainerStatusNotPresentError{}) {
+	if errors.As(err, &ContainerStatusNotPresentError{}) {
 		logging.Infof(ctx, logging.VDebug, "container status not yet present")
 		return false
 	}
 
-	if errors.Is(err, ContainerStatusAllocatedResourcesNotPresentError{}) {
+	if errors.As(err, &ContainerStatusAllocatedResourcesNotPresentError{}) {
 		logging.Infof(ctx, logging.VDebug, "container status allocated resources not yet present")
 		return false
 	}
 
-	if errors.Is(err, ContainerStatusResourcesNotPresentError{}) {
+	if errors.As(err, &ContainerStatusResourcesNotPresentError{}) {
 		logging.Infof(ctx, logging.VDebug, "container status resources not yet present")
 		return false
 	}

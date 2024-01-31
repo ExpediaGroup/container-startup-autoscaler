@@ -17,12 +17,14 @@ limitations under the License.
 package controller
 
 import (
+	"errors"
+
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	csametrics "github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	runtimecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -97,7 +99,7 @@ func (c *controller) Initialize(runtimeController ...runtimecontroller.Controlle
 			},
 		)
 		if err != nil {
-			return errors.Wrap(err, "unable to create controller-runtime controller")
+			return common.WrapErrorf(err, "unable to create controller-runtime controller")
 		}
 	} else {
 		actualRuntimeController = runtimeController[0]
@@ -114,7 +116,7 @@ func (c *controller) Initialize(runtimeController ...runtimecontroller.Controlle
 			GenericFunc: PredicateGenericFunc,
 		},
 	); err != nil {
-		return errors.Wrap(err, "unable to watch pods")
+		return common.WrapErrorf(err, "unable to watch pods")
 	}
 
 	csametrics.RegisterAllMetrics(metrics.Registry, Name)

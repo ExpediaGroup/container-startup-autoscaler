@@ -19,8 +19,10 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"sync"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	ccontext "github.com/ExpediaGroup/container-startup-autoscaler/internal/context"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
@@ -28,7 +30,6 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	cmap "github.com/orcaman/concurrent-map/v2"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -88,7 +89,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	// Reconcilation will still operate correctly in this case as current conditions are always examined.
 	podExists, kubePod, err := r.pod.KubeHelper.Get(ctx, request.NamespacedName)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "unable to get pod (will requeue)")
+		wrappedErr := common.WrapErrorf(err, "unable to get pod (will requeue)")
 		logging.Errore(ctx, wrappedErr)
 		reconciler.FailureUnableToGetPod().Inc()
 		return reconcile.Result{RequeueAfter: r.controllerConfig.RequeueDurationSecsDuration()}, nil
@@ -106,7 +107,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 		var podJson []byte
 		podJson, err = json.Marshal(kubePod)
 		if err != nil {
-			logging.Errore(ctx, errors.Wrap(err, "unable to marshal pod to json for trace logging"))
+			logging.Errore(ctx, common.WrapErrorf(err, "unable to marshal pod to json for trace logging"))
 		} else {
 			logging.Infof(ctx, logging.VTrace, "reconciling pod: %s", string(podJson))
 		}
@@ -121,7 +122,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	}
 	err = r.pod.Validation.Validate(ctx, kubePod, config, afterScaleConfigPopulatedFunc)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "unable to validate pod (won't requeue)")
+		wrappedErr := common.WrapErrorf(err, "unable to validate pod (won't requeue)")
 		logging.Errore(ctx, wrappedErr)
 		reconciler.FailureValidation().Inc()
 		return reconcile.Result{}, reconcile.TerminalError(wrappedErr)
@@ -130,7 +131,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	// Determine target container states.
 	states, err := r.pod.TargetContainerState.States(ctx, kubePod, config)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "unable to determine target container states (won't requeue)")
+		wrappedErr := common.WrapErrorf(err, "unable to determine target container states (won't requeue)")
 		logging.Errore(ctx, wrappedErr)
 		reconciler.FailureStatesDetermination().Inc()
 		return reconcile.Result{}, reconcile.TerminalError(wrappedErr)
@@ -140,7 +141,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	// Execute action for determined target container states.
 	err = r.pod.TargetContainerAction.Execute(ctx, states, kubePod, config)
 	if err != nil {
-		wrappedErr := errors.Wrap(err, "unable to action target container states (won't requeue)")
+		wrappedErr := common.WrapErrorf(err, "unable to action target container states (won't requeue)")
 		logging.Errore(ctx, wrappedErr)
 		reconciler.FailureStatesAction().Inc()
 		return reconcile.Result{}, reconcile.TerminalError(wrappedErr)

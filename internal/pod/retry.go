@@ -18,12 +18,12 @@ package pod
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	metricsretry "github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/retry"
 	"github.com/avast/retry-go/v4"
-	"github.com/pkg/errors"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 )

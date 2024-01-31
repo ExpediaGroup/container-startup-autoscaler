@@ -18,10 +18,10 @@ package podtest
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
-	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 

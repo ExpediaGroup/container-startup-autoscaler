@@ -18,6 +18,7 @@ package pod
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -25,7 +26,6 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podtest"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
@@ -446,7 +446,7 @@ func TestValidationValidate(t *testing.T) {
 				func(podcommon.ScaleConfig) {},
 			)
 			if tt.wantErrMsg != "" {
-				assert.True(t, errors.Is(err, ValidationError{}))
+				assert.True(t, errors.As(err, &ValidationError{}))
 				assert.Contains(t, err.Error(), tt.wantErrMsg)
 			} else {
 				assert.Nil(t, err)

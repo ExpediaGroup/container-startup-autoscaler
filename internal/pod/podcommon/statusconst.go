@@ -17,8 +17,9 @@ limitations under the License.
 package podcommon
 
 import (
+	"fmt"
+
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/metricscommon"
-	"github.com/pkg/errors"
 )
 
 // StatusScaleState indicates the scale state for status purposes.
@@ -59,5 +60,5 @@ func (s StatusScaleState) Direction() metricscommon.Direction {
 		return metricscommon.DirectionDown
 	}
 
-	panic(errors.Errorf("'%s' not supported", s))
+	panic(fmt.Errorf("'%s' not supported", s))
 }

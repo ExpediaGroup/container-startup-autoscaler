@@ -23,7 +23,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 )
 
 const (
@@ -81,7 +81,7 @@ func kindSetupCluster(reuseCluster bool, installMetricsServer bool) {
 		case "arm64":
 			kindNodeImage = kindNodeImageArm64
 		default:
-			fmt.Println(errors.Errorf("architecture '%s' not supported", runtime.GOARCH))
+			fmt.Println(fmt.Errorf("architecture '%s' not supported", runtime.GOARCH))
 			os.Exit(1)
 		}
 
@@ -105,12 +105,12 @@ func kindSetupCluster(reuseCluster bool, installMetricsServer bool) {
 	)
 
 	if err := os.WriteFile(kindKubeconfig, []byte(output), 0644); err != nil {
-		fmt.Println(errors.Wrapf(err, "unable to write kubeconfig"))
+		fmt.Println(common.WrapErrorf(err, "unable to write kubeconfig"))
 		os.Exit(1)
 	}
 
 	if err := kubePrintNodeInfo(); err != nil {
-		fmt.Println(errors.Wrapf(err, "unable to print kube node info"))
+		fmt.Println(common.WrapErrorf(err, "unable to print kube node info"))
 		os.Exit(1)
 	}
 

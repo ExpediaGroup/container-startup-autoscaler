@@ -14,11 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package logging
+package common
 
-import "github.com/pkg/errors"
+import "fmt"
 
-// stackTracer is implemented within errors that include a stack trace.
-type stackTracer interface {
-	StackTrace() errors.StackTrace
+// WrapErrorf returns an error with the supplied format that wraps err. The supplied format is appended with ': %w',
+// with %w as err.
+func WrapErrorf(err error, format string, a ...any) error {
+	wrapFormat := fmt.Sprintf("%s: %%w", format)
+	return fmt.Errorf(wrapFormat, append(a, err)...)
 }

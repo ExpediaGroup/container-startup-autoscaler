@@ -18,6 +18,7 @@ package pod
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
@@ -25,7 +26,6 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/metricscommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 )
 
@@ -62,7 +62,7 @@ func (s *status) Update(
 
 	newPod, err := s.kubeHelper.Patch(ctx, pod, mutatePodFunc)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to patch pod")
+		return nil, common.WrapErrorf(err, "unable to patch pod")
 	}
 
 	return newPod, nil
@@ -83,7 +83,7 @@ func (s *status) UpdateMutatePodFunc(
 			var err error
 			currentStat, err = podcommon.StatusAnnotationFromString(currentStatAnn)
 			if err != nil {
-				return false, pod, errors.Wrap(err, "unable to get status annotation from string")
+				return false, pod, common.WrapErrorf(err, "unable to get status annotation from string")
 			}
 		}
 
@@ -130,7 +130,7 @@ func (s *status) UpdateMutatePodFunc(
 				)
 			}
 		default:
-			panic(errors.Errorf("scaleState '%s' not supported", scaleState))
+			panic(fmt.Errorf("scaleState '%s' not supported", scaleState))
 		}
 
 		newStat := podcommon.NewStatusAnnotation(common.CapitalizeFirstChar(status), states, statScale, s.formattedNow(timeFormatSecs))

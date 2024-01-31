@@ -17,43 +17,34 @@ limitations under the License.
 package pod
 
 import (
+	"errors"
 	"testing"
 
-	"github.com/pkg/errors"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewValidationError(t *testing.T) {
 	err := NewValidationError("test", errors.New(""))
-	assert.True(t, errors.Is(err, ValidationError{}))
+	assert.True(t, errors.As(err, &ValidationError{}))
 }
 
 func TestValidationErrorError(t *testing.T) {
-	t.Run("NotNilCause", func(t *testing.T) {
-		e := NewValidationError("test1", errors.New("test2"))
-		assert.Equal(t, "validation error: test1: test2", e.Error())
+	t.Run("Wrapped", func(t *testing.T) {
+		err1 := errors.New("err1")
+		err2 := common.WrapErrorf(err1, "err2")
+		e := NewValidationError("err3", err2)
+		assert.Equal(t, "validation error: err3: err2: err1", e.Error())
 	})
 
-	t.Run("NilCause", func(t *testing.T) {
+	t.Run("NotWrapped", func(t *testing.T) {
 		e := NewValidationError("test", nil)
 		assert.Equal(t, "validation error: test", e.Error())
 	})
 }
 
-func TestValidationErrorCause(t *testing.T) {
-	t.Run("NotNilCause", func(t *testing.T) {
-		e := ValidationError{wrapped: errors.New("")}
-		assert.NotNil(t, e.Cause())
-	})
-
-	t.Run("NilCause", func(t *testing.T) {
-		e := ValidationError{wrapped: nil}
-		assert.Nil(t, e.Cause())
-	})
-}
-
 func TestNewContainerStatusNotPresentError(t *testing.T) {
-	assert.True(t, errors.Is(NewContainerStatusNotPresentError(), ContainerStatusNotPresentError{}))
+	assert.True(t, errors.As(NewContainerStatusNotPresentError(), &ContainerStatusNotPresentError{}))
 }
 
 func TestContainerStatusNotPresentErrorError(t *testing.T) {
@@ -62,7 +53,7 @@ func TestContainerStatusNotPresentErrorError(t *testing.T) {
 }
 
 func TestNewContainerStatusAllocatedResourcesNotPresentError(t *testing.T) {
-	assert.True(t, errors.Is(NewContainerStatusAllocatedResourcesNotPresentError(), ContainerStatusAllocatedResourcesNotPresentError{}))
+	assert.True(t, errors.As(NewContainerStatusAllocatedResourcesNotPresentError(), &ContainerStatusAllocatedResourcesNotPresentError{}))
 }
 
 func TestContainerStatusAllocatedResourcesNotPresentErrorError(t *testing.T) {
@@ -71,7 +62,7 @@ func TestContainerStatusAllocatedResourcesNotPresentErrorError(t *testing.T) {
 }
 
 func TestNewContainerStatusResourcesNotPresentError(t *testing.T) {
-	assert.True(t, errors.Is(NewContainerStatusResourcesNotPresentError(), ContainerStatusResourcesNotPresentError{}))
+	assert.True(t, errors.As(NewContainerStatusResourcesNotPresentError(), &ContainerStatusResourcesNotPresentError{}))
 }
 
 func TestContainerStatusResourcesNotPresentErrorError(t *testing.T) {

@@ -18,10 +18,10 @@ package context
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contextcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/pkg/errors"
 )
 
 // WithStandardRetryAttempts adds or replaces contextcommon.KeyStandardRetryAttempts to/in ctx.

@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
-	"github.com/pkg/errors"
 )
 
 // StatusAnnotation holds status information that's serialized to JSON for status reporting.
@@ -63,7 +62,7 @@ func (s StatusAnnotation) Equal(to StatusAnnotation) bool {
 func StatusAnnotationFromString(s string) (StatusAnnotation, error) {
 	ret := &StatusAnnotation{}
 	if err := json.Unmarshal([]byte(s), ret); err != nil {
-		return *ret, errors.Wrap(err, "unable to unmarshal")
+		return *ret, common.WrapErrorf(err, "unable to unmarshal")
 	}
 
 	return *ret, nil
