@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -147,7 +146,7 @@ func kubeWaitPodsExist(namespace string, nameContains string, count int, timeout
 
 	for {
 		if int(time.Now().Sub(started).Seconds()) > timeoutSecs {
-			return errors.Errorf("waiting for %d pods (pod name contains '%s') to exist in namespace '%s' timed out",
+			return fmt.Errorf("waiting for %d pods (pod name contains '%s') to exist in namespace '%s' timed out",
 				timeoutSecs, nameContains, namespace,
 			)
 		}

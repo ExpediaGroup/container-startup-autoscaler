@@ -18,12 +18,12 @@ package controller
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/apimachinery/pkg/api/meta"

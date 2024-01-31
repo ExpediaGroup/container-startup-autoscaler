@@ -18,12 +18,14 @@ package pod
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strconv"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/retry"
 	retrygo "github.com/avast/retry-go/v4"
-	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -79,7 +81,7 @@ func (h *kubeHelper) Get(ctx context.Context, name types.NamespacedName) (bool, 
 			return false, &v1.Pod{}, nil
 		}
 
-		return false, &v1.Pod{}, errors.Wrap(err, "unable to get pod")
+		return false, &v1.Pod{}, common.WrapErrorf(err, "unable to get pod")
 	}
 
 	return true, pod, nil
@@ -95,7 +97,7 @@ func (h *kubeHelper) Patch(
 ) (*v1.Pod, error) {
 	shouldPatch, mutatedPod, err := mutatePodFunc(pod)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to mutate pod")
+		return nil, common.WrapErrorf(err, "unable to mutate pod")
 	}
 	if !shouldPatch {
 		return pod, nil
@@ -110,7 +112,7 @@ func (h *kubeHelper) Patch(
 					Name:      pod.Name,
 				})
 				if getErr != nil {
-					return errors.Wrap(err, "unable to get pod when resolving conflict")
+					return common.WrapErrorf(err, "unable to get pod when resolving conflict")
 				}
 				if !exists {
 					// Mark as unrecoverable so not to retry further.
@@ -120,7 +122,7 @@ func (h *kubeHelper) Patch(
 				_, mutatedPod, _ = mutatePodFunc(latestPod)
 			}
 
-			return errors.WithStack(err)
+			return err
 		}
 
 		return nil
@@ -128,7 +130,7 @@ func (h *kubeHelper) Patch(
 
 	err = retry.DoStandardRetryWithMoreOpts(ctx, retryableFunc, kubeApiRetryOptions(ctx))
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to patch pod")
+		return nil, common.WrapErrorf(err, "unable to patch pod")
 	}
 
 	return mutatedPod, nil
@@ -169,7 +171,7 @@ func (h *kubeHelper) UpdateContainerResources(
 			// 'Should patch' ignored here as supplementary to patching resources.
 			_, mutatedPod, err = addMutations(mutatedPod)
 			if err != nil {
-				return false, nil, errors.Wrap(err, "unable to apply additional pod mutations")
+				return false, nil, common.WrapErrorf(err, "unable to apply additional pod mutations")
 			}
 		}
 
@@ -178,7 +180,7 @@ func (h *kubeHelper) UpdateContainerResources(
 
 	newPod, err := h.Patch(ctx, pod, mutatePodFunc)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to patch pod")
+		return nil, common.WrapErrorf(err, "unable to patch pod")
 	}
 
 	return newPod, nil
@@ -232,7 +234,7 @@ func (h *kubeHelper) expectedLabelOrAnnotationAs(
 	var value string
 	var present bool
 	if value, present = m[name]; !present {
-		return nil, errors.Errorf("%s '%s' not present", mapFor, name)
+		return nil, fmt.Errorf("%s '%s' not present", mapFor, name)
 	}
 
 	switch as {
@@ -241,11 +243,11 @@ func (h *kubeHelper) expectedLabelOrAnnotationAs(
 	case podcommon.TypeBool:
 		valueBool, err := strconv.ParseBool(value)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unable to parse '%s' %s value '%s' as %s", name, mapFor, value, as)
+			return nil, common.WrapErrorf(err, "unable to parse '%s' %s value '%s' as %s", name, mapFor, value, as)
 		}
 
 		return valueBool, nil
 	}
 
-	panic(errors.Errorf("as '%s' not supported", as))
+	panic(fmt.Errorf("as '%s' not supported", as))
 }

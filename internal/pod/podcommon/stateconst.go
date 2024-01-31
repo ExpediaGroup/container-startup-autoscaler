@@ -17,8 +17,9 @@ limitations under the License.
 package podcommon
 
 import (
+	"fmt"
+
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/metricscommon"
-	"github.com/pkg/errors"
 )
 
 // StateBool indicates the state of a boolean-like state.
@@ -63,7 +64,7 @@ func (s StateResources) Direction() metricscommon.Direction {
 		return metricscommon.DirectionDown
 	}
 
-	panic(errors.Errorf("'%s' not supported", s))
+	panic(fmt.Errorf("'%s' not supported", s))
 }
 
 // HumanReadable returns a string suitable to include within human-readable messages.

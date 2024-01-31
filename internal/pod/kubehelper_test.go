@@ -18,6 +18,7 @@ package pod
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -26,7 +27,6 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/retry"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podtest"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -246,14 +246,15 @@ func TestKubeHelperPatch(t *testing.T) {
 			},
 		))
 
+		beforeMetricVal, _ := testutil.GetCounterMetricValue(retry.Retry(strings.ToLower(string(metav1.StatusReasonConflict))))
 		got, err := h.Patch(contexttest.NewCtxBuilder(contexttest.NewOneRetryCtxConfig(nil)).Build(), pod, mutatePodFunc)
 		assert.Nil(t, err)
 		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(cpuRequests))
 		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(cpuLimits))
 		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(memoryRequests))
 		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceMemory].Equal(memoryLimits))
-		metricVal, _ := testutil.GetCounterMetricValue(retry.Retry(strings.ToLower(string(metav1.StatusReasonConflict))))
-		assert.Equal(t, float64(1), metricVal)
+		afterMetricVal, _ := testutil.GetCounterMetricValue(retry.Retry(strings.ToLower(string(metav1.StatusReasonConflict))))
+		assert.Equal(t, beforeMetricVal+1, afterMetricVal)
 	})
 
 	t.Run("OkNoPatch", func(t *testing.T) {

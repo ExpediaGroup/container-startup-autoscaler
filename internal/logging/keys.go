@@ -19,5 +19,4 @@ package logging
 const (
 	KeyTargetContainerName   = "targetname"
 	KeyTargetContainerStates = "targetstates"
-	KeyStackTrace            = "stacktrace"
 )

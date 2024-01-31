@@ -17,7 +17,10 @@ limitations under the License.
 package pod
 
 import (
-	"github.com/pkg/errors"
+	"errors"
+	"fmt"
+
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -70,7 +73,7 @@ func (h containerKubeHelper) HasReadinessProbe(container *v1.Container) bool {
 func (h containerKubeHelper) State(pod *v1.Pod, containerName string) (v1.ContainerState, error) {
 	stat, err := h.status(pod, containerName)
 	if err != nil {
-		return v1.ContainerState{}, errors.Wrap(err, "unable to get container status")
+		return v1.ContainerState{}, common.WrapErrorf(err, "unable to get container status")
 	}
 
 	return stat.State, nil
@@ -80,7 +83,7 @@ func (h containerKubeHelper) State(pod *v1.Pod, containerName string) (v1.Contai
 func (h containerKubeHelper) IsStarted(pod *v1.Pod, containerName string) (bool, error) {
 	stat, err := h.status(pod, containerName)
 	if err != nil {
-		return false, errors.Wrap(err, "unable to get container status")
+		return false, common.WrapErrorf(err, "unable to get container status")
 	}
 
 	if stat.Started == nil {
@@ -94,7 +97,7 @@ func (h containerKubeHelper) IsStarted(pod *v1.Pod, containerName string) (bool,
 func (h containerKubeHelper) IsReady(pod *v1.Pod, containerName string) (bool, error) {
 	stat, err := h.status(pod, containerName)
 	if err != nil {
-		return false, errors.Wrap(err, "unable to get container status")
+		return false, common.WrapErrorf(err, "unable to get container status")
 	}
 
 	return stat.Ready, nil
@@ -113,7 +116,7 @@ func (h containerKubeHelper) Requests(container *v1.Container, resourceName v1.R
 		return *container.Resources.Requests.Memory()
 	}
 
-	panic(errors.Errorf("resourceName '%s' not supported", resourceName))
+	panic(fmt.Errorf("resourceName '%s' not supported", resourceName))
 }
 
 // Limits returns limits for the supplied resourceName, from the supplied container.
@@ -129,7 +132,7 @@ func (h containerKubeHelper) Limits(container *v1.Container, resourceName v1.Res
 		return *container.Resources.Limits.Memory()
 	}
 
-	panic(errors.Errorf("resourceName '%s' not supported", resourceName))
+	panic(fmt.Errorf("resourceName '%s' not supported", resourceName))
 }
 
 // ResizePolicy returns the resource resize restart policy for the supplied resourceName, from the supplied container.
@@ -147,7 +150,7 @@ func (h containerKubeHelper) ResizePolicy(
 		}
 	}
 
-	panic(errors.Errorf("resourceName '%s' not supported", resourceName))
+	panic(fmt.Errorf("resourceName '%s' not supported", resourceName))
 }
 
 // AllocatedResources returns allocated resources for the supplied containerName and resourceName, from the supplied
@@ -159,7 +162,7 @@ func (h containerKubeHelper) AllocatedResources(
 ) (resource.Quantity, error) {
 	stat, err := h.status(pod, containerName)
 	if err != nil {
-		return resource.Quantity{}, errors.Wrap(err, "unable to get container status")
+		return resource.Quantity{}, common.WrapErrorf(err, "unable to get container status")
 	}
 
 	if stat.AllocatedResources == nil {
@@ -173,7 +176,7 @@ func (h containerKubeHelper) AllocatedResources(
 		return *stat.AllocatedResources.Memory(), nil
 	}
 
-	panic(errors.Errorf("resourceName '%s' not supported", resourceName))
+	panic(fmt.Errorf("resourceName '%s' not supported", resourceName))
 }
 
 // CurrentRequests returns currently enacted requests for the supplied containerName and resourceName, from the
@@ -185,7 +188,7 @@ func (h containerKubeHelper) CurrentRequests(
 ) (resource.Quantity, error) {
 	stat, err := h.status(pod, containerName)
 	if err != nil {
-		return resource.Quantity{}, errors.Wrap(err, "unable to get container status")
+		return resource.Quantity{}, common.WrapErrorf(err, "unable to get container status")
 	}
 
 	if stat.Resources == nil {
@@ -199,7 +202,7 @@ func (h containerKubeHelper) CurrentRequests(
 		return *stat.Resources.Requests.Memory(), nil
 	}
 
-	panic(errors.Errorf("resourceName '%s' not supported", resourceName))
+	panic(fmt.Errorf("resourceName '%s' not supported", resourceName))
 }
 
 // CurrentLimits returns currently enacted limits for the supplied containerName and resourceName, from the supplied
@@ -211,7 +214,7 @@ func (h containerKubeHelper) CurrentLimits(
 ) (resource.Quantity, error) {
 	stat, err := h.status(pod, containerName)
 	if err != nil {
-		return resource.Quantity{}, errors.Wrap(err, "unable to get container status")
+		return resource.Quantity{}, common.WrapErrorf(err, "unable to get container status")
 	}
 
 	if stat.Resources == nil {
@@ -225,7 +228,7 @@ func (h containerKubeHelper) CurrentLimits(
 		return *stat.Resources.Limits.Memory(), nil
 	}
 
-	panic(errors.Errorf("resourceName '%s' not supported", resourceName))
+	panic(fmt.Errorf("resourceName '%s' not supported", resourceName))
 }
 
 // status returns the container status for the supplied containerName, from the supplied pod.

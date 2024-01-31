@@ -18,6 +18,7 @@ package controller
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 	"time"
 
@@ -28,7 +29,6 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podtest"
 	cmap "github.com/orcaman/concurrent-map/v2"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"

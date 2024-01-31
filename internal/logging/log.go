@@ -18,6 +18,7 @@ package logging
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -27,9 +28,7 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zerologr"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/pkgerrors"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -70,7 +69,6 @@ func Init(w io.Writer, v V, addCaller bool) {
 // configureLogger actually configures the logger with the supplied settings.
 func configureLogger(w io.Writer, v V, addCaller bool) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnixMs
-	zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 	zerologr.SetMaxV(int(v)) // See https://github.com/go-logr/zerologr#implementation-details.
 	zerologr.VerbosityFieldName = ""
 
@@ -92,7 +90,7 @@ func Errore(ctx context.Context, err error) {
 // Errorf logs err with a formatted message.
 func Errorf(ctx context.Context, err error, format string, args ...any) {
 	validateFormat(format)
-	configuredLogger(ctx, err).Error(err, buildMessage(format, args, false))
+	configuredLogger(ctx).Error(err, buildMessage(format, args, false))
 }
 
 // Fatale logs err and exits with a non-0 return code. The resulting message is the err's message.
@@ -103,7 +101,7 @@ func Fatale(ctx context.Context, err error) {
 // Fatalf logs err with a formatted message and exits with a non-0 return code.
 func Fatalf(ctx context.Context, err error, format string, args ...any) {
 	validateFormat(format)
-	configuredLogger(ctx, err).Error(err, buildMessage(format, args, true))
+	configuredLogger(ctx).Error(err, buildMessage(format, args, true))
 	if exitOnFatal {
 		os.Exit(1)
 	}
@@ -138,11 +136,7 @@ func buildMessage(format string, args []any, isFatal bool) string {
 }
 
 // buildMessage returns a logger that's been configured with additional values.
-func configuredLogger(ctx context.Context, err ...error) logr.Logger {
-	if len(err) > 1 {
-		panic(errors.New("more than one err supplied"))
-	}
-
+func configuredLogger(ctx context.Context) logr.Logger {
 	logger := Logger
 
 	if ctx != nil {
@@ -161,12 +155,6 @@ func configuredLogger(ctx context.Context, err ...error) logr.Logger {
 	}
 
 	logger = logger.WithCallDepth(1)
-
-	if len(err) == 1 {
-		if stackErr, stackOK := err[0].(stackTracer); stackOK {
-			logger = logger.WithValues(KeyStackTrace, stackErr.StackTrace())
-		}
-	}
 
 	return logger
 }

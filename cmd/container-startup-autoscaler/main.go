@@ -19,11 +19,11 @@ package main
 import (
 	"os"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -94,29 +94,29 @@ func run(_ *cobra.Command, _ []string) {
 	// Uses KUBECONFIG env var if set, otherwise tries in-cluster config.
 	restConfig, err := config.GetConfig()
 	if err != nil {
-		logging.Fatale(nil, errors.Wrap(err, "unable to get rest config"))
+		logging.Fatale(nil, common.WrapErrorf(err, "unable to get rest config"))
 	}
 
 	runtimeManager, err := manager.New(restConfig, options)
 	if err != nil {
-		logging.Fatale(nil, errors.Wrap(err, "unable to create controller-runtime manager"))
+		logging.Fatale(nil, common.WrapErrorf(err, "unable to create controller-runtime manager"))
 	}
 
 	if err = runtimeManager.AddHealthzCheck("liveness", healthz.Ping); err != nil {
-		logging.Fatale(nil, errors.Wrap(err, "unable to add healthz check"))
+		logging.Fatale(nil, common.WrapErrorf(err, "unable to add healthz check"))
 	}
 
 	csaController, err := controller.NewController(controllerConfig, runtimeManager)
 	if err != nil {
-		logging.Fatale(nil, errors.Wrap(err, "unable to create controller"))
+		logging.Fatale(nil, common.WrapErrorf(err, "unable to create controller"))
 	}
 
 	if err = csaController.Initialize(); err != nil {
-		logging.Fatale(nil, errors.Wrap(err, "unable to initialize controller"))
+		logging.Fatale(nil, common.WrapErrorf(err, "unable to initialize controller"))
 	}
 
 	// Blocks.
 	if err = runtimeManager.Start(signals.SetupSignalHandler()); err != nil {
-		logging.Fatale(nil, errors.Wrap(err, "unable to start controller-runtime manager"))
+		logging.Fatale(nil, common.WrapErrorf(err, "unable to start controller-runtime manager"))
 	}
 }

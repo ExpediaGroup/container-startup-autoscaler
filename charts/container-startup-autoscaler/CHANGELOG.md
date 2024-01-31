@@ -10,3 +10,12 @@
 
 ### CSA Version
 [0.1.0](../../CHANGELOG.md#010)
+
+## 1.1.0
+2024-02-01
+
+### Changed
+- CSA version only.
+
+### CSA Version
+[0.2.0](../../CHANGELOG.md#020)

@@ -22,7 +22,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 )
 
 func cmdRun(cmd *exec.Cmd, info string, coreErrMsg string, fatalOnErr bool, suppressInfo ...bool) (string, error) {
@@ -38,7 +38,7 @@ func cmdRun(cmd *exec.Cmd, info string, coreErrMsg string, fatalOnErr bool, supp
 	combinedOutput, err := cmd.CombinedOutput()
 	if err != nil {
 		trimmedOutput := strings.Trim(string(combinedOutput), "\n")
-		wrappedErr := errors.Wrapf(err, "%s (output: %s)", coreErrMsg, trimmedOutput)
+		wrappedErr := common.WrapErrorf(err, "%s (output: %s)", coreErrMsg, trimmedOutput)
 
 		if fatalOnErr {
 			fmt.Println(wrappedErr)

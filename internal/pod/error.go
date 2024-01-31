@@ -18,8 +18,6 @@ package pod
 
 import (
 	"fmt"
-
-	"github.com/pkg/errors"
 )
 
 // ValidationError is an error that indicates validation failed. It wraps another error.
@@ -33,11 +31,9 @@ func NewValidationError(message string, toWrap error) error {
 		return ValidationError{message: message}
 	}
 
-	withMessage := errors.WithMessage(toWrap, message)
-	withStack := errors.WithStack(withMessage)
 	return ValidationError{
 		message: message,
-		wrapped: withStack,
+		wrapped: toWrap,
 	}
 }
 
@@ -46,16 +42,11 @@ func (e ValidationError) Error() string {
 		return fmt.Sprintf("validation error: %s", e.message)
 	}
 
-	return fmt.Sprintf("validation error: %s", e.wrapped.Error())
+	return fmt.Errorf("validation error: %s: %w", e.message, e.wrapped).Error()
 }
 
-func (e ValidationError) Cause() error {
+func (e ValidationError) Unwrap() error {
 	return e.wrapped
-}
-
-// Is required for errors.Is() since this error has additional fields.
-func (e ValidationError) Is(target error) bool {
-	return target == ValidationError{}
 }
 
 // ContainerStatusNotPresentError is an error that indicates container status is not present.

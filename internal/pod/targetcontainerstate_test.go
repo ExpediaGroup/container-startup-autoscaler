@@ -17,12 +17,12 @@ limitations under the License.
 package pod
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podtest"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
@@ -775,6 +775,7 @@ func TestTargetContainerStateShouldReturnError(t *testing.T) {
 	}{
 		{"ContainerStatusResourcesNotPresentErrorFalse", NewContainerStatusResourcesNotPresentError(), false},
 		{"ContainerStatusAllocatedResourcesNotPresentErrorFalse", NewContainerStatusAllocatedResourcesNotPresentError(), false},
+		{"NewContainerStatusResourcesNotPresentErrorFalse", NewContainerStatusResourcesNotPresentError(), false},
 		{"True", errors.New(""), true},
 	}
 	for _, tt := range tests {

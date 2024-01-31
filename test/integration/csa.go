@@ -23,8 +23,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -148,7 +148,7 @@ func csaWaitStatus(
 		if int(time.Now().Sub(started).Seconds()) > timeoutSecs {
 			return retPod,
 				retStatusAnn,
-				errors.Errorf(
+				fmt.Errorf(
 					"waiting for csa status '%s' for pod '%s/%s' timed out - last status '%s'",
 					waitMsgContains, podNamespace, podName, lastStatusAnnJson,
 				)
@@ -170,7 +170,7 @@ func csaWaitStatus(
 		if err != nil {
 			return retPod,
 				retStatusAnn,
-				errors.Wrapf(err, "unable to convert csa status for pod '%s/%s'", podNamespace, podName)
+				common.WrapErrorf(err, "unable to convert csa status for pod '%s/%s'", podNamespace, podName)
 		}
 
 		lastStatusAnnJson = statusAnn.Json()

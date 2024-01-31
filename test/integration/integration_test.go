@@ -17,6 +17,7 @@ limitations under the License.
 package integration
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -25,7 +26,6 @@ import (
 	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/api/core/v1"

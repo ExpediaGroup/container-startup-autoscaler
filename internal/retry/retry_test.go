@@ -18,13 +18,13 @@ package retry
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/avast/retry-go/v4"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
