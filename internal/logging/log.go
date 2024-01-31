@@ -82,20 +82,10 @@ func configureLogger(w io.Writer, v V, addCaller bool) {
 	CurrentV = v
 }
 
-// Errore logs err. The resulting message is the err's message.
-func Errore(ctx context.Context, err error) {
-	Errorf(ctx, err, "%s", err)
-}
-
 // Errorf logs err with a formatted message.
 func Errorf(ctx context.Context, err error, format string, args ...any) {
 	validateFormat(format)
 	configuredLogger(ctx).Error(err, buildMessage(format, args, false))
-}
-
-// Fatale logs err and exits with a non-0 return code. The resulting message is the err's message.
-func Fatale(ctx context.Context, err error) {
-	Fatalf(ctx, err, "%s", err)
 }
 
 // Fatalf logs err with a formatted message and exits with a non-0 return code.

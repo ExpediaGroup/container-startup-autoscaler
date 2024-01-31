@@ -19,7 +19,6 @@ package main
 import (
 	"os"
 
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
@@ -94,29 +93,29 @@ func run(_ *cobra.Command, _ []string) {
 	// Uses KUBECONFIG env var if set, otherwise tries in-cluster config.
 	restConfig, err := config.GetConfig()
 	if err != nil {
-		logging.Fatale(nil, common.WrapErrorf(err, "unable to get rest config"))
+		logging.Fatalf(nil, err, "unable to get rest config")
 	}
 
 	runtimeManager, err := manager.New(restConfig, options)
 	if err != nil {
-		logging.Fatale(nil, common.WrapErrorf(err, "unable to create controller-runtime manager"))
+		logging.Fatalf(nil, err, "unable to create controller-runtime manager")
 	}
 
 	if err = runtimeManager.AddHealthzCheck("liveness", healthz.Ping); err != nil {
-		logging.Fatale(nil, common.WrapErrorf(err, "unable to add healthz check"))
+		logging.Fatalf(nil, err, "unable to add healthz check")
 	}
 
 	csaController, err := controller.NewController(controllerConfig, runtimeManager)
 	if err != nil {
-		logging.Fatale(nil, common.WrapErrorf(err, "unable to create controller"))
+		logging.Fatalf(nil, err, "unable to create controller")
 	}
 
 	if err = csaController.Initialize(); err != nil {
-		logging.Fatale(nil, common.WrapErrorf(err, "unable to initialize controller"))
+		logging.Fatalf(nil, err, "unable to initialize controller")
 	}
 
 	// Blocks.
 	if err = runtimeManager.Start(signals.SetupSignalHandler()); err != nil {
-		logging.Fatale(nil, common.WrapErrorf(err, "unable to start controller-runtime manager"))
+		logging.Fatalf(nil, err, "unable to start controller-runtime manager")
 	}
 }
