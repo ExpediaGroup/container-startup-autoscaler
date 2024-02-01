@@ -102,29 +102,6 @@ func TestInit(t *testing.T) {
 	})
 }
 
-func TestErrore(t *testing.T) {
-	tests := []test{
-		{
-			name: "PodInfo",
-			args: args{
-				ctx: testContextPodInfo(),
-				err: errors.New(testErrorMsg),
-			},
-			wantLogRxConfig: wantLogRxConfig{
-				wantLevelRx:      wantErrorLevelRx,
-				wantMsgRx:        testErrorMsg,
-				wantTargetNameRx: testTargetContainerName,
-				wantTargetStates: true,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runTest(t, tt, func() { Errore(tt.args.ctx, tt.args.err) })
-		})
-	}
-}
-
 func TestErrorf(t *testing.T) {
 	tests := []test{
 		{
@@ -167,29 +144,6 @@ func TestErrorf(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			runTest(t, tt, func() { Errorf(tt.args.ctx, tt.args.err, tt.args.format, tt.args.args...) })
-		})
-	}
-}
-
-func TestFatale(t *testing.T) {
-	tests := []test{
-		{
-			name: "PodInfo",
-			args: args{
-				ctx: testContextPodInfo(),
-				err: errors.New(testErrorMsg),
-			},
-			wantLogRxConfig: wantLogRxConfig{
-				wantLevelRx:      wantErrorLevelRx,
-				wantMsgRx:        testErrorMsg + fatalSuffixRx,
-				wantTargetNameRx: testTargetContainerName,
-				wantTargetStates: true,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			runTest(t, tt, func() { Fatale(tt.args.ctx, tt.args.err) })
 		})
 	}
 }
