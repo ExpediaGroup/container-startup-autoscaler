@@ -33,7 +33,7 @@ import (
 
 /*
 
-// TODO(wt) 'In-place Update of Pod Resources' implementation bug
+// TODO(wt) 'In-place Update of Pod Resources' implementation bug (Kube 1.29)
 Note: there currently appears to be a bug in the 'In-place Update of Pod Resources' implementation whereby successful
 resizes are restarted - this is specifically mitigated against within csaWaitStatus(). This sometimes (depending on the
 timing of retrieving pods via kubectl) manifested in a CSA status that (correctly) stated that the resize had occurred,
@@ -178,37 +178,49 @@ Example logs of such an event (restart marked with '<-- HERE'):
 
 */
 
-const (
-	defaultTimeoutSecs = 60
-)
-
 var deleteNsPostTest = true
 
 func TestMain(m *testing.M) {
 	setStringConfig := func(env string, config *string) {
 		envVal := os.Getenv(env)
+
+		if envVal == "" && *config == "" {
+			// Require env unless defaulted via supplied.
+			logMessage(nil, fmt.Sprintf("(config) '%s' value is required", env))
+			os.Exit(1)
+		}
+
 		if envVal != "" {
 			*config = envVal
 		}
 	}
 	setBoolConfig := func(env string, config *bool) {
 		envVal := os.Getenv(env)
+
+		if envVal == "" && config == nil {
+			// Require env unless defaulted via supplied.
+			logMessage(nil, fmt.Sprintf("(config) '%s' value is required", env))
+			os.Exit(1)
+		}
+
 		if envVal != "" {
 			var err error
 			*config, err = strconv.ParseBool(envVal)
 			if err != nil {
-				fmt.Println("(config)", env, "value is not a bool")
+				logMessage(nil, fmt.Sprintf("(config) '%s' value is not a bool", env))
 				os.Exit(1)
 			}
 		}
 	}
 
+	kubeVersion := ""
 	maxParallelism := "4"
 	reuseCluster := false
 	installMetricsServer := false
 	keepCsa := false
 	keepCluster := false
 
+	setStringConfig("KUBE_VERSION", &kubeVersion)
 	setStringConfig("MAX_PARALLELISM", &maxParallelism)
 	setBoolConfig("REUSE_CLUSTER", &reuseCluster)
 	setBoolConfig("INSTALL_METRICS_SERVER", &installMetricsServer)
@@ -216,38 +228,39 @@ func TestMain(m *testing.M) {
 	setBoolConfig("KEEP_CLUSTER", &keepCluster)
 	setBoolConfig("DELETE_NS_AFTER_TEST", &deleteNsPostTest)
 
-	fmt.Println("(config) MAX_PARALLELISM:", maxParallelism)
-	fmt.Println("(config) REUSE_CLUSTER:", reuseCluster)
-	fmt.Println("(config) INSTALL_METRICS_SERVER:", installMetricsServer)
-	fmt.Println("(config) KEEP_CSA:", keepCsa)
-	fmt.Println("(config) KEEP_CLUSTER:", keepCluster)
-	fmt.Println("(config) DELETE_NS_AFTER_TEST:", deleteNsPostTest)
+	logMessage(nil, fmt.Sprintf("(config) KUBE_VERSION: %s", kubeVersion))
+	logMessage(nil, fmt.Sprintf("(config) MAX_PARALLELISM: %s", maxParallelism))
+	logMessage(nil, fmt.Sprintf("(config) REUSE_CLUSTER: %t", reuseCluster))
+	logMessage(nil, fmt.Sprintf("(config) INSTALL_METRICS_SERVER: %t", installMetricsServer))
+	logMessage(nil, fmt.Sprintf("(config) KEEP_CSA: %t", keepCsa))
+	logMessage(nil, fmt.Sprintf("(config) KEEP_CLUSTER: %t", keepCluster))
+	logMessage(nil, fmt.Sprintf("(config) DELETE_NS_AFTER_TEST: %t", deleteNsPostTest))
 
 	_ = flag.Set("test.parallel", maxParallelism)
 	flag.Parse()
 	if testing.Short() {
-		fmt.Println("not running because short tests configured")
+		logMessage(nil, "not running because short tests configured")
 		os.Exit(0)
 	}
 
-	kindSetupCluster(reuseCluster, installMetricsServer)
-	if err := csaRun(); err != nil {
+	kindSetupCluster(nil, kubeVersion, reuseCluster, installMetricsServer)
+	if err := csaRun(nil); err != nil {
 		if !keepCsa {
-			csaCleanUp()
+			csaCleanUp(nil)
 		}
 		if !keepCluster {
-			kindCleanUpCluster()
+			kindCleanUpCluster(nil)
 		}
-		fmt.Println(err)
+		logMessage(nil, err)
 		os.Exit(1)
 	}
 
 	exitVal := m.Run()
 	if !keepCsa {
-		csaCleanUp()
+		csaCleanUp(nil)
 	}
 	if !keepCluster {
-		kindCleanUpCluster()
+		kindCleanUpCluster(nil)
 	}
 	os.Exit(exitVal)
 }
@@ -375,8 +388,8 @@ func TestDeploymentScaleWhenUnknownResources(t *testing.T) {
 	namespace := "deployment-scale-when-unknown-resources"
 	maybeRegisterCleanup(t, namespace)
 
-	_ = kubeDeleteNamespace(namespace)
-	maybeLogErrAndFailNow(t, kubeCreateNamespace(namespace))
+	_ = kubeDeleteNamespace(t, namespace)
+	maybeLogErrAndFailNow(t, kubeCreateNamespace(t, namespace))
 
 	annotations := csaQuantityAnnotations{
 		cpuStartup:                "200m",
@@ -396,19 +409,19 @@ func TestDeploymentScaleWhenUnknownResources(t *testing.T) {
 		echoServerDefaultProbeInitialDelaySeconds,
 	)
 	config.removeReadinessProbes()
-	maybeLogErrAndFailNow(t, kubeApplyYamlOrJsonResources(config.deploymentJson()))
+	maybeLogErrAndFailNow(t, kubeApplyYamlOrJsonResources(t, config.deploymentJson()))
 
-	names, err := kubeGetPodNames(namespace, echoServerName)
+	names, err := kubeGetPodNames(t, namespace, echoServerName)
 	maybeLogErrAndFailNow(t, err)
 
-	podStatusAnn, errs := csaWaitStatusAll(namespace, names, csaStatusMessageStartupEnacted, defaultTimeoutSecs)
+	podStatusAnn, errs := csaWaitStatusAll(t, namespace, names, csaStatusMessageStartupEnacted, testsDefaultWaitStatusTimeoutSecs)
 	if len(errs) > 0 {
 		maybeLogErrAndFailNow(t, errs[len(errs)-1])
 	}
 
 	assertStartupEnacted(t, annotations, podStatusAnn, true, false, false)
 
-	podStatusAnn, errs = csaWaitStatusAll(namespace, names, csaStatusMessagePostStartupEnacted, defaultTimeoutSecs)
+	podStatusAnn, errs = csaWaitStatusAll(t, namespace, names, csaStatusMessagePostStartupEnacted, testsDefaultWaitStatusTimeoutSecs)
 	if len(errs) > 0 {
 		maybeLogErrAndFailNow(t, errs[len(errs)-1])
 	}
@@ -556,8 +569,8 @@ func TestValidationFailure(t *testing.T) {
 	namespace := "validation-failure"
 	maybeRegisterCleanup(t, namespace)
 
-	_ = kubeDeleteNamespace(namespace)
-	maybeLogErrAndFailNow(t, kubeCreateNamespace(namespace))
+	_ = kubeDeleteNamespace(t, namespace)
+	maybeLogErrAndFailNow(t, kubeCreateNamespace(t, namespace))
 
 	annotations := csaQuantityAnnotations{
 		cpuStartup:                "50m",
@@ -569,12 +582,12 @@ func TestValidationFailure(t *testing.T) {
 	}
 
 	config := echoDeploymentConfigStandardStartup(namespace, 2, annotations)
-	maybeLogErrAndFailNow(t, kubeApplyYamlOrJsonResources(config.deploymentJson()))
+	maybeLogErrAndFailNow(t, kubeApplyYamlOrJsonResources(t, config.deploymentJson()))
 
-	names, err := kubeGetPodNames(namespace, echoServerName)
+	names, err := kubeGetPodNames(t, namespace, echoServerName)
 	maybeLogErrAndFailNow(t, err)
 
-	podStatusAnn, errs := csaWaitStatusAll(namespace, names, csaStatusMessageValidationError, defaultTimeoutSecs)
+	podStatusAnn, errs := csaWaitStatusAll(t, namespace, names, csaStatusMessageValidationError, testsDefaultWaitStatusTimeoutSecs)
 	if len(errs) > 0 {
 		maybeLogErrAndFailNow(t, errs[len(errs)-1])
 	}
@@ -611,8 +624,8 @@ func testWorkflow(
 	assertStartupEnactedRestartFunc func(*testing.T, csaQuantityAnnotations, map[*v1.Pod]podcommon.StatusAnnotation),
 	assertPostStartupEnactedRestartFunc func(*testing.T, csaQuantityAnnotations, map[*v1.Pod]podcommon.StatusAnnotation),
 ) {
-	_ = kubeDeleteNamespace(namespace)
-	maybeLogErrAndFailNow(t, kubeCreateNamespace(namespace))
+	_ = kubeDeleteNamespace(t, namespace)
+	maybeLogErrAndFailNow(t, kubeCreateNamespace(t, namespace))
 
 	annotations := csaQuantityAnnotations{
 		cpuStartup:                "200m",
@@ -624,22 +637,22 @@ func testWorkflow(
 	}
 
 	workloadJson, replicas := workloadJsonReplicasFunc(annotations)
-	maybeLogErrAndFailNow(t, kubeApplyYamlOrJsonResources(workloadJson))
+	maybeLogErrAndFailNow(t, kubeApplyYamlOrJsonResources(t, workloadJson))
 
-	maybeLogErrAndFailNow(t, kubeWaitPodsExist(namespace, echoServerName, replicas, defaultTimeoutSecs))
+	maybeLogErrAndFailNow(t, kubeWaitPodsExist(t, namespace, echoServerName, replicas, testsDefaultWaitStatusTimeoutSecs))
 
-	names, err := kubeGetPodNames(namespace, echoServerName)
+	names, err := kubeGetPodNames(t, namespace, echoServerName)
 	maybeLogErrAndFailNow(t, err)
 
 	// Startup resources enacted ---------------------------------------------------------------------------------------
-	podStatusAnn, errs := csaWaitStatusAll(namespace, names, csaStatusMessageStartupEnacted, defaultTimeoutSecs)
+	podStatusAnn, errs := csaWaitStatusAll(t, namespace, names, csaStatusMessageStartupEnacted, testsDefaultWaitStatusTimeoutSecs)
 	if len(errs) > 0 {
 		maybeLogErrAndFailNow(t, errs[len(errs)-1])
 	}
 	assertStartupEnactedFunc(t, annotations, podStatusAnn)
 
 	// Post-startup resources enacted ----------------------------------------------------------------------------------
-	podStatusAnn, errs = csaWaitStatusAll(namespace, names, csaStatusMessagePostStartupEnacted, defaultTimeoutSecs)
+	podStatusAnn, errs = csaWaitStatusAll(t, namespace, names, csaStatusMessagePostStartupEnacted, testsDefaultWaitStatusTimeoutSecs)
 	if len(errs) > 0 {
 		maybeLogErrAndFailNow(t, errs[len(errs)-1])
 	}
@@ -649,18 +662,18 @@ func testWorkflow(
 	for pod := range podStatusAnn {
 		for _, status := range pod.Status.ContainerStatuses {
 			if status.Name == echoServerName {
-				maybeLogErrAndFailNow(t, kubeCauseContainerRestart(status.ContainerID))
+				maybeLogErrAndFailNow(t, kubeCauseContainerRestart(t, status.ContainerID))
 			}
 		}
 	}
 
-	podStatusAnn, errs = csaWaitStatusAll(namespace, names, csaStatusMessageStartupEnacted, defaultTimeoutSecs)
+	podStatusAnn, errs = csaWaitStatusAll(t, namespace, names, csaStatusMessageStartupEnacted, testsDefaultWaitStatusTimeoutSecs)
 	if len(errs) > 0 {
 		maybeLogErrAndFailNow(t, errs[len(errs)-1])
 	}
 	assertStartupEnactedRestartFunc(t, annotations, podStatusAnn)
 
-	podStatusAnn, errs = csaWaitStatusAll(namespace, names, csaStatusMessagePostStartupEnacted, defaultTimeoutSecs)
+	podStatusAnn, errs = csaWaitStatusAll(t, namespace, names, csaStatusMessagePostStartupEnacted, testsDefaultWaitStatusTimeoutSecs)
 	if len(errs) > 0 {
 		maybeLogErrAndFailNow(t, errs[len(errs)-1])
 	}
@@ -859,7 +872,7 @@ func assertPostStartupEnacted(
 
 func ensureEvents(t *testing.T, reason string, substrs []string, namespace string, names []string) {
 	for _, name := range names {
-		messages, err := kubeGetEventMessages(namespace, name, reason)
+		messages, err := kubeGetEventMessages(t, namespace, name, reason)
 		maybeLogErrAndFailNow(t, err)
 
 		for _, substr := range substrs {
@@ -879,14 +892,14 @@ func ensureEvents(t *testing.T, reason string, substrs []string, namespace strin
 func maybeRegisterCleanup(t *testing.T, namespace string) {
 	if deleteNsPostTest {
 		t.Cleanup(func() {
-			_ = kubeDeleteNamespace(namespace)
+			_ = kubeDeleteNamespace(t, namespace)
 		})
 	}
 }
 
 func maybeLogErrAndFailNow(t *testing.T, err error) {
 	if err != nil {
-		t.Log(err)
+		logMessage(t, err)
 		t.FailNow()
 	}
 }

@@ -517,14 +517,15 @@ execution might take some time to complete.
 
 A number of environment variable-based configuration options are available:
 
-| Name                     | Default | Description                                                           |
-|--------------------------|---------|-----------------------------------------------------------------------|
-| `MAX_PARALLELISM`        | `4`     | The maximum number of tests that can run in parallel.                 |
-| `REUSE_CLUSTER`          | `false` | Whether to reuse an existing CSA kind cluster (if it already exists). |
-| `INSTALL_METRICS_SERVER` | `false` | Whether to install metrics-server.                                    |
-| `KEEP_CSA`               | `false` | Whether to keep the CSA installation after tests finish.              |
-| `KEEP_CLUSTER`           | `false` | Whether to keep the CSA kind cluster after tests finish.              |
-| `DELETE_NS_AFTER_TEST`   | `true`  | Whether to delete namespaces created by tests after they conclude.    |
+| Name                     | Default | Description                                                                                                                          |
+|--------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------|
+| `KUBE_VERSION`           | -       | The _major.minor_ version of Kube to run tests against e.g. `1.29`.                                                                  |
+| `MAX_PARALLELISM`        | `4`     | The maximum number of tests that can run in parallel.                                                                                |
+| `REUSE_CLUSTER`          | `false` | Whether to reuse an existing CSA kind cluster (if it already exists). `KUBE_VERSION` has no effect if an existing cluster is reused. |
+| `INSTALL_METRICS_SERVER` | `false` | Whether to install metrics-server.                                                                                                   |
+| `KEEP_CSA`               | `false` | Whether to keep the CSA installation after tests finish.                                                                             |
+| `KEEP_CLUSTER`           | `false` | Whether to keep the CSA kind cluster after tests finish.                                                                             |
+| `DELETE_NS_AFTER_TEST`   | `true`  | Whether to delete namespaces created by tests after they conclude.                                                                   |
 
 Integration tests are executed in parallel due to their long-running nature. Each test operates within a separate Kube
 namespace (but using the same single CSA installation). If local resources are limited, reduce `MAX_PARALLELISM`

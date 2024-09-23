@@ -48,7 +48,7 @@ jobs:
       - name: Test
         env:
           MAX_PARALLELISM: 1 # Constrained to 2 CPUs on ubuntu-latest
-        run: make test-run-int-verbose
+        run: make test-run-int-verbose KUBE_VERSION=1.29 # TODO(wt) test against potentially many versions
 
   helm:
     name: Run Helm tests

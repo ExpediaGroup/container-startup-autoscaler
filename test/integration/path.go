@@ -17,15 +17,8 @@ limitations under the License.
 package integration
 
 import (
-	"os"
 	"path/filepath"
 	"runtime"
-)
-
-const (
-	pathSeparator    = string(os.PathSeparator)
-	intTestRelPath   = "test" + pathSeparator + "integration"
-	configDirRelPath = intTestRelPath + pathSeparator + "config"
 )
 
 var rootAbsPath string

@@ -25,20 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	echoServerDockerImageTag = "ealen/echo-server:0.7.0"
-	echoServerName           = "echo-server"
-)
-
-const (
-	echoServerNonTargetContainerName           = echoServerName + "-non-target"
-	echoServerNonTargetContainerCpuRequests    = "50m"
-	echoServerNonTargetContainerCpuLimits      = "50m"
-	echoServerNonTargetContainerMemoryRequests = "150M"
-	echoServerNonTargetContainerMemoryLimits   = "150M"
-	echoServerDefaultProbeInitialDelaySeconds  = 20
-)
-
 // Deployment-----------------------------------------------------------------------------------------------------------
 
 func echoDeploymentConfigStandardStartup(
