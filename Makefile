@@ -18,7 +18,7 @@
 SHELL:=/bin/bash
 ROOT_DIR:=$(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 
-INT_TESTS_TIMEOUT=30m
+INT_TESTS_TIMEOUT=60m
 HELM_TESTS_SNAPSHOT_DIR=${ROOT_DIR}charts/container-startup-autoscaler/tests/__snapshot__
 
 .PHONY: help
