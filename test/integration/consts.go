@@ -32,17 +32,21 @@ const (
 )
 
 var k8sVersionToImage = map[string]map[string]string{
-	"1.29": {
-		"amd64": "kindest/node:v1.29.8@sha256:b69a150f9951ef41158ec76de381a920df2be3582fd16fc19cf4757eef0dded9",
-		"arm64": "kindest/node:v1.29.8@sha256:0d5623800cf6290edbc1007ca8a33a5f7e2ad92b41dc7022b4d20a66447db23c",
+	"1.31": {
+		"amd64": "kindest/node:v1.31.0@sha256:919a65376fd11b67df05caa2e60802ad5de2fca250c9fe0c55b0dce5c9591af3",
+		"arm64": "kindest/node:v1.31.0@sha256:0ccfb11dc66eae4abc20c30ee95687bab51de8aeb04e325e1c49af0890646548",
 	},
 	"1.30": {
 		"amd64": "kindest/node:v1.30.4@sha256:34cb98a38a57a3357fde925a41d61232bbbbeb411b45a25c0d766635d6c3b975",
 		"arm64": "kindest/node:v1.30.4@sha256:6becd630a18e77730e31f3833f0b129bbcc9c09ee49c3b88429b3c1fdc30bfc4",
 	},
-	"1.31": {
-		"amd64": "kindest/node:v1.31.0@sha256:919a65376fd11b67df05caa2e60802ad5de2fca250c9fe0c55b0dce5c9591af3",
-		"arm64": "kindest/node:v1.31.0@sha256:0ccfb11dc66eae4abc20c30ee95687bab51de8aeb04e325e1c49af0890646548",
+	"1.29": {
+		"amd64": "kindest/node:v1.29.8@sha256:b69a150f9951ef41158ec76de381a920df2be3582fd16fc19cf4757eef0dded9",
+		"arm64": "kindest/node:v1.29.8@sha256:0d5623800cf6290edbc1007ca8a33a5f7e2ad92b41dc7022b4d20a66447db23c",
+	},
+	"1.28": {
+		"amd64": "kindest/node:v1.28.13@sha256:d97df9fff48099bf9a94c92fdc39adde65bec2aa1d011f84233b96172c1003c9",
+		"arm64": "kindest/node:v1.28.13@sha256:ddef612bb93a9aa3a989f9d3d4e01c0a7c4d866a4b949264146c182cd202d738",
 	},
 }
 

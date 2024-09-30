@@ -519,7 +519,7 @@ A number of environment variable-based configuration options are available:
 
 | Name                     | Default | Description                                                                                                                          |
 |--------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------|
-| `KUBE_VERSION`           | -       | The _major.minor_ version of Kube to run tests against e.g. `1.29`.                                                                  |
+| `KUBE_VERSION`           | -       | The _major.minor_ version of Kube to run tests against e.g. `1.31`.                                                                  |
 | `MAX_PARALLELISM`        | `4`     | The maximum number of tests that can run in parallel.                                                                                |
 | `REUSE_CLUSTER`          | `false` | Whether to reuse an existing CSA kind cluster (if it already exists). `KUBE_VERSION` has no effect if an existing cluster is reused. |
 | `INSTALL_METRICS_SERVER` | `false` | Whether to install metrics-server.                                                                                                   |
@@ -543,7 +543,7 @@ exist in parallel, if desired.
 ### Cluster/CSA Installation
 Executing `csa-install.sh`:
 - Removes any pre-existing CSA kind cluster.
-- Installs a CSA kind cluster.
+- Installs a CSA kind cluster with the latest version of Kubernetes [certified as compatible with CSA](CHANGELOG.md).
 - Creates a new, separate CSA kind cluster kubeconfig file under `$HOME/.kube/`.
 - Pulls metrics-server, loads the image into the CSA kind cluster and installs.
 - Pulls echo-server and loads the image into the CSA kind cluster.
