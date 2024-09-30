@@ -63,7 +63,7 @@ func suppliedConfigInit() {
 func suppliedConfigSetString(env string, config *string) {
 	envVal := os.Getenv(env)
 
-	if envVal == "" && *config == "" {
+	if envVal == "" && (config == nil || *config == "") {
 		// Require env unless defaulted via supplied.
 		logMessage(nil, fmt.Sprintf("(config) '%s' value is required", env))
 		os.Exit(1)
