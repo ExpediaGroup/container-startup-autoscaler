@@ -23,7 +23,12 @@ import (
 )
 
 func logMessage(t *testing.T, log any) {
-	prefix := fmt.Sprintf("[%s]:", time.Now().Format(time.RFC3339Nano))
+	testName := ""
+	if t != nil {
+		testName = t.Name()
+	}
+
+	prefix := fmt.Sprintf("[%s] [%s]:", time.Now().Format(time.RFC3339Nano), testName)
 
 	if t != nil {
 		t.Log(prefix, log)
