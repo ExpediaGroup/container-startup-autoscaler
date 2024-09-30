@@ -9,7 +9,7 @@ works with deployments, statefulsets, daemonsets and other workload management A
 CSA is implemented using [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime).
 
 CSA is built around Kube's [In-place Update of Pod Resources](https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/1287-in-place-update-pod-resources)
-feature, which is currently in alpha state as of Kubernetes 1.29 and therefore requires the `InPlacePodVerticalScaling`
+feature, which is currently in alpha state as of Kubernetes 1.31 and therefore requires the `InPlacePodVerticalScaling`
 feature gate to be enabled. Beta/stable targets are indicated [here](https://github.com/kubernetes/enhancements/issues/1287).
 The feature implementation (along with the corresponding implementation of CSA) is likely to change until it reaches
 stable status. See [CHANGELOG.md](CHANGELOG.md) for details of CSA versions and Kubernetes version compatibility.
@@ -517,14 +517,15 @@ execution might take some time to complete.
 
 A number of environment variable-based configuration options are available:
 
-| Name                     | Default | Description                                                           |
-|--------------------------|---------|-----------------------------------------------------------------------|
-| `MAX_PARALLELISM`        | `4`     | The maximum number of tests that can run in parallel.                 |
-| `REUSE_CLUSTER`          | `false` | Whether to reuse an existing CSA kind cluster (if it already exists). |
-| `INSTALL_METRICS_SERVER` | `false` | Whether to install metrics-server.                                    |
-| `KEEP_CSA`               | `false` | Whether to keep the CSA installation after tests finish.              |
-| `KEEP_CLUSTER`           | `false` | Whether to keep the CSA kind cluster after tests finish.              |
-| `DELETE_NS_AFTER_TEST`   | `true`  | Whether to delete namespaces created by tests after they conclude.    |
+| Name                     | Default | Description                                                                                                                          |
+|--------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------|
+| `KUBE_VERSION`           | -       | The _major.minor_ version of Kube to run tests against e.g. `1.31`.                                                                  |
+| `MAX_PARALLELISM`        | `4`     | The maximum number of tests that can run in parallel.                                                                                |
+| `REUSE_CLUSTER`          | `false` | Whether to reuse an existing CSA kind cluster (if it already exists). `KUBE_VERSION` has no effect if an existing cluster is reused. |
+| `INSTALL_METRICS_SERVER` | `false` | Whether to install metrics-server.                                                                                                   |
+| `KEEP_CSA`               | `false` | Whether to keep the CSA installation after tests finish.                                                                             |
+| `KEEP_CLUSTER`           | `false` | Whether to keep the CSA kind cluster after tests finish.                                                                             |
+| `DELETE_NS_AFTER_TEST`   | `true`  | Whether to delete namespaces created by tests after they conclude.                                                                   |
 
 Integration tests are executed in parallel due to their long-running nature. Each test operates within a separate Kube
 namespace (but using the same single CSA installation). If local resources are limited, reduce `MAX_PARALLELISM`
@@ -542,7 +543,7 @@ exist in parallel, if desired.
 ### Cluster/CSA Installation
 Executing `csa-install.sh`:
 - Removes any pre-existing CSA kind cluster.
-- Installs a CSA kind cluster.
+- Installs a CSA kind cluster with the latest version of Kubernetes [certified as compatible with CSA](CHANGELOG.md).
 - Creates a new, separate CSA kind cluster kubeconfig file under `$HOME/.kube/`.
 - Pulls metrics-server, loads the image into the CSA kind cluster and installs.
 - Pulls echo-server and loads the image into the CSA kind cluster.

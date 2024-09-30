@@ -21,39 +21,12 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"testing"
 	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	v1 "k8s.io/api/core/v1"
-)
-
-const (
-	csaDockerImage    = "csa"
-	csaDockerTag      = "test"
-	csaDockerImageTag = csaDockerImage + ":" + csaDockerTag
-)
-
-const (
-	csaHelmChartRelPath = "charts" + pathSeparator + "container-startup-autoscaler"
-	csaHelmName         = "csa-int"
-	csaHelmTimeout      = "60s"
-)
-
-const (
-	csaStatusWaitMillis                            = 500
-	csaStatusMessageStartupCommanded               = "Startup resources commanded"
-	csaStatusMessageStartupCommandedUnknownRes     = "Startup resources commanded (unknown resources applied)"
-	csaStatusMessagePostStartupCommanded           = "Post-startup resources commanded"
-	csaStatusMessagePostStartupCommandedUnknownRes = "Post-startup resources commanded (unknown resources applied)"
-	csaStatusMessageStartupEnacted                 = "Startup resources enacted"
-	csaStatusMessagePostStartupEnacted             = "Post-startup resources enacted"
-	csaStatusMessageValidationError                = "Validation error"
-)
-
-const (
-	csaEventReasonScaling    = "Scaling"
-	csaEventReasonValidation = "Validation"
+	"k8s.io/api/core/v1"
 )
 
 type csaQuantityAnnotations struct {
@@ -65,10 +38,11 @@ type csaQuantityAnnotations struct {
 	memoryPostStartupLimits   string
 }
 
-func csaRun() error {
-	csaCleanUp()
+func csaRun(t *testing.T) error {
+	csaCleanUp(t)
 
 	_, err := cmdRun(
+		t,
 		exec.Command("docker", "build", "-t", csaDockerImageTag, rootAbsPath),
 		"building csa...",
 		"unable to build csa",
@@ -79,6 +53,7 @@ func csaRun() error {
 	}
 
 	_, err = cmdRun(
+		t,
 		exec.Command("kind", "load", "docker-image", csaDockerImageTag, "--name", kindClusterName),
 		"loading csa into kind cluster...",
 		"unable to load csa into kind cluster",
@@ -89,6 +64,7 @@ func csaRun() error {
 	}
 
 	_, err = cmdRun(
+		t,
 		exec.Command(
 			"helm", "install",
 			csaHelmName,
@@ -114,8 +90,9 @@ func csaRun() error {
 	return nil
 }
 
-func csaCleanUp() {
+func csaCleanUp(t *testing.T) {
 	_, _ = cmdRun(
+		t,
 		exec.Command(
 			"helm", "uninstall",
 			csaHelmName,
@@ -127,16 +104,17 @@ func csaCleanUp() {
 		false,
 	)
 
-	_ = kubeDeleteNamespace(csaHelmName)
+	_ = kubeDeleteNamespace(nil, csaHelmName)
 }
 
 func csaWaitStatus(
+	t *testing.T,
 	podNamespace string,
 	podName string,
 	waitMsgContains string,
 	timeoutSecs int,
 ) (*v1.Pod, podcommon.StatusAnnotation, error) {
-	fmt.Println(fmt.Sprintf("waiting for csa status '%s' for pod '%s/%s'", waitMsgContains, podNamespace, podName))
+	logMessage(t, fmt.Sprintf("waiting for csa status '%s' for pod '%s/%s'", waitMsgContains, podNamespace, podName))
 
 	var retPod *v1.Pod
 	retStatusAnn := podcommon.StatusAnnotation{}
@@ -154,14 +132,14 @@ func csaWaitStatus(
 				)
 		}
 
-		pod, err := kubeGetPod(podNamespace, podName, true)
+		pod, err := kubeGetPod(t, podNamespace, podName, true)
 		if err != nil {
 			return retPod, retStatusAnn, err
 		}
 
 		statusAnnStr, exists := pod.Annotations[podcommon.AnnotationStatus]
 		if !exists {
-			fmt.Println(fmt.Sprintf("csa status for pod '%s/%s' doesn't yet exist", podNamespace, podName))
+			logMessage(t, fmt.Sprintf("csa status for pod '%s/%s' doesn't yet exist", podNamespace, podName))
 			time.Sleep(csaStatusWaitMillis * time.Millisecond)
 			continue
 		}
@@ -174,10 +152,10 @@ func csaWaitStatus(
 		}
 
 		lastStatusAnnJson = statusAnn.Json()
-		//fmt.Println(lastStatusAnnJson)
+		logMessage(t, fmt.Sprintf("current csa status for pod '%s/%s': %s", podNamespace, podName, lastStatusAnnJson))
 
 		if strings.Contains(statusAnn.Status, waitMsgContains) {
-			// TODO(wt) 'In-place Update of Pod Resources' implementation bug
+			// TODO(wt) 'In-place Update of Pod Resources' implementation bug (Kube 1.29)
 			//  See large comment at top of integration_test.go - need to re-get pod in case resize is restarted.
 			//  Remove once fixed.
 			if getAgain {
@@ -194,11 +172,12 @@ func csaWaitStatus(
 		time.Sleep(csaStatusWaitMillis * time.Millisecond)
 	}
 
-	fmt.Println(fmt.Sprintf("got csa status message '%s' for pod '%s/%s'", waitMsgContains, podNamespace, podName))
+	logMessage(t, fmt.Sprintf("got csa status message '%s' for pod '%s/%s'", waitMsgContains, podNamespace, podName))
 	return retPod, retStatusAnn, nil
 }
 
 func csaWaitStatusAll(
+	t *testing.T,
 	podNamespace string,
 	podNames []string,
 	waitMsgContains string,
@@ -215,7 +194,7 @@ func csaWaitStatusAll(
 
 		go func() {
 			defer wg.Done()
-			pod, statusAnn, err := csaWaitStatus(podNamespace, name, waitMsgContains, timeoutSecs)
+			pod, statusAnn, err := csaWaitStatus(t, podNamespace, name, waitMsgContains, timeoutSecs)
 
 			mutex.Lock()
 			defer mutex.Unlock()

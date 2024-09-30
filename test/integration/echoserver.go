@@ -25,20 +25,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-const (
-	echoServerDockerImageTag = "ealen/echo-server:0.7.0"
-	echoServerName           = "echo-server"
-)
-
-const (
-	echoServerNonTargetContainerName           = echoServerName + "-non-target"
-	echoServerNonTargetContainerCpuRequests    = "50m"
-	echoServerNonTargetContainerCpuLimits      = "50m"
-	echoServerNonTargetContainerMemoryRequests = "150M"
-	echoServerNonTargetContainerMemoryLimits   = "150M"
-	echoServerDefaultProbeInitialDelaySeconds  = 20
-)
-
 // Deployment-----------------------------------------------------------------------------------------------------------
 
 func echoDeploymentConfigStandardStartup(
@@ -253,8 +239,8 @@ func echoContainerConfigStandard(
 				},
 			},
 			InitialDelaySeconds: probesInitialDelaySeconds,
-			PeriodSeconds:       5,
-			FailureThreshold:    2,
+			PeriodSeconds:       echoServerProbePeriodSeconds,
+			FailureThreshold:    echoServerProbeFailureThreshold,
 		},
 		readinessProbe: &v1.Probe{
 			ProbeHandler: v1.ProbeHandler{
@@ -267,8 +253,8 @@ func echoContainerConfigStandard(
 				},
 			},
 			InitialDelaySeconds: probesInitialDelaySeconds,
-			PeriodSeconds:       5,
-			FailureThreshold:    2,
+			PeriodSeconds:       echoServerProbePeriodSeconds,
+			FailureThreshold:    echoServerProbeFailureThreshold,
 		},
 	}
 }

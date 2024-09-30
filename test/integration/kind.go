@@ -22,21 +22,9 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
-)
-
-const (
-	kindClusterName       = "csa-int-cluster"
-	kindNodeImagex8664    = "kindest/node:v1.29.0@sha256:54a50c9354f11ce0aa56a85d2cacb1b950f85eab3fe1caf988826d1f89bf37eb"
-	kindNodeImageArm64    = "kindest/node:v1.29.0@sha256:8ccbd8bc4d52c467f3c79eeeb434827c225600a1d7385a4b1c19d9e038c9e0c0"
-	kindConfigFileRelPath = configDirRelPath + pathSeparator + "kind.yaml"
-)
-
-const (
-	metricsServerImageTag            = "registry.k8s.io/metrics-server/metrics-server:v0.6.4"
-	metricsServerKustomizeDirRelPath = configDirRelPath + pathSeparator + "metricsserver"
-	metricsServerReadyTimeout        = "60s"
 )
 
 var kindKubeconfig string
@@ -50,10 +38,11 @@ func init() {
 	kindKubeconfig = fmt.Sprintf("%s%s.kube%sconfig-%s", home, pathSeparator, pathSeparator, kindClusterName)
 }
 
-func kindSetupCluster(reuseCluster bool, installMetricsServer bool) {
+func kindSetupCluster(t *testing.T) {
 	hasExistingCluster := false
 
 	output, _ := cmdRun(
+		t,
 		exec.Command("kind", "get", "clusters"),
 		"getting existing kind clusters...",
 		"unable to get existing kind clusters",
@@ -68,24 +57,20 @@ func kindSetupCluster(reuseCluster bool, installMetricsServer bool) {
 		}
 	}
 
-	if !reuseCluster || !hasExistingCluster {
+	if !suppliedConfig.reuseCluster || !hasExistingCluster {
 		if hasExistingCluster {
-			kindCleanUpCluster()
+			kindCleanUpCluster(t)
 		}
 
-		var kindNodeImage string
-
-		switch runtime.GOARCH {
-		case "amd64":
-			kindNodeImage = kindNodeImagex8664
-		case "arm64":
-			kindNodeImage = kindNodeImageArm64
-		default:
-			fmt.Println(fmt.Errorf("architecture '%s' not supported", runtime.GOARCH))
+		kindNodeImage, err := kindImageFromKubeVersion(suppliedConfig.kubeVersion, runtime.GOARCH)
+		if err != nil {
+			logMessage(t, common.WrapErrorf(err, "unable to obtain kind image"))
 			os.Exit(1)
 		}
+		logMessage(t, fmt.Sprintf("using kind node image '%s'", kindNodeImage))
 
 		_, _ = cmdRun(
+			t,
 			exec.Command("kind", "create", "cluster",
 				"--name", kindClusterName,
 				"--config", pathAbsFromRel(kindConfigFileRelPath),
@@ -98,6 +83,7 @@ func kindSetupCluster(reuseCluster bool, installMetricsServer bool) {
 	}
 
 	output, _ = cmdRun(
+		t,
 		exec.Command("kind", "get", "kubeconfig", "--name", kindClusterName),
 		"getting kind kubeconfig...",
 		"unable to get kind kubeconfig",
@@ -105,17 +91,18 @@ func kindSetupCluster(reuseCluster bool, installMetricsServer bool) {
 	)
 
 	if err := os.WriteFile(kindKubeconfig, []byte(output), 0644); err != nil {
-		fmt.Println(common.WrapErrorf(err, "unable to write kubeconfig"))
+		logMessage(t, common.WrapErrorf(err, "unable to write kubeconfig"))
 		os.Exit(1)
 	}
 
-	if err := kubePrintNodeInfo(); err != nil {
-		fmt.Println(common.WrapErrorf(err, "unable to print kube node info"))
+	if err := kubePrintNodeInfo(t); err != nil {
+		logMessage(t, common.WrapErrorf(err, "unable to print kube node info"))
 		os.Exit(1)
 	}
 
-	if installMetricsServer {
+	if suppliedConfig.installMetricsServer {
 		_, _ = cmdRun(
+			t,
 			exec.Command("docker", "pull", metricsServerImageTag),
 			"pulling metrics-server...",
 			"unable to pull metrics-server",
@@ -123,25 +110,27 @@ func kindSetupCluster(reuseCluster bool, installMetricsServer bool) {
 		)
 
 		_, _ = cmdRun(
+			t,
 			exec.Command("kind", "load", "docker-image", metricsServerImageTag, "--name", kindClusterName),
 			"loading metrics-server into kind cluster...",
 			"unable to load metrics-server into kind cluster",
 			true,
 		)
 
-		if err := kubeApplyKustomizeResources(pathAbsFromRel(metricsServerKustomizeDirRelPath)); err != nil {
-			fmt.Println(err)
+		if err := kubeApplyKustomizeResources(t, pathAbsFromRel(metricsServerKustomizeDirRelPath)); err != nil {
+			logMessage(t, err)
 			os.Exit(1)
 		}
 
-		err := kubeWaitResourceCondition("kube-system", "k8s-app=metrics-server", "pod", "ready", metricsServerReadyTimeout)
+		err := kubeWaitResourceCondition(t, "kube-system", "k8s-app=metrics-server", "pod", "ready", metricsServerReadyTimeout)
 		if err != nil {
-			fmt.Println(err)
+			logMessage(t, err)
 			os.Exit(1)
 		}
 	}
 
 	_, _ = cmdRun(
+		t,
 		exec.Command("docker", "pull", echoServerDockerImageTag),
 		"pulling echo-service...",
 		"unable to pull echo-service",
@@ -149,6 +138,7 @@ func kindSetupCluster(reuseCluster bool, installMetricsServer bool) {
 	)
 
 	_, _ = cmdRun(
+		t,
 		exec.Command("kind", "load", "docker-image", echoServerDockerImageTag, "--name", kindClusterName),
 		"loading echo-service into kind cluster...",
 		"unable to load echo-service into kind cluster",
@@ -156,11 +146,23 @@ func kindSetupCluster(reuseCluster bool, installMetricsServer bool) {
 	)
 }
 
-func kindCleanUpCluster() {
+func kindCleanUpCluster(t *testing.T) {
 	_, _ = cmdRun(
+		t,
 		exec.Command("kind", "delete", "cluster", "--name", kindClusterName),
 		"deleting existing kind cluster...",
 		"unable to delete existing kind cluster",
 		false,
 	)
+}
+
+func kindImageFromKubeVersion(kubeVersion, arch string) (string, error) {
+	if archMap, found := k8sVersionToImage[kubeVersion]; found {
+		if image, archFound := archMap[arch]; archFound {
+			return image, nil
+		}
+		return "", fmt.Errorf("architecture '%s' not supported", arch)
+	}
+
+	return "", fmt.Errorf("kube version %s not supported", kubeVersion)
 }

@@ -14,6 +14,8 @@
 ### Kubernetes Compatibility
 | Kube Version | Compatible? | `In-place Update of Pod Resources` Maturity |
 |:------------:|:-----------:|:-------------------------------------------:|
+|     1.31     |     ✔️      |                    Alpha                    |
+|     1.30     |     ✔️      |                    Alpha                    |
 |     1.29     |     ✔️      |                    Alpha                    |
 |     1.28     |     ✔️      |                    Alpha                    |
 |     1.27     |      ❌      |                    Alpha                    |
@@ -49,4 +51,3 @@
 |     1.29     |     ✔️      |                    Alpha                    |
 |     1.28     |     ✔️      |                    Alpha                    |
 |     1.27     |      ❌      |                    Alpha                    |
-

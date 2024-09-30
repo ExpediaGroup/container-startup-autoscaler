@@ -21,13 +21,15 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"testing"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 )
 
-func kubePrintNodeInfo() error {
+func kubePrintNodeInfo(t *testing.T) error {
 	output, err := cmdRun(
+		t,
 		exec.Command("kubectl", "describe", "nodes", "--kubeconfig", kindKubeconfig),
 		"",
 		"unable to describe nodes",
@@ -38,13 +40,14 @@ func kubePrintNodeInfo() error {
 		return err
 	}
 
-	fmt.Println("node information:")
-	fmt.Println(output)
+	logMessage(t, "node information:")
+	logMessage(t, output)
 	return nil
 }
 
-func kubeCreateNamespace(name string) error {
+func kubeCreateNamespace(t *testing.T, name string) error {
 	_, err := cmdRun(
+		t,
 		exec.Command("kubectl", "create", "namespace", name, "--kubeconfig", kindKubeconfig),
 		fmt.Sprintf("creating namespace '%s'...", name),
 		fmt.Sprintf("unable to create namespace '%s'", name),
@@ -53,8 +56,9 @@ func kubeCreateNamespace(name string) error {
 	return err
 }
 
-func kubeDeleteNamespace(name string) error {
+func kubeDeleteNamespace(t *testing.T, name string) error {
 	_, err := cmdRun(
+		t,
 		exec.Command("kubectl", "delete", "namespace", name, "--kubeconfig", kindKubeconfig),
 		fmt.Sprintf("deleting namespace '%s'...", name),
 		fmt.Sprintf("unable to delete namespace '%s'", name),
@@ -63,10 +67,11 @@ func kubeDeleteNamespace(name string) error {
 	return err
 }
 
-func kubeApplyYamlOrJsonResources(yamlOrJson string) error {
+func kubeApplyYamlOrJsonResources(t *testing.T, yamlOrJson string) error {
 	cmd := exec.Command("kubectl", "apply", "-f", "-", "--kubeconfig", kindKubeconfig)
 	cmd.Stdin = strings.NewReader(yamlOrJson)
 	_, err := cmdRun(
+		t,
 		cmd,
 		fmt.Sprintf("applying resources '%s'...", yamlOrJson),
 		fmt.Sprintf("unable to apply resources '%s'", yamlOrJson),
@@ -75,8 +80,9 @@ func kubeApplyYamlOrJsonResources(yamlOrJson string) error {
 	return err
 }
 
-func kubeApplyKustomizeResources(kPath string) error {
+func kubeApplyKustomizeResources(t *testing.T, kPath string) error {
 	_, err := cmdRun(
+		t,
 		exec.Command("kubectl", "apply", "-k", kPath, "--kubeconfig", kindKubeconfig),
 		fmt.Sprintf("applying kustomize resources from '%s'...", kPath),
 		fmt.Sprintf("unable to apply kustomize resources from '%s'...", kPath),
@@ -85,8 +91,9 @@ func kubeApplyKustomizeResources(kPath string) error {
 	return err
 }
 
-func kubeGetPodNames(namespace string, nameContains string, suppressInfo ...bool) ([]string, error) {
+func kubeGetPodNames(t *testing.T, namespace string, nameContains string, suppressInfo ...bool) ([]string, error) {
 	output, err := cmdRun(
+		t,
 		exec.Command(
 			"kubectl", "get", "pods",
 			"-n", namespace,
@@ -113,8 +120,9 @@ func kubeGetPodNames(namespace string, nameContains string, suppressInfo ...bool
 	return ret, nil
 }
 
-func kubeGetPod(namespace string, name string, suppressInfo ...bool) (*v1.Pod, error) {
+func kubeGetPod(t *testing.T, namespace string, name string, suppressInfo ...bool) (*v1.Pod, error) {
 	output, err := cmdRun(
+		t,
 		exec.Command(
 			"kubectl", "get", "pod",
 			name,
@@ -136,8 +144,8 @@ func kubeGetPod(namespace string, name string, suppressInfo ...bool) (*v1.Pod, e
 	return pod, err
 }
 
-func kubeWaitPodsExist(namespace string, nameContains string, count int, timeoutSecs int) error {
-	fmt.Println(fmt.Sprintf(
+func kubeWaitPodsExist(t *testing.T, namespace string, nameContains string, count int, timeoutSecs int) error {
+	logMessage(t, fmt.Sprintf(
 		"waiting for %d pods (pod name contains '%s') to exist in namespace '%s'",
 		count, nameContains, namespace,
 	))
@@ -151,7 +159,7 @@ func kubeWaitPodsExist(namespace string, nameContains string, count int, timeout
 			)
 		}
 
-		pods, err := kubeGetPodNames(namespace, nameContains, true)
+		pods, err := kubeGetPodNames(t, namespace, nameContains, true)
 		if err != nil {
 			return nil
 		}
@@ -163,7 +171,7 @@ func kubeWaitPodsExist(namespace string, nameContains string, count int, timeout
 		time.Sleep(csaStatusWaitMillis * time.Millisecond)
 	}
 
-	fmt.Println(fmt.Sprintf(
+	logMessage(t, fmt.Sprintf(
 		"%d pods (pod name contains '%s') now exist in namespace '%s'",
 		count, nameContains, namespace,
 	))
@@ -172,6 +180,7 @@ func kubeWaitPodsExist(namespace string, nameContains string, count int, timeout
 }
 
 func kubeWaitResourceCondition(
+	t *testing.T,
 	namespace string,
 	label string,
 	resource string,
@@ -179,6 +188,7 @@ func kubeWaitResourceCondition(
 	timeout string,
 ) error {
 	_, err := cmdRun(
+		t,
 		exec.Command(
 			"kubectl",
 			"wait",
@@ -202,8 +212,9 @@ func kubeWaitResourceCondition(
 	return err
 }
 
-func kubeGetEventMessages(namespace string, podName string, reason string) ([]string, error) {
+func kubeGetEventMessages(t *testing.T, namespace string, podName string, reason string) ([]string, error) {
 	output, err := cmdRun(
+		t,
 		exec.Command(
 			"kubectl", "get", "events",
 			"-n", namespace,
@@ -223,10 +234,11 @@ func kubeGetEventMessages(namespace string, podName string, reason string) ([]st
 	return strings.Split(output, "\n"), nil
 }
 
-func kubeCauseContainerRestart(containerId string) error {
+func kubeCauseContainerRestart(t *testing.T, containerId string) error {
 	fixedContainerId := strings.ReplaceAll(containerId, "containerd://", "")
 
 	_, err := cmdRun(
+		t,
 		exec.Command(
 			"docker", "exec", "-i", kindClusterName+"-control-plane",
 			"bash", "-c", "ctr -n k8s.io task kill -s SIGTERM "+fixedContainerId,

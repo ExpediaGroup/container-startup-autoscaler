@@ -17,22 +17,22 @@ limitations under the License.
 package integration
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"strings"
+	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 )
 
-func cmdRun(cmd *exec.Cmd, info string, coreErrMsg string, fatalOnErr bool, suppressInfo ...bool) (string, error) {
+func cmdRun(t *testing.T, cmd *exec.Cmd, info string, coreErrMsg string, fatalOnErr bool, suppressInfo ...bool) (string, error) {
 	suppress := false
 	if len(suppressInfo) > 0 && suppressInfo[0] {
 		suppress = true
 	}
 
 	if info != "" && !suppress {
-		fmt.Println(info)
+		logMessage(t, info)
 	}
 
 	combinedOutput, err := cmd.CombinedOutput()
@@ -41,7 +41,7 @@ func cmdRun(cmd *exec.Cmd, info string, coreErrMsg string, fatalOnErr bool, supp
 		wrappedErr := common.WrapErrorf(err, "%s (output: %s)", coreErrMsg, trimmedOutput)
 
 		if fatalOnErr {
-			fmt.Println(wrappedErr)
+			logMessage(t, wrappedErr)
 			os.Exit(1)
 		}
 		return trimmedOutput, wrappedErr

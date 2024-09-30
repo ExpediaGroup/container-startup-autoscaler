@@ -17,17 +17,23 @@ limitations under the License.
 package integration
 
 import (
-	"path/filepath"
-	"runtime"
+	"fmt"
+	"testing"
+	"time"
 )
 
-var rootAbsPath string
+func logMessage(t *testing.T, log any) {
+	testName := ""
+	if t != nil {
+		testName = t.Name()
+	}
 
-func init() {
-	_, b, _, _ := runtime.Caller(0)
-	rootAbsPath = filepath.Join(filepath.Dir(b), ".."+pathSeparator+"..")
-}
+	prefix := fmt.Sprintf("[%s] [%s]:", time.Now().Format(time.RFC3339Nano), testName)
 
-func pathAbsFromRel(relPath string) string {
-	return rootAbsPath + pathSeparator + relPath
+	if t != nil {
+		t.Log(prefix, log)
+		return
+	}
+
+	fmt.Println(prefix, log)
 }
