@@ -152,7 +152,7 @@ func csaWaitStatus(
 		}
 
 		lastStatusAnnJson = statusAnn.Json()
-		//logMessage(t, fmt.Sprintf("current csa status for pod '%s/%s': %s", podNamespace, podName, lastStatusAnnJson))
+		logMessage(t, fmt.Sprintf("current csa status for pod '%s/%s': %s", podNamespace, podName, lastStatusAnnJson))
 
 		if strings.Contains(statusAnn.Status, waitMsgContains) {
 			// TODO(wt) 'In-place Update of Pod Resources' implementation bug (Kube 1.29)

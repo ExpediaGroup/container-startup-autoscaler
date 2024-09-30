@@ -19,9 +19,7 @@ package integration
 import (
 	"errors"
 	"flag"
-	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -178,77 +176,22 @@ Example logs of such an event (restart marked with '<-- HERE'):
 
 */
 
-var deleteNsPostTest = true
-
 func TestMain(m *testing.M) {
-	setStringConfig := func(env string, config *string) {
-		envVal := os.Getenv(env)
+	suppliedConfigInit()
 
-		if envVal == "" && *config == "" {
-			// Require env unless defaulted via supplied.
-			logMessage(nil, fmt.Sprintf("(config) '%s' value is required", env))
-			os.Exit(1)
-		}
-
-		if envVal != "" {
-			*config = envVal
-		}
-	}
-	setBoolConfig := func(env string, config *bool) {
-		envVal := os.Getenv(env)
-
-		if envVal == "" && config == nil {
-			// Require env unless defaulted via supplied.
-			logMessage(nil, fmt.Sprintf("(config) '%s' value is required", env))
-			os.Exit(1)
-		}
-
-		if envVal != "" {
-			var err error
-			*config, err = strconv.ParseBool(envVal)
-			if err != nil {
-				logMessage(nil, fmt.Sprintf("(config) '%s' value is not a bool", env))
-				os.Exit(1)
-			}
-		}
-	}
-
-	kubeVersion := ""
-	maxParallelism := "4"
-	reuseCluster := false
-	installMetricsServer := false
-	keepCsa := false
-	keepCluster := false
-
-	setStringConfig("KUBE_VERSION", &kubeVersion)
-	setStringConfig("MAX_PARALLELISM", &maxParallelism)
-	setBoolConfig("REUSE_CLUSTER", &reuseCluster)
-	setBoolConfig("INSTALL_METRICS_SERVER", &installMetricsServer)
-	setBoolConfig("KEEP_CSA", &keepCsa)
-	setBoolConfig("KEEP_CLUSTER", &keepCluster)
-	setBoolConfig("DELETE_NS_AFTER_TEST", &deleteNsPostTest)
-
-	logMessage(nil, fmt.Sprintf("(config) KUBE_VERSION: %s", kubeVersion))
-	logMessage(nil, fmt.Sprintf("(config) MAX_PARALLELISM: %s", maxParallelism))
-	logMessage(nil, fmt.Sprintf("(config) REUSE_CLUSTER: %t", reuseCluster))
-	logMessage(nil, fmt.Sprintf("(config) INSTALL_METRICS_SERVER: %t", installMetricsServer))
-	logMessage(nil, fmt.Sprintf("(config) KEEP_CSA: %t", keepCsa))
-	logMessage(nil, fmt.Sprintf("(config) KEEP_CLUSTER: %t", keepCluster))
-	logMessage(nil, fmt.Sprintf("(config) DELETE_NS_AFTER_TEST: %t", deleteNsPostTest))
-
-	_ = flag.Set("test.parallel", maxParallelism)
+	_ = flag.Set("test.parallel", suppliedConfig.maxParallelism)
 	flag.Parse()
 	if testing.Short() {
 		logMessage(nil, "not running because short tests configured")
 		os.Exit(0)
 	}
 
-	kindSetupCluster(nil, kubeVersion, reuseCluster, installMetricsServer)
+	kindSetupCluster(nil)
 	if err := csaRun(nil); err != nil {
-		if !keepCsa {
+		if !suppliedConfig.keepCsa {
 			csaCleanUp(nil)
 		}
-		if !keepCluster {
+		if !suppliedConfig.keepCluster {
 			kindCleanUpCluster(nil)
 		}
 		logMessage(nil, err)
@@ -256,10 +199,10 @@ func TestMain(m *testing.M) {
 	}
 
 	exitVal := m.Run()
-	if !keepCsa {
+	if !suppliedConfig.keepCsa {
 		csaCleanUp(nil)
 	}
-	if !keepCluster {
+	if !suppliedConfig.keepCluster {
 		kindCleanUpCluster(nil)
 	}
 	os.Exit(exitVal)
@@ -890,7 +833,7 @@ func ensureEvents(t *testing.T, reason string, substrs []string, namespace strin
 }
 
 func maybeRegisterCleanup(t *testing.T, namespace string) {
-	if deleteNsPostTest {
+	if suppliedConfig.deleteNsPostTest {
 		t.Cleanup(func() {
 			_ = kubeDeleteNamespace(t, namespace)
 		})

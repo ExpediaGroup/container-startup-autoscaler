@@ -16,3 +16,10 @@ kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 featureGates:
   InPlacePodVerticalScaling: true
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches: # TODO(wt) temporary to work around https://github.com/kubernetes/kubernetes/issues/112264
+      - |
+        apiVersion: kubelet.config.k8s.io/v1beta1
+        kind: KubeletConfiguration
+        syncFrequency: "3s"

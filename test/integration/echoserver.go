@@ -239,8 +239,8 @@ func echoContainerConfigStandard(
 				},
 			},
 			InitialDelaySeconds: probesInitialDelaySeconds,
-			PeriodSeconds:       5,
-			FailureThreshold:    2,
+			PeriodSeconds:       echoServerProbePeriodSeconds,
+			FailureThreshold:    echoServerProbeFailureThreshold,
 		},
 		readinessProbe: &v1.Probe{
 			ProbeHandler: v1.ProbeHandler{
@@ -253,8 +253,8 @@ func echoContainerConfigStandard(
 				},
 			},
 			InitialDelaySeconds: probesInitialDelaySeconds,
-			PeriodSeconds:       5,
-			FailureThreshold:    2,
+			PeriodSeconds:       echoServerProbePeriodSeconds,
+			FailureThreshold:    echoServerProbeFailureThreshold,
 		},
 	}
 }

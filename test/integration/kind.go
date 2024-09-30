@@ -38,7 +38,7 @@ func init() {
 	kindKubeconfig = fmt.Sprintf("%s%s.kube%sconfig-%s", home, pathSeparator, pathSeparator, kindClusterName)
 }
 
-func kindSetupCluster(t *testing.T, kubeVersion string, reuseCluster, installMetricsServer bool) {
+func kindSetupCluster(t *testing.T) {
 	hasExistingCluster := false
 
 	output, _ := cmdRun(
@@ -57,12 +57,12 @@ func kindSetupCluster(t *testing.T, kubeVersion string, reuseCluster, installMet
 		}
 	}
 
-	if !reuseCluster || !hasExistingCluster {
+	if !suppliedConfig.reuseCluster || !hasExistingCluster {
 		if hasExistingCluster {
 			kindCleanUpCluster(t)
 		}
 
-		kindNodeImage, err := kindImageFromKubeVersion(kubeVersion, runtime.GOARCH)
+		kindNodeImage, err := kindImageFromKubeVersion(suppliedConfig.kubeVersion, runtime.GOARCH)
 		if err != nil {
 			logMessage(t, common.WrapErrorf(err, "unable to obtain kind image"))
 			os.Exit(1)
@@ -100,7 +100,7 @@ func kindSetupCluster(t *testing.T, kubeVersion string, reuseCluster, installMet
 		os.Exit(1)
 	}
 
-	if installMetricsServer {
+	if suppliedConfig.installMetricsServer {
 		_, _ = cmdRun(
 			t,
 			exec.Command("docker", "pull", metricsServerImageTag),
