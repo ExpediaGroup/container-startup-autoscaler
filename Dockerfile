@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=$BUILDPLATFORM golang:1.22 AS build
+FROM --platform=$BUILDPLATFORM golang:1.22.9 AS build
 RUN echo "Build platform: $BUILDPLATFORM, target platform: $TARGETPLATFORM, target OS: $TARGETOS, target arch: $TARGETARCH"
 RUN openssl s_client -showcerts -connect proxy.golang.org:443 </dev/null 2>/dev/null|openssl x509 -outform PEM > /usr/local/share/ca-certificates/goproxy.crt
 RUN update-ca-certificates
