@@ -18,21 +18,10 @@
 
 kind_cluster_name="csa-sandbox-cluster"
 
-arch=$(uname -m)
-case $arch in
-  x86_64)
-    # shellcheck disable=SC2034
-    kind_image="kindest/node:v1.31.0@sha256:919a65376fd11b67df05caa2e60802ad5de2fca250c9fe0c55b0dce5c9591af3"
-    ;;
-  arm64)
-    # shellcheck disable=SC2034
-    kind_image="kindest/node:v1.31.0@sha256:0ccfb11dc66eae4abc20c30ee95687bab51de8aeb04e325e1c49af0890646548"
-    ;;
-  *)
-    echo "Error: architecture '$arch' not supported"
-    exit 1
-    ;;
-esac
+# shellcheck disable=SC2034
+kind_kube_version="v1.31.3"
+# shellcheck disable=SC2034
+kind_node_docker_tag="kindest/node:$kind_kube_version"
 
 # shellcheck disable=SC2034
 kind_kubeconfig="$HOME/.kube/config-$kind_cluster_name"

@@ -18,10 +18,16 @@ source config/vars.sh
 source csa-uninstall.sh
 
 # shellcheck disable=SC2154
+if [ -z "$(docker images --filter "reference=$kind_node_docker_tag" --format '{{.Repository}}:{{.Tag}}')" ]; then
+  # shellcheck disable=SC2154
+  kind build node-image --type release "$kind_kube_version" --image "$kind_node_docker_tag"
+fi
+
+# shellcheck disable=SC2154
 kind create cluster \
      --name="$kind_cluster_name" \
      --config=config/kind.yaml \
-     --image="$kind_image"
+     --image="$kind_node_docker_tag"
 
 # shellcheck disable=SC2154
 kind get kubeconfig --name "$kind_cluster_name" > "$kind_kubeconfig"
