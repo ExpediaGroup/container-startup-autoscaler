@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -39,8 +38,6 @@ func init() {
 }
 
 func kindSetupCluster(t *testing.T) {
-	hasExistingCluster := false
-
 	output, _ := cmdRun(
 		t,
 		exec.Command("kind", "get", "clusters"),
@@ -49,6 +46,7 @@ func kindSetupCluster(t *testing.T) {
 		true,
 	)
 
+	hasExistingCluster := false
 	if output != "" {
 		for _, s := range strings.Split(output, "\n") {
 			if s == kindClusterName {
@@ -62,19 +60,44 @@ func kindSetupCluster(t *testing.T) {
 			kindCleanUpCluster(t)
 		}
 
-		kindNodeImage, err := kindImageFromKubeVersion(suppliedConfig.kubeVersion, runtime.GOARCH)
+		kubeFullVersion, err := kubeFullVersionFor(suppliedConfig.kubeVersion)
 		if err != nil {
-			logMessage(t, common.WrapErrorf(err, "unable to obtain kind image"))
+			logMessage(t, common.WrapErrorf(err, "unable to obtain kube full version"))
 			os.Exit(1)
 		}
-		logMessage(t, fmt.Sprintf("using kind node image '%s'", kindNodeImage))
+
+		dockerTag := fmt.Sprintf("kindest/node:%s", kubeFullVersion)
+
+		output, _ = cmdRun(
+			t,
+			exec.Command("docker", "images",
+				"--filter", fmt.Sprintf("reference=%s", dockerTag),
+				"--format", "{{.Repository}}:{{.Tag}}",
+			),
+			"getting existing docker images...",
+			"unable to get existing docker images",
+			true,
+		)
+
+		if output == "" {
+			_, _ = cmdRun(
+				t,
+				exec.Command("kind", "build", "node-image",
+					"--type", "release", kubeFullVersion,
+					"--image", dockerTag,
+				),
+				"building kind node image...",
+				"unable to build kind node image",
+				true,
+			)
+		}
 
 		_, _ = cmdRun(
 			t,
 			exec.Command("kind", "create", "cluster",
 				"--name", kindClusterName,
 				"--config", pathAbsFromRel(kindConfigFileRelPath),
-				"--image", kindNodeImage,
+				"--image", dockerTag,
 			),
 			"creating kind cluster...",
 			"unable to create kind cluster",
@@ -156,12 +179,9 @@ func kindCleanUpCluster(t *testing.T) {
 	)
 }
 
-func kindImageFromKubeVersion(kubeVersion, arch string) (string, error) {
-	if archMap, found := k8sVersionToImage[kubeVersion]; found {
-		if image, archFound := archMap[arch]; archFound {
-			return image, nil
-		}
-		return "", fmt.Errorf("architecture '%s' not supported", arch)
+func kubeFullVersionFor(kubeVersion string) (string, error) {
+	if fullVersion, found := kubeVersionToFullVersion[kubeVersion]; found {
+		return fullVersion, nil
 	}
 
 	return "", fmt.Errorf("kube version %s not supported", kubeVersion)

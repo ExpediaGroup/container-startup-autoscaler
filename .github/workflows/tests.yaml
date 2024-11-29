@@ -18,7 +18,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.22.9'
 
       - name: Test
         run: make test-run-unit
@@ -29,9 +29,6 @@ jobs:
     strategy:
       matrix:
         arg:
-          - '1.28'
-          - '1.29'
-          - '1.30'
           - '1.31'
 
     steps:
@@ -43,14 +40,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.22.9'
 
       - name: Set up Kind
-        uses: helm/kind-action@v1.8.0
+        uses: helm/kind-action@v1.10.0
         with:
           install_only: true
-          version: v0.20.0
-          kubectl_version: v1.27.2
+          version: v0.25.0
 
       - name: Test with Kubernetes ${{ matrix.arg }}
         env:

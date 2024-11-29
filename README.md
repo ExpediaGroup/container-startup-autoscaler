@@ -504,13 +504,12 @@ top of [go.mod](go.mod).
 
 Integration tests are implemented as Go tests and located in `test/integration`. During initialization of the tests, a
 [kind](https://kind.sigs.k8s.io/) cluster is created (with a specific name); CSA is built via Docker and run via
-[Helm](#helm-chart). Tools are not bundled with the tests, so you must have the following installed locally (test
-development versions indicated):
+[Helm](#helm-chart). Tools are not bundled with the tests, so you must have the following installed locally:
 
-- Docker (24.0.6)
-- Helm (3.13.1)
-- kind (0.20.0)
-- kubectl (1.27.2)
+- Docker
+- Helm
+- kind (at least 0.24.0)
+- kubectl
 
 The integration tests use [echo-server](https://github.com/Ealenn/Echo-Server) for containers. Note: the very first
 execution might take some time to complete.
