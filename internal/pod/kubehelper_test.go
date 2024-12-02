@@ -63,7 +63,7 @@ func TestKubeHelperGet(t *testing.T) {
 		{
 			name: "UnableToGetPod",
 			client: podtest.ControllerRuntimeFakeClientWithKubeFake(
-				func() *kubefake.Clientset { return kubefake.NewSimpleClientset() },
+				func() *kubefake.Clientset { return kubefake.NewClientset() },
 				func() interceptor.Funcs { return interceptor.Funcs{Get: podtest.InterceptorFuncGetFail()} },
 			),
 			args: args{
@@ -77,7 +77,7 @@ func TestKubeHelperGet(t *testing.T) {
 		{
 			name: "NotFound",
 			client: podtest.ControllerRuntimeFakeClientWithKubeFake(
-				func() *kubefake.Clientset { return kubefake.NewSimpleClientset() },
+				func() *kubefake.Clientset { return kubefake.NewClientset() },
 				func() interceptor.Funcs { return interceptor.Funcs{} },
 			),
 			args: args{
@@ -91,7 +91,7 @@ func TestKubeHelperGet(t *testing.T) {
 			name: "Found",
 			client: podtest.ControllerRuntimeFakeClientWithKubeFake(
 				func() *kubefake.Clientset {
-					return kubefake.NewSimpleClientset(
+					return kubefake.NewClientset(
 						podtest.NewPodBuilder(podtest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
 					)
 				},
@@ -124,7 +124,7 @@ func TestKubeHelperGet(t *testing.T) {
 func TestKubeHelperPatch(t *testing.T) {
 	t.Run("UnableToMutatePod", func(t *testing.T) {
 		h := newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewSimpleClientset() },
+			func() *kubefake.Clientset { return kubefake.NewClientset() },
 			func() interceptor.Funcs { return interceptor.Funcs{} },
 		))
 
@@ -139,7 +139,7 @@ func TestKubeHelperPatch(t *testing.T) {
 
 	t.Run("UnableToPatchPod", func(t *testing.T) {
 		h := newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewSimpleClientset() },
+			func() *kubefake.Clientset { return kubefake.NewClientset() },
 			func() interceptor.Funcs { return interceptor.Funcs{Patch: podtest.InterceptorFuncPatchFail()} },
 		))
 
@@ -155,7 +155,7 @@ func TestKubeHelperPatch(t *testing.T) {
 	t.Run("ConflictUnableToGetPod", func(t *testing.T) {
 		conflictErr := kerrors.NewConflict(schema.GroupResource{}, "", errors.New(""))
 		h := newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewSimpleClientset() },
+			func() *kubefake.Clientset { return kubefake.NewClientset() },
 			func() interceptor.Funcs {
 				return interceptor.Funcs{
 					Patch: podtest.InterceptorFuncPatchFail(conflictErr),
@@ -177,7 +177,7 @@ func TestKubeHelperPatch(t *testing.T) {
 		conflictErr := kerrors.NewConflict(schema.GroupResource{}, "", errors.New(""))
 		notFoundErr := kerrors.NewNotFound(schema.GroupResource{}, "")
 		h := newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewSimpleClientset() },
+			func() *kubefake.Clientset { return kubefake.NewClientset() },
 			func() interceptor.Funcs {
 				return interceptor.Funcs{
 					Patch: podtest.InterceptorFuncPatchFail(conflictErr),
@@ -208,7 +208,7 @@ func TestKubeHelperPatch(t *testing.T) {
 			return true, mutatedPod, nil
 		}
 		h := newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewSimpleClientset(pod) },
+			func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
 			func() interceptor.Funcs { return interceptor.Funcs{} },
 		))
 
@@ -240,7 +240,7 @@ func TestKubeHelperPatch(t *testing.T) {
 		}
 		conflictErr := kerrors.NewConflict(schema.GroupResource{}, "", errors.New(""))
 		h := newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewSimpleClientset(pod) },
+			func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
 			func() interceptor.Funcs {
 				return interceptor.Funcs{Patch: podtest.InterceptorFuncPatchFailFirstOnly(conflictErr)}
 			},
@@ -270,7 +270,7 @@ func TestKubeHelperPatch(t *testing.T) {
 			return false, mutatedPod, nil
 		}
 		h := newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewSimpleClientset(pod) },
+			func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
 			func() interceptor.Funcs { return interceptor.Funcs{} },
 		))
 
@@ -324,7 +324,7 @@ func TestKubeHelperUpdateContainerResources(t *testing.T) {
 
 	t.Run("UnableToPatchPod", func(t *testing.T) {
 		h := newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewSimpleClientset() },
+			func() *kubefake.Clientset { return kubefake.NewClientset() },
 			func() interceptor.Funcs { return interceptor.Funcs{Patch: podtest.InterceptorFuncPatchFail()} },
 		))
 
@@ -345,7 +345,7 @@ func TestKubeHelperUpdateContainerResources(t *testing.T) {
 		cpuRequests, cpuLimits := resource.MustParse("89998m"), resource.MustParse("99999m")
 		memoryRequests, memoryLimits := resource.MustParse("89998M"), resource.MustParse("99999M")
 		h := newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewSimpleClientset(pod) },
+			func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
 			func() interceptor.Funcs { return interceptor.Funcs{} },
 		))
 

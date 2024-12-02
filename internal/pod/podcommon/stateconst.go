@@ -77,23 +77,6 @@ func (s StateResources) HumanReadable() string {
 	}
 }
 
-// StateAllocatedResources indicates the state of a Kube container's allocated resources.
-type StateAllocatedResources string
-
-const (
-	// StateAllocatedResourcesIncomplete indicates allocated resources are incomplete.
-	StateAllocatedResourcesIncomplete StateAllocatedResources = "incomplete"
-
-	// StateAllocatedResourcesContainerRequestsMatch indicates allocated resources match container requests.
-	StateAllocatedResourcesContainerRequestsMatch StateAllocatedResources = "containerrequestsmatch"
-
-	// StateAllocatedResourcesContainerRequestsMismatch indicates allocated resources don't match container requests.
-	StateAllocatedResourcesContainerRequestsMismatch StateAllocatedResources = "containerrequestsmismatch"
-
-	// StateAllocatedResourcesUnknown indicates allocated resources are unknown.
-	StateAllocatedResourcesUnknown StateAllocatedResources = "unknown"
-)
-
 // StateStatusResources indicates the state of a Kube container's status resources.
 type StateStatusResources string
 

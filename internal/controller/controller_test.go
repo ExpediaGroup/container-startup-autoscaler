@@ -140,7 +140,7 @@ func (m *mockRuntimeManager) Elected() <-chan struct{} {
 	panic(errors.New("not supported"))
 }
 
-func (m *mockRuntimeManager) AddMetricsServerExtraHandler(path string, handler http.Handler) error {
+func (m *mockRuntimeManager) AddMetricsServerExtraHandler(_ string, _ http.Handler) error {
 	panic(errors.New("not supported"))
 }
 

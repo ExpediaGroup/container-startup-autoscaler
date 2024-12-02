@@ -53,7 +53,6 @@ Example logs of such an event (restart marked with '<-- HERE'):
 		"started": "false",
 		"ready": "false",
 		"resources": "poststartup",
-		"allocatedResources": "unknown",
 		"statusResources": "unknown"
 	},
 	"time": 1698695785143,
@@ -72,7 +71,6 @@ Example logs of such an event (restart marked with '<-- HERE'):
 		"started": "false",
 		"ready": "false",
 		"resources": "poststartup",
-		"allocatedResources": "containerrequestsmatch",
 		"statusResources": "containerresourcesmatch"
 	},
 	"time": 1698695786101,
@@ -91,7 +89,6 @@ Example logs of such an event (restart marked with '<-- HERE'):
 		"started": "false",
 		"ready": "false",
 		"resources": "startup",
-		"allocatedResources": "containerrequestsmismatch",
 		"statusResources": "containerresourcesmismatch"
 	},
 	"time": 1698695786101,
@@ -110,7 +107,6 @@ Example logs of such an event (restart marked with '<-- HERE'):
 		"started": "false",
 		"ready": "false",
 		"resources": "startup",
-		"allocatedResources": "containerrequestsmatch",
 		"statusResources": "containerresourcesmismatch"
 	},
 	"time": 1698695788169,
@@ -129,7 +125,6 @@ Example logs of such an event (restart marked with '<-- HERE'):
 		"started": "false",
 		"ready": "false",
 		"resources": "startup",
-		"allocatedResources": "containerrequestsmatch",
 		"statusResources": "containerresourcesmatch"
 	},
 	"time": 1698695789015,
@@ -148,7 +143,6 @@ Example logs of such an event (restart marked with '<-- HERE'):
 		"started": "false",
 		"ready": "false",
 		"resources": "startup",
-		"allocatedResources": "containerrequestsmatch",
 		"statusResources": "containerresourcesmismatch" <-- HERE
 	},
 	"time": 1698695789058,
@@ -167,7 +161,6 @@ Example logs of such an event (restart marked with '<-- HERE'):
 		"started": "false",
 		"ready": "false",
 		"resources": "startup",
-		"allocatedResources": "containerrequestsmatch",
 		"statusResources": "containerresourcesmatch"
 	},
 	"time": 1698695789982,
@@ -545,7 +538,6 @@ func TestValidationFailure(t *testing.T) {
 		require.Equal(t, podcommon.StateBoolUnknown, statusAnn.States.Started)
 		require.Equal(t, podcommon.StateBoolUnknown, statusAnn.States.Ready)
 		require.Equal(t, podcommon.StateResourcesUnknown, statusAnn.States.Resources)
-		require.Equal(t, podcommon.StateAllocatedResourcesUnknown, statusAnn.States.AllocatedResources)
 		require.Equal(t, podcommon.StateStatusResourcesUnknown, statusAnn.States.StatusResources)
 
 		require.Empty(t, statusAnn.Scale.LastCommanded)
@@ -677,12 +669,10 @@ func assertStartupEnacted(
 		}
 
 		for _, s := range pod.Status.ContainerStatuses {
-			expectCpuA, expectMemoryA := annotations.cpuPostStartupRequests, annotations.memoryPostStartupRequests
 			expectCpuR, expectCpuL := annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits
 			expectMemoryR, expectMemoryL := annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits
 
 			if s.Name == echoServerName {
-				expectCpuA, expectMemoryA = annotations.cpuStartup, annotations.memoryStartup
 				expectCpuR, expectCpuL = annotations.cpuStartup, annotations.cpuStartup
 				expectMemoryR, expectMemoryL = annotations.memoryStartup, annotations.memoryStartup
 
@@ -696,10 +686,6 @@ func assertStartupEnacted(
 			}
 
 			require.NotNil(t, s.State.Running)
-			cpuA := s.AllocatedResources[v1.ResourceCPU]
-			require.Equal(t, expectCpuA, cpuA.String())
-			memoryA := s.AllocatedResources[v1.ResourceMemory]
-			require.Equal(t, expectMemoryA, memoryA.String())
 			cpuR := s.Resources.Requests[v1.ResourceCPU]
 			require.Equal(t, expectCpuR, cpuR.String())
 			cpuL := s.Resources.Limits[v1.ResourceCPU]
@@ -723,7 +709,6 @@ func assertStartupEnacted(
 		}
 		require.Equal(t, podcommon.StateBoolFalse, statusAnn.States.Ready)
 		require.Equal(t, podcommon.StateResourcesStartup, statusAnn.States.Resources)
-		require.Equal(t, podcommon.StateAllocatedResourcesContainerRequestsMatch, statusAnn.States.AllocatedResources)
 		require.Equal(t, podcommon.StateStatusResourcesContainerResourcesMatch, statusAnn.States.StatusResources)
 
 		if expectStatusCommandedEnactedEmpty {
@@ -770,7 +755,6 @@ func assertPostStartupEnacted(
 		}
 
 		for _, s := range pod.Status.ContainerStatuses {
-			expectCpuA, expectMemoryA := annotations.cpuPostStartupRequests, annotations.memoryPostStartupRequests
 			expectCpuR, expectCpuL := annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits
 			expectMemoryR, expectMemoryL := annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits
 
@@ -781,10 +765,6 @@ func assertPostStartupEnacted(
 			}
 
 			require.NotNil(t, s.State.Running)
-			cpuA := s.AllocatedResources[v1.ResourceCPU]
-			require.Equal(t, expectCpuA, cpuA.String())
-			memoryA := s.AllocatedResources[v1.ResourceMemory]
-			require.Equal(t, expectMemoryA, memoryA.String())
 			cpuR := s.Resources.Requests[v1.ResourceCPU]
 			require.Equal(t, expectCpuR, cpuR.String())
 			cpuL := s.Resources.Limits[v1.ResourceCPU]
@@ -804,7 +784,6 @@ func assertPostStartupEnacted(
 		require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.Started)
 		require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.Ready)
 		require.Equal(t, podcommon.StateResourcesPostStartup, statusAnn.States.Resources)
-		require.Equal(t, podcommon.StateAllocatedResourcesContainerRequestsMatch, statusAnn.States.AllocatedResources)
 		require.Equal(t, podcommon.StateStatusResourcesContainerResourcesMatch, statusAnn.States.StatusResources)
 
 		require.NotEmpty(t, statusAnn.Scale.LastCommanded)

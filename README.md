@@ -243,7 +243,6 @@ Example output:
     "started": "true",
     "ready": "false",
     "resources": "poststartup",
-    "allocatedResources": "containerrequestsmatch",
     "statusResources": "containerresourcesmatch"
   },
   "scale": {
@@ -267,8 +266,7 @@ Explanation of status items:
 | `states`      | `started`            | Whether the container is signalled as started by Kube.                                                 |
 | `states`      | `ready`              | Whether the container is signalled as ready by Kube.                                                   |
 | `states`      | `resources`          | The type of resources (startup/post-startup) that are currently applied (but not necessarily enacted). |
-| `states`      | `allocatedResources` | How the reported container allocated resources relate to container requests.                           |
-| `states`      | `statusResources`    | How the reported currently allocated resources relate to container resources.                          |
+| `states`      | `statusResources`    | How the reported current enacted resources relate to container resources.                              |
 | `scale`       | -                    | Information around scaling activity.                                                                   |
 | `scale`       | `lastCommanded`      | The last time a scale was commanded (UTC).                                                             |
 | `scale`       | `lastEnacted`        | The last time a scale was enacted (UTC; empty if failed).                                              |
@@ -318,7 +316,6 @@ Example `info`-level log:
 		"started": "true",
 		"ready": "false",
 		"resources": "poststartup",
-		"allocatedResources": "containerrequestsmatch",
 		"statusResources": "containerresourcesmatch"
 	},
 	"caller": "container-startup-autoscaler/internal/pod/targetcontaineraction.go:472",

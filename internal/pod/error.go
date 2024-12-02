@@ -60,18 +60,6 @@ func (e ContainerStatusNotPresentError) Error() string {
 	return "container status not present"
 }
 
-// ContainerStatusAllocatedResourcesNotPresentError is an error that indicates container status allocated resources
-// is not present.
-type ContainerStatusAllocatedResourcesNotPresentError struct{}
-
-func NewContainerStatusAllocatedResourcesNotPresentError() error {
-	return ContainerStatusAllocatedResourcesNotPresentError{}
-}
-
-func (e ContainerStatusAllocatedResourcesNotPresentError) Error() string {
-	return "container status allocated resources not present"
-}
-
 // ContainerStatusResourcesNotPresentError is an error that indicates container status resources is not present.
 type ContainerStatusResourcesNotPresentError struct{}
 

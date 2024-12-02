@@ -36,7 +36,6 @@ type ContainerKubeHelper interface {
 	Requests(*v1.Container, v1.ResourceName) resource.Quantity
 	Limits(*v1.Container, v1.ResourceName) resource.Quantity
 	ResizePolicy(*v1.Container, v1.ResourceName) (v1.ResourceResizeRestartPolicy, error)
-	AllocatedResources(*v1.Pod, string, v1.ResourceName) (resource.Quantity, error)
 	CurrentRequests(*v1.Pod, string, v1.ResourceName) (resource.Quantity, error)
 	CurrentLimits(*v1.Pod, string, v1.ResourceName) (resource.Quantity, error)
 }
@@ -148,32 +147,6 @@ func (h containerKubeHelper) ResizePolicy(
 		if resizePolicy.ResourceName == resourceName {
 			return resizePolicy.RestartPolicy, nil
 		}
-	}
-
-	panic(fmt.Errorf("resourceName '%s' not supported", resourceName))
-}
-
-// AllocatedResources returns allocated resources for the supplied containerName and resourceName, from the supplied
-// pod.
-func (h containerKubeHelper) AllocatedResources(
-	pod *v1.Pod,
-	containerName string,
-	resourceName v1.ResourceName,
-) (resource.Quantity, error) {
-	stat, err := h.status(pod, containerName)
-	if err != nil {
-		return resource.Quantity{}, common.WrapErrorf(err, "unable to get container status")
-	}
-
-	if stat.AllocatedResources == nil {
-		return resource.Quantity{}, NewContainerStatusAllocatedResourcesNotPresentError()
-	}
-
-	switch resourceName {
-	case v1.ResourceCPU:
-		return *stat.AllocatedResources.Cpu(), nil
-	case v1.ResourceMemory:
-		return *stat.AllocatedResources.Memory(), nil
 	}
 
 	panic(fmt.Errorf("resourceName '%s' not supported", resourceName))

@@ -399,51 +399,7 @@ func (a *targetContainerAction) processConfigEnacted(
 		return fmt.Errorf("%s '%s'", msg, a.kubeHelper.ResizeStatus(pod))
 	}
 
-	// Resize is not pending, so examine AllocatedResources.
-	switch states.AllocatedResources {
-	case podcommon.StateAllocatedResourcesIncomplete:
-		// Target container allocated CPU and/or memory resources are missing. Log and return with the expectation that
-		// the missing items become available in the future.
-		a.logInfoAndUpdateStatus(
-			ctx,
-			logging.VDebug,
-			states, podcommon.StatusScaleStateNotApplicable,
-			pod,
-			"target container allocated cpu and/or memory resources currently missing",
-		)
-		return nil
-
-	case podcommon.StateAllocatedResourcesContainerRequestsMatch: // Want this, but here so we can panic on default below.
-
-	case podcommon.StateAllocatedResourcesContainerRequestsMismatch:
-		// Target container allocated CPU and/or memory resources don't match target container's 'requests'. Log and
-		// return with the expectation that they match in the future.
-		a.logInfoAndUpdateStatus(
-			ctx,
-			logging.VDebug,
-			states, podcommon.StatusScaleStateNotApplicable,
-			pod,
-			"target container allocated cpu and/or memory resources currently don't match target container's 'requests'",
-		)
-		return nil
-
-	case podcommon.StateAllocatedResourcesUnknown:
-		// Target container allocated CPU and/or memory resources are unknown. Log and return with the expectation that
-		// they become known in the future.
-		a.logInfoAndUpdateStatus(
-			ctx,
-			logging.VDebug,
-			states, podcommon.StatusScaleStateNotApplicable,
-			pod,
-			"target container allocated cpu and/or memory resources currently unknown",
-		)
-		return nil
-
-	default:
-		panic(fmt.Errorf("unknown state '%s'", states.AllocatedResources))
-	}
-
-	// AllocatedResources is as expected - finally examine StatusResources.
+	// Resize is not pending, so examine StatusResources.
 	switch states.StatusResources {
 	case podcommon.StateStatusResourcesIncomplete:
 		// Target container current CPU and/or memory resources are missing. Log and return with the expectation that
