@@ -105,16 +105,21 @@ func (c *controller) Initialize(runtimeController ...runtimecontroller.Controlle
 		actualRuntimeController = runtimeController[0]
 	}
 
+	// &handler.TypedEnqueueRequestForObject[*appsv1.ReplicaSet]{})
+
 	// Predicates are employed to filter out pod changes that are not necessary to reconcile.
 	if err := actualRuntimeController.Watch(
-		source.Kind(c.runtimeManager.GetCache(), &v1.Pod{}),
-		&handler.EnqueueRequestForObject{},
-		predicate.Funcs{
-			CreateFunc:  PredicateCreateFunc,
-			DeleteFunc:  PredicateDeleteFunc,
-			UpdateFunc:  PredicateUpdateFunc,
-			GenericFunc: PredicateGenericFunc,
-		},
+		source.Kind(
+			c.runtimeManager.GetCache(),
+			&v1.Pod{},
+			&handler.TypedEnqueueRequestForObject[*v1.Pod]{},
+			predicate.TypedFuncs[*v1.Pod]{
+				CreateFunc:  PredicateCreateFunc,
+				DeleteFunc:  PredicateDeleteFunc,
+				UpdateFunc:  PredicateUpdateFunc,
+				GenericFunc: PredicateGenericFunc,
+			},
+		),
 	); err != nil {
 		return common.WrapErrorf(err, "unable to watch pods")
 	}

@@ -33,10 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -56,8 +54,8 @@ func (m *mockController) Reconcile(_ context.Context, _ reconcile.Request) (reco
 	panic(errors.New("not supported"))
 }
 
-func (m *mockController) Watch(src source.Source, eventhandler handler.EventHandler, predicates ...predicate.Predicate) error {
-	args := m.Called(src, eventhandler, predicates)
+func (m *mockController) Watch(src source.TypedSource[reconcile.Request]) error {
+	args := m.Called(src)
 	return args.Error(0)
 }
 
@@ -142,7 +140,7 @@ func (m *mockRuntimeManager) Elected() <-chan struct{} {
 	panic(errors.New("not supported"))
 }
 
-func (m *mockRuntimeManager) AddMetricsExtraHandler(_ string, _ http.Handler) error {
+func (m *mockRuntimeManager) AddMetricsServerExtraHandler(path string, handler http.Handler) error {
 	panic(errors.New("not supported"))
 }
 
