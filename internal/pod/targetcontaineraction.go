@@ -223,7 +223,7 @@ func (a *targetContainerAction) notStartedWithPostStartupResAction(
 		pod, config.GetTargetContainerName(),
 		config.GetCpuConfig().Startup, config.GetCpuConfig().Startup,
 		config.GetMemoryConfig().Startup, config.GetMemoryConfig().Startup,
-		a.status.UpdateMutatePodFunc(ctx, msg, states, podcommon.StatusScaleStateUpCommanded),
+		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUpCommanded),
 	)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
@@ -248,7 +248,7 @@ func (a *targetContainerAction) startedWithStartupResAction(
 		pod, config.GetTargetContainerName(),
 		config.GetCpuConfig().PostStartupRequests, config.GetCpuConfig().PostStartupLimits,
 		config.GetMemoryConfig().PostStartupRequests, config.GetMemoryConfig().PostStartupLimits,
-		a.status.UpdateMutatePodFunc(ctx, msg, states, podcommon.StatusScaleStateDownCommanded),
+		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateDownCommanded),
 	)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
@@ -285,7 +285,7 @@ func (a *targetContainerAction) notStartedWithUnknownResAction(
 		pod, config.GetTargetContainerName(),
 		config.GetCpuConfig().Startup, config.GetCpuConfig().Startup,
 		config.GetMemoryConfig().Startup, config.GetMemoryConfig().Startup,
-		a.status.UpdateMutatePodFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded),
+		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded),
 	)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
@@ -311,7 +311,7 @@ func (a *targetContainerAction) startedWithUnknownResAction(
 		pod, config.GetTargetContainerName(),
 		config.GetCpuConfig().PostStartupRequests, config.GetCpuConfig().PostStartupLimits,
 		config.GetMemoryConfig().PostStartupRequests, config.GetMemoryConfig().PostStartupLimits,
-		a.status.UpdateMutatePodFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded),
+		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded),
 	)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")

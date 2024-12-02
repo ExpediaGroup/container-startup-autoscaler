@@ -52,7 +52,7 @@ func (m *MockStatus) Update(
 	return args.Get(0).(*v1.Pod), args.Error(1)
 }
 
-func (m *MockStatus) UpdateMutatePodFunc(
+func (m *MockStatus) PodMutationFunc(
 	ctx context.Context,
 	status string,
 	states podcommon.States,
@@ -73,16 +73,16 @@ func (m *MockStatus) UpdateDefaultAndRun(run func()) {
 		Run(func(args mock.Arguments) { run() })
 }
 
-func (m *MockStatus) UpdateMutatePodFuncDefault() {
-	m.On("UpdateMutatePodFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+func (m *MockStatus) PodMutationFuncDefault() {
+	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 		func(pod *v1.Pod) (bool, *v1.Pod, error) {
 			return true, &v1.Pod{}, nil
 		},
 	)
 }
 
-func (m *MockStatus) UpdateMutatePodFuncDefaultAndRun(run func()) {
-	m.On("UpdateMutatePodFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+func (m *MockStatus) PodMutationFuncDefaultAndRun(run func()) {
+	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 		func(pod *v1.Pod) (bool, *v1.Pod, error) {
 			return true, &v1.Pod{}, nil
 		},

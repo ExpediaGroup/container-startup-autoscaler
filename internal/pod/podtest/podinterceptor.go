@@ -26,13 +26,15 @@ import (
 )
 
 var (
-	ctxUuidGetInvocs   = map[string]int{}
-	ctxUuidPatchInvocs = map[string]int{}
+	ctxUuidGetInvocs              = map[string]int{}
+	ctxUuidPatchInvocs            = map[string]int{}
+	ctxUuidSubResourcePatchInvocs = map[string]int{}
 )
 
 var (
-	getMutex   sync.Mutex
-	patchMutex sync.Mutex
+	getMutex              sync.Mutex
+	patchMutex            sync.Mutex
+	subResourcePatchMutex sync.Mutex
 )
 
 // InterceptorFuncGetFail returns an interceptor get function that fails. Returns withError if supplied, otherwise an
@@ -113,6 +115,43 @@ func InterceptorFuncPatchFailFirstOnly(withFirstError ...error) func(_ context.C
 		}
 
 		ctxUuidPatchInvocs[uuid] = current + 1
+		return nil
+	}
+}
+
+// InterceptorFuncSubResourcePatchFail returns an interceptor subresource patch function that fails. Returns withError
+// if supplied, otherwise an error with an empty message.
+func InterceptorFuncSubResourcePatchFail(withError ...error) func(_ context.Context, _ client.Client, _ string, _ client.Object, _ client.Patch, _ ...client.SubResourcePatchOption) error {
+	if len(withError) > 1 {
+		panic("only 0 or 1 errors can be supplied")
+	}
+
+	return func(_ context.Context, _ client.Client, _ string, _ client.Object, _ client.Patch, _ ...client.SubResourcePatchOption) error {
+		if len(withError) == 0 {
+			return errors.New("")
+		}
+		return withError[0]
+	}
+}
+
+// InterceptorFuncSubResourcePatchFailFirstOnly returns an interceptor subresource patch function that fails on the
+// first invocation only. Returns withError if supplied, otherwise an error with an empty message.
+func InterceptorFuncSubResourcePatchFailFirstOnly(withFirstError ...error) func(_ context.Context, _ client.Client, _ string, _ client.Object, _ client.Patch, _ ...client.SubResourcePatchOption) error {
+	return func(ctx context.Context, _ client.Client, _ string, _ client.Object, _ client.Patch, _ ...client.SubResourcePatchOption) error {
+		defer subResourcePatchMutex.Unlock()
+		subResourcePatchMutex.Lock()
+
+		uuid := ctx.Value(contexttest.KeyUuid).(string)
+		current, got := ctxUuidSubResourcePatchInvocs[uuid]
+		if !got {
+			ctxUuidSubResourcePatchInvocs[uuid] = 1
+			if len(withFirstError) == 0 {
+				return errors.New("")
+			}
+			return withFirstError[0]
+		}
+
+		ctxUuidSubResourcePatchInvocs[uuid] = current + 1
 		return nil
 	}
 }

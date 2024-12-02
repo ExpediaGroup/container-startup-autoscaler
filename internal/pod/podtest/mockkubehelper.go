@@ -46,9 +46,10 @@ func (m *MockKubeHelper) Get(ctx context.Context, name types.NamespacedName) (bo
 func (m *MockKubeHelper) Patch(
 	ctx context.Context,
 	originalPod *v1.Pod,
+	patchResize bool,
 	mutatePodFunc func(*v1.Pod) (bool, *v1.Pod, error),
 ) (*v1.Pod, error) {
-	args := m.Called(ctx, originalPod, mutatePodFunc)
+	args := m.Called(ctx, originalPod, patchResize, mutatePodFunc)
 	return args.Get(0).(*v1.Pod), args.Error(1)
 }
 
@@ -58,9 +59,9 @@ func (m *MockKubeHelper) UpdateContainerResources(
 	containerName string,
 	cpuRequests resource.Quantity, cpuLimits resource.Quantity,
 	memoryRequests resource.Quantity, memoryLimits resource.Quantity,
-	addMutations func(pod *v1.Pod) (bool, *v1.Pod, error),
+	addPodMutationFunc func(pod *v1.Pod) (bool, *v1.Pod, error),
 ) (*v1.Pod, error) {
-	args := m.Called(ctx, pod, containerName, cpuRequests, cpuLimits, memoryRequests, memoryLimits, addMutations)
+	args := m.Called(ctx, pod, containerName, cpuRequests, cpuLimits, memoryRequests, memoryLimits, addPodMutationFunc)
 	return args.Get(0).(*v1.Pod), args.Error(1)
 }
 

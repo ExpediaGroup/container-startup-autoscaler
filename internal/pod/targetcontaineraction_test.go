@@ -214,7 +214,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 		{
 			name: "StartedWithStartupResAction",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -234,7 +234,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 		{
 			name: "NotStartedWithPostStartupResAction",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -276,7 +276,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			name:                "NotStartedWithUnknownResAction",
 			scaleWhenUnknownRes: true,
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -297,7 +297,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			name:                "StartedWithUnknownResAction",
 			scaleWhenUnknownRes: true,
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -580,7 +580,7 @@ func TestTargetContainerActionNotStartedWithPostStartupResAction(t *testing.T) {
 		{
 			name: "UnableToPatchContainerResources",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
@@ -592,7 +592,7 @@ func TestTargetContainerActionNotStartedWithPostStartupResAction(t *testing.T) {
 		{
 			name: "Ok",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -654,7 +654,7 @@ func TestTargetContainerActionStartedWithStartupResAction(t *testing.T) {
 		{
 			name: "UnableToPatchContainerResources",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
@@ -666,7 +666,7 @@ func TestTargetContainerActionStartedWithStartupResAction(t *testing.T) {
 		{
 			name: "Ok",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -801,7 +801,7 @@ func TestTargetContainerActionNotStartedWithUnknownResAction(t *testing.T) {
 		{
 			name: "UnableToPatchContainerResources",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
@@ -813,7 +813,7 @@ func TestTargetContainerActionNotStartedWithUnknownResAction(t *testing.T) {
 		{
 			name: "Ok",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -875,7 +875,7 @@ func TestTargetContainerActionStartedWithUnknownResAction(t *testing.T) {
 		{
 			name: "UnableToPatchContainerResources",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
@@ -887,7 +887,7 @@ func TestTargetContainerActionStartedWithUnknownResAction(t *testing.T) {
 		{
 			name: "Ok",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
