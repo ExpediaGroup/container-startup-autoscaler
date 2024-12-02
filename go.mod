@@ -1,6 +1,6 @@
 module github.com/ExpediaGroup/container-startup-autoscaler
 
-go 1.22.9
+go 1.23.3
 
 require (
 	github.com/avast/retry-go/v4 v4.5.0
