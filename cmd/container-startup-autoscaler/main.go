@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// TODO(wt) go fmt everything
 // TODO(wt) prepare chart/changelogs for release
 // TODO(wt) switch to Kube 1.32.0 (non-RC) when available on 11 Dec - see other TODOs
 

@@ -62,9 +62,6 @@ func newTargetContainerAction(
 	}
 }
 
-// TODO(wt) might want to protect against resize flapping (startup -> post-startup -> startup ad nauseum) - disable for
-//  a period of time with startup resources.
-
 // Execute performs the appropriate action for the determined target container state.
 func (a *targetContainerAction) Execute(
 	ctx context.Context,

@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/informercache"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/retry"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podtest"
@@ -121,7 +122,6 @@ func TestKubeHelperGet(t *testing.T) {
 	}
 }
 
-// TODO(wt) update tests to ensure latest was gotten where sync=true
 func TestKubeHelperPatch(t *testing.T) {
 	t.Run("UnableToMutatePod", func(t *testing.T) {
 		h := newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
@@ -645,4 +645,42 @@ func TestKubeHelperResizeStatus(t *testing.T) {
 
 	got := h.ResizeStatus(pod)
 	assert.Equal(t, v1.PodResizeStatusInProgress, got)
+}
+
+func TestKubeHelperWaitForCacheUpdate(t *testing.T) {
+	t.Run("Ok", func(t *testing.T) {
+		pod := podtest.NewPodBuilder(podtest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build()
+		pod.ResourceVersion = "123"
+		h := newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
+			func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
+			func() interceptor.Funcs { return interceptor.Funcs{} },
+		))
+
+		beforeMetricVal, _ := testutil.GetHistogramMetricValue(informercache.SyncPoll())
+		newPod := h.waitForCacheUpdate(
+			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
+			pod,
+		)
+		assert.NotNil(t, newPod)
+		afterMetricVal, _ := testutil.GetHistogramMetricValue(informercache.SyncPoll())
+		assert.Equal(t, beforeMetricVal+1, afterMetricVal)
+	})
+
+	t.Run("Timeout", func(t *testing.T) {
+		pod := podtest.NewPodBuilder(podtest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build()
+		pod.ResourceVersion = "123"
+		h := newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
+			func() *kubefake.Clientset { return kubefake.NewClientset(&v1.Pod{}) },
+			func() interceptor.Funcs { return interceptor.Funcs{} },
+		))
+
+		beforeMetricVal, _ := testutil.GetCounterMetricValue(informercache.SyncTimeout())
+		newPod := h.waitForCacheUpdate(
+			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
+			pod,
+		)
+		assert.Nil(t, newPod)
+		afterMetricVal, _ := testutil.GetCounterMetricValue(informercache.SyncTimeout())
+		assert.Equal(t, beforeMetricVal+1, afterMetricVal)
+	})
 }

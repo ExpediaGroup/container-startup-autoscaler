@@ -279,7 +279,6 @@ func (h *kubeHelper) expectedLabelOrAnnotationAs(
 
 // waitForCacheUpdate waits for the informer cache to update a pod with at least the resource version indicated by the
 // supplied pod. Returns the new representation of the pod if found within a timeout period, otherwise nil.
-// TODO(wt) test, including metrics
 func (h *kubeHelper) waitForCacheUpdate(ctx context.Context, pod *v1.Pod) *v1.Pod {
 	ticker := time.NewTicker(waitForCacheUpdatePollMillis * time.Millisecond)
 	defer ticker.Stop()
