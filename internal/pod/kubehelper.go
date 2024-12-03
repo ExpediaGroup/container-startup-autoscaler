@@ -21,8 +21,11 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/informercache"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/retry"
 	retrygo "github.com/avast/retry-go/v4"
@@ -33,10 +36,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	waitForCacheUpdatePollMillis  = 100
+	waitForCacheUpdateMaxWaitSecs = 3
+)
+
 // KubeHelper performs operations relating to Kube pods.
 type KubeHelper interface {
 	Get(context.Context, types.NamespacedName) (bool, *v1.Pod, error)
-	Patch(context.Context, *v1.Pod, bool, func(*v1.Pod) (bool, *v1.Pod, error)) (*v1.Pod, error)
+	Patch(context.Context, *v1.Pod, func(*v1.Pod) (bool, *v1.Pod, error), bool, bool) (*v1.Pod, error)
 	UpdateContainerResources(
 		context.Context,
 		*v1.Pod,
@@ -44,6 +52,7 @@ type KubeHelper interface {
 		resource.Quantity, resource.Quantity,
 		resource.Quantity, resource.Quantity,
 		func(pod *v1.Pod) (bool, *v1.Pod, error),
+		bool,
 	) (*v1.Pod, error)
 	HasAnnotation(pod *v1.Pod, name string) (bool, string)
 	ExpectedLabelValueAs(*v1.Pod, string, podcommon.Type) (any, error)
@@ -88,14 +97,15 @@ func (h *kubeHelper) Get(ctx context.Context, name types.NamespacedName) (bool, 
 }
 
 // Patch applies the mutations dictated by mutatePodFunc to either the 'resize' subresource of the supplied pod, or the
-// pod itself. It returns the new server representation of the pod. Patches are retried and specially handled if
-// there's a conflict: the latest version is retrieved and the patch is reapplied before attempting again. The supplied
-// pod is never mutated.
+// pod itself. If mustSyncCache is true, it waits for the patched pod to be updated in the informer cache. It returns
+// the new server representation of the pod. Patches are retried and specially handled if there's a conflict: the
+// latest version is retrieved and the patch is reapplied before attempting again. The supplied pod is never mutated.
 func (h *kubeHelper) Patch(
 	ctx context.Context,
 	pod *v1.Pod,
-	patchResize bool,
 	podMutationFunc func(*v1.Pod) (bool, *v1.Pod, error),
+	patchResize bool,
+	mustSyncCache bool,
 ) (*v1.Pod, error) {
 	shouldPatch, mutatedPod, err := podMutationFunc(pod.DeepCopy())
 	if err != nil {
@@ -141,12 +151,21 @@ func (h *kubeHelper) Patch(
 		return nil, common.WrapErrorf(err, "unable to patch pod")
 	}
 
+	if mustSyncCache {
+		// Wait for the patched pod to be updated in the informer cache. For example, this is necessary when updating
+		// the status annotation since the cache may not be updated immediately upon the next reconciliation, leading
+		// to inaccurate status updates that rely on accurate current status. The reconciler doesn't allow concurrent
+		// reconciles for same pod so subsequent reconciles will not start until this wait has completed.
+		_ = h.waitForCacheUpdate(ctx, mutatedPod)
+	}
+
 	return mutatedPod, nil
 }
 
 // UpdateContainerResources updates the resources (requests and limits) of the supplied containerName within the
-// supplied pod. Optional additional mutations may be supplied via addMutations. The update is serviced via a patch,
-// which behaves per Patch. The supplied pod is never mutated. Returns the new server representation of the pod.
+// supplied pod. Optional additional mutations may be supplied via addPodMutationFunc, with the option to wait for
+// these mutations to reflect in the pod informer cache via addPodMutationMustSyncCache. The update is serviced via a
+// patch, which behaves per Patch. The supplied pod is never mutated. Returns the new server representation of the pod.
 func (h *kubeHelper) UpdateContainerResources(
 	ctx context.Context,
 	pod *v1.Pod,
@@ -154,6 +173,7 @@ func (h *kubeHelper) UpdateContainerResources(
 	cpuRequests resource.Quantity, cpuLimits resource.Quantity,
 	memoryRequests resource.Quantity, memoryLimits resource.Quantity,
 	addPodMutationFunc func(pod *v1.Pod) (bool, *v1.Pod, error),
+	addPodMutationMustSyncCache bool,
 ) (*v1.Pod, error) {
 	mutateResizeFunc := func(pod *v1.Pod) (bool, *v1.Pod, error) {
 		var container *v1.Container
@@ -176,13 +196,13 @@ func (h *kubeHelper) UpdateContainerResources(
 		return true, pod, nil
 	}
 
-	newPod, err := h.Patch(ctx, pod, true, mutateResizeFunc)
+	newPod, err := h.Patch(ctx, pod, mutateResizeFunc, true, false)
 	if err != nil {
 		return nil, common.WrapErrorf(err, "unable to patch pod resize subresource")
 	}
 
 	if addPodMutationFunc != nil {
-		newPod, err = h.Patch(ctx, newPod, false, addPodMutationFunc)
+		newPod, err = h.Patch(ctx, newPod, addPodMutationFunc, false, addPodMutationMustSyncCache)
 		if err != nil {
 			return nil, common.WrapErrorf(err, "unable to patch pod additional mutations")
 		}
@@ -255,4 +275,32 @@ func (h *kubeHelper) expectedLabelOrAnnotationAs(
 	}
 
 	panic(fmt.Errorf("as '%s' not supported", as))
+}
+
+// waitForCacheUpdate waits for the informer cache to update a pod with at least the resource version indicated by the
+// supplied pod. Returns the new representation of the pod if found within a timeout period, otherwise nil.
+// TODO(wt) test, including metrics
+func (h *kubeHelper) waitForCacheUpdate(ctx context.Context, pod *v1.Pod) *v1.Pod {
+	ticker := time.NewTicker(waitForCacheUpdatePollMillis * time.Millisecond)
+	defer ticker.Stop()
+	timeout := time.After(waitForCacheUpdateMaxWaitSecs * time.Second)
+
+	pollCount := 0
+	for {
+		select {
+		case <-ticker.C:
+			pollCount++
+			exists, podFromCache, err := h.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name})
+			if err == nil && exists && podFromCache.ResourceVersion >= pod.ResourceVersion {
+				logging.Infof(ctx, logging.VTrace, "pod polled from cache %d time(s) in total", pollCount)
+				informercache.PatchSyncPoll().Observe(float64(pollCount))
+				return podFromCache
+			}
+
+		case <-timeout:
+			logging.Infof(ctx, logging.VDebug, "cache wasn't updated in time")
+			informercache.PatchSyncTimeout().Inc()
+			return nil
+		}
+	}
 }

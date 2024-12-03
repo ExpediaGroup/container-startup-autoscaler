@@ -583,7 +583,7 @@ func TestTargetContainerActionNotStartedWithPostStartupResAction(t *testing.T) {
 				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
-				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(&v1.Pod{}, errors.New(""))
 			},
 			wantErrMsg:       "unable to patch container resources",
@@ -657,7 +657,7 @@ func TestTargetContainerActionStartedWithStartupResAction(t *testing.T) {
 				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
-				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(&v1.Pod{}, errors.New(""))
 			},
 			wantErrMsg:       "unable to patch container resources",
@@ -804,7 +804,7 @@ func TestTargetContainerActionNotStartedWithUnknownResAction(t *testing.T) {
 				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
-				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(&v1.Pod{}, errors.New(""))
 			},
 			wantErrMsg:       "unable to patch container resources",
@@ -878,7 +878,7 @@ func TestTargetContainerActionStartedWithUnknownResAction(t *testing.T) {
 				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
-				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(&v1.Pod{}, errors.New(""))
 			},
 			wantErrMsg:       "unable to patch container resources",

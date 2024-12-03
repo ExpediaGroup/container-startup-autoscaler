@@ -415,7 +415,7 @@ All configuration flags are always logged upon CSA start.
 | `--leader-election-resource-namespace` | String  | -             | The namespace to create resources in if leader election is enabled (uses current namespace if not supplied). |
 | `--cache-sync-period-mins`             | Integer | `60`          | How frequently the informer should re-sync.                                                                  |
 | `--graceful-shutdown-timeout-secs`     | Integer | `10`          | How long to allow busy workers to complete upon shutdown.                                                    |
-| `--requeue-duration-secs`              | Integer | `3`           | How long to wait before requeuing a reconcile.                                                               |
+| `--requeue-duration-secs`              | Integer | `1`           | How long to wait before requeuing a reconcile.                                                               |
 | `--max-concurrent-reconciles`          | Integer | `10`          | The maximum number of concurrent reconciles.                                                                 |
 | `--scale-when-unknown-resources`       | Boolean | `false`       | Whether to scale when [unknown resources](#encountering-unknown-resources) are encountered.                  |
 

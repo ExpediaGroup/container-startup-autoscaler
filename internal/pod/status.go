@@ -60,7 +60,7 @@ func (s *status) Update(
 ) (*v1.Pod, error) {
 	mutatePodFunc := s.PodMutationFunc(ctx, status, states, scaleState)
 
-	newPod, err := s.kubeHelper.Patch(ctx, pod, false, mutatePodFunc)
+	newPod, err := s.kubeHelper.Patch(ctx, pod, mutatePodFunc, false, true)
 	if err != nil {
 		return nil, common.WrapErrorf(err, "unable to patch pod")
 	}

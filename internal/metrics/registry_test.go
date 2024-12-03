@@ -22,6 +22,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/informercache"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/metricscommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/reconciler"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/retry"
@@ -34,10 +35,11 @@ func TestRegisterAllMetrics(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	RegisterAllMetrics(registry, "test")
 
-	gotReconciler, gotRetryKubeapi, gotScale := gotSubsystems(registry)
+	gotReconciler, gotRetryKubeapi, gotScale, gotInformerCache := gotSubsystems(registry)
 	assert.True(t, gotReconciler)
 	assert.True(t, gotScale)
 	assert.True(t, gotRetryKubeapi)
+	assert.True(t, gotInformerCache)
 }
 
 func TestUnregisterAllMetrics(t *testing.T) {
@@ -45,16 +47,17 @@ func TestUnregisterAllMetrics(t *testing.T) {
 	RegisterAllMetrics(registry, "")
 	UnregisterAllMetrics(registry)
 
-	gotReconciler, gotRetryKubeapi, gotScale := gotSubsystems(registry)
+	gotReconciler, gotRetryKubeapi, gotScale, gotInformerCache := gotSubsystems(registry)
 	assert.False(t, gotReconciler)
 	assert.False(t, gotScale)
 	assert.False(t, gotRetryKubeapi)
+	assert.False(t, gotInformerCache)
 }
 
-func gotSubsystems(registry *prometheus.Registry) (bool, bool, bool) {
+func gotSubsystems(registry *prometheus.Registry) (bool, bool, bool, bool) {
 	descCh := make(chan *prometheus.Desc)
 	doneCh := make(chan struct{})
-	gotReconciler, gotRetryKubeapi, gotScale := false, false, false
+	gotReconciler, gotRetryKubeapi, gotScale, gotInformerCache := false, false, false, false
 
 	var wg sync.WaitGroup
 	wg.Add(1)
@@ -75,6 +78,11 @@ func gotSubsystems(registry *prometheus.Registry) (bool, bool, bool) {
 				if strings.Contains(desc.String(), fmt.Sprintf("%s_%s", metricscommon.Namespace, scale.Subsystem)) {
 					gotScale = true
 				}
+
+				if strings.Contains(desc.String(), fmt.Sprintf("%s_%s", metricscommon.Namespace, informercache.Subsystem)) {
+					gotInformerCache = true
+				}
+
 			case <-doneCh:
 				return
 			}
@@ -84,5 +92,5 @@ func gotSubsystems(registry *prometheus.Registry) (bool, bool, bool) {
 	registry.Describe(descCh)
 	doneCh <- struct{}{}
 	wg.Wait()
-	return gotReconciler, gotRetryKubeapi, gotScale
+	return gotReconciler, gotRetryKubeapi, gotScale, gotInformerCache
 }

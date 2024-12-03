@@ -46,10 +46,11 @@ func (m *MockKubeHelper) Get(ctx context.Context, name types.NamespacedName) (bo
 func (m *MockKubeHelper) Patch(
 	ctx context.Context,
 	originalPod *v1.Pod,
-	patchResize bool,
 	mutatePodFunc func(*v1.Pod) (bool, *v1.Pod, error),
+	patchResize bool,
+	mustSyncCache bool,
 ) (*v1.Pod, error) {
-	args := m.Called(ctx, originalPod, patchResize, mutatePodFunc)
+	args := m.Called(ctx, originalPod, mutatePodFunc, patchResize, mustSyncCache)
 	return args.Get(0).(*v1.Pod), args.Error(1)
 }
 
@@ -60,8 +61,9 @@ func (m *MockKubeHelper) UpdateContainerResources(
 	cpuRequests resource.Quantity, cpuLimits resource.Quantity,
 	memoryRequests resource.Quantity, memoryLimits resource.Quantity,
 	addPodMutationFunc func(pod *v1.Pod) (bool, *v1.Pod, error),
+	addPodMutationMustSyncCache bool,
 ) (*v1.Pod, error) {
-	args := m.Called(ctx, pod, containerName, cpuRequests, cpuLimits, memoryRequests, memoryLimits, addPodMutationFunc)
+	args := m.Called(ctx, pod, containerName, cpuRequests, cpuLimits, memoryRequests, memoryLimits, addPodMutationFunc, addPodMutationMustSyncCache)
 	return args.Get(0).(*v1.Pod), args.Error(1)
 }
 
@@ -95,11 +97,11 @@ func (m *MockKubeHelper) GetDefault() {
 }
 
 func (m *MockKubeHelper) PatchDefault() {
-	m.On("Patch", mock.Anything, mock.Anything, mock.Anything).Return(&v1.Pod{}, nil)
+	m.On("Patch", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&v1.Pod{}, nil)
 }
 
 func (m *MockKubeHelper) UpdateContainerResourcesDefault() {
-	m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(&v1.Pod{}, nil)
 }
 

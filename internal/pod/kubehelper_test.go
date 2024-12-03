@@ -121,6 +121,7 @@ func TestKubeHelperGet(t *testing.T) {
 	}
 }
 
+// TODO(wt) update tests to ensure latest was gotten where sync=true
 func TestKubeHelperPatch(t *testing.T) {
 	t.Run("UnableToMutatePod", func(t *testing.T) {
 		h := newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
@@ -131,8 +132,9 @@ func TestKubeHelperPatch(t *testing.T) {
 		got, err := h.Patch(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			&v1.Pod{},
-			false,
 			func(pod *v1.Pod) (bool, *v1.Pod, error) { return false, nil, errors.New("") },
+			false,
+			false,
 		)
 		assert.Nil(t, got)
 		assert.Contains(t, err.Error(), "unable to mutate pod")
@@ -147,8 +149,9 @@ func TestKubeHelperPatch(t *testing.T) {
 		got, err := h.Patch(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			&v1.Pod{},
-			false,
 			func(pod *v1.Pod) (bool, *v1.Pod, error) { return true, pod, nil },
+			false,
+			false,
 		)
 		assert.Nil(t, got)
 		assert.Contains(t, err.Error(), "unable to patch pod")
@@ -169,8 +172,9 @@ func TestKubeHelperPatch(t *testing.T) {
 		got, err := h.Patch(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			&v1.Pod{},
-			false,
 			func(pod *v1.Pod) (bool, *v1.Pod, error) { return true, pod, nil },
+			false,
+			false,
 		)
 		assert.Nil(t, got)
 		assert.Contains(t, err.Error(), "unable to get pod when resolving conflict")
@@ -192,8 +196,9 @@ func TestKubeHelperPatch(t *testing.T) {
 		got, err := h.Patch(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			&v1.Pod{},
-			false,
 			func(pod *v1.Pod) (bool, *v1.Pod, error) { return true, pod, nil },
+			false,
+			false,
 		)
 		assert.Nil(t, got)
 		assert.Contains(t, err.Error(), "pod doesn't exist when resolving conflict")
@@ -215,7 +220,13 @@ func TestKubeHelperPatch(t *testing.T) {
 			func() interceptor.Funcs { return interceptor.Funcs{} },
 		))
 
-		got, err := h.Patch(contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(), pod, true, podMutationFunc)
+		got, err := h.Patch(
+			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
+			pod,
+			podMutationFunc,
+			true,
+			true,
+		)
 		assert.Nil(t, err)
 		assert.False(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(cpuRequests))
 		assert.False(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(cpuLimits))
@@ -249,7 +260,13 @@ func TestKubeHelperPatch(t *testing.T) {
 		))
 
 		beforeMetricVal, _ := testutil.GetCounterMetricValue(retry.Retry(strings.ToLower(string(metav1.StatusReasonConflict))))
-		got, err := h.Patch(contexttest.NewCtxBuilder(contexttest.NewOneRetryCtxConfig(nil)).Build(), pod, true, podMutationFunc)
+		got, err := h.Patch(
+			contexttest.NewCtxBuilder(contexttest.NewOneRetryCtxConfig(nil)).Build(),
+			pod,
+			podMutationFunc,
+			true,
+			true,
+		)
 		assert.Nil(t, err)
 		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(cpuRequests))
 		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(cpuLimits))
@@ -275,7 +292,13 @@ func TestKubeHelperPatch(t *testing.T) {
 			func() interceptor.Funcs { return interceptor.Funcs{} },
 		))
 
-		got, err := h.Patch(contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(), pod, true, podMutationFunc)
+		got, err := h.Patch(
+			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
+			pod,
+			podMutationFunc,
+			true,
+			true,
+		)
 		assert.Nil(t, err)
 		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(cpuRequests))
 		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(cpuLimits))
@@ -300,7 +323,13 @@ func TestKubeHelperPatch(t *testing.T) {
 			func() interceptor.Funcs { return interceptor.Funcs{} },
 		))
 
-		got, err := h.Patch(contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(), pod, false, podMutationFunc)
+		got, err := h.Patch(
+			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
+			pod,
+			podMutationFunc,
+			false,
+			false,
+		)
 		assert.Nil(t, err)
 		assert.Equal(t, "test", got.Annotations["test"])
 
@@ -321,6 +350,7 @@ func TestKubeHelperUpdateContainerResources(t *testing.T) {
 			resource.Quantity{}, resource.Quantity{},
 			resource.Quantity{}, resource.Quantity{},
 			nil,
+			false,
 		)
 		assert.Nil(t, got)
 		assert.Contains(t, err.Error(), "container not present")
@@ -341,6 +371,7 @@ func TestKubeHelperUpdateContainerResources(t *testing.T) {
 			resource.Quantity{}, resource.Quantity{},
 			resource.Quantity{}, resource.Quantity{},
 			nil,
+			false,
 		)
 		assert.Nil(t, got)
 		assert.Contains(t, err.Error(), "unable to patch pod resize subresource")
@@ -364,6 +395,7 @@ func TestKubeHelperUpdateContainerResources(t *testing.T) {
 			func(pod *v1.Pod) (bool, *v1.Pod, error) {
 				return false, nil, errors.New("")
 			},
+			false,
 		)
 		assert.Nil(t, got)
 		assert.Contains(t, err.Error(), "unable to patch pod additional mutations")
@@ -388,6 +420,7 @@ func TestKubeHelperUpdateContainerResources(t *testing.T) {
 				pod.Annotations["test"] = "test"
 				return true, pod, nil
 			},
+			false,
 		)
 		assert.Nil(t, err)
 		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(cpuRequests))

@@ -224,6 +224,7 @@ func (a *targetContainerAction) notStartedWithPostStartupResAction(
 		config.GetCpuConfig().Startup, config.GetCpuConfig().Startup,
 		config.GetMemoryConfig().Startup, config.GetMemoryConfig().Startup,
 		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUpCommanded),
+		true,
 	)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
@@ -249,6 +250,7 @@ func (a *targetContainerAction) startedWithStartupResAction(
 		config.GetCpuConfig().PostStartupRequests, config.GetCpuConfig().PostStartupLimits,
 		config.GetMemoryConfig().PostStartupRequests, config.GetMemoryConfig().PostStartupLimits,
 		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateDownCommanded),
+		true,
 	)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
@@ -286,6 +288,7 @@ func (a *targetContainerAction) notStartedWithUnknownResAction(
 		config.GetCpuConfig().Startup, config.GetCpuConfig().Startup,
 		config.GetMemoryConfig().Startup, config.GetMemoryConfig().Startup,
 		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded),
+		true,
 	)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
@@ -312,6 +315,7 @@ func (a *targetContainerAction) startedWithUnknownResAction(
 		config.GetCpuConfig().PostStartupRequests, config.GetCpuConfig().PostStartupLimits,
 		config.GetMemoryConfig().PostStartupRequests, config.GetMemoryConfig().PostStartupLimits,
 		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded),
+		true,
 	)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")

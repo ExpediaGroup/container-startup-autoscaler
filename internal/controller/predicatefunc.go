@@ -52,8 +52,6 @@ import (
 	  predicates.
 */
 
-// func(event.TypedCreateEvent[object]) bool
-
 // PredicateCreateFunc reports whether create events should be reconciled.
 func PredicateCreateFunc(_ event.TypedCreateEvent[*v1.Pod]) bool {
 	// Never filter.
