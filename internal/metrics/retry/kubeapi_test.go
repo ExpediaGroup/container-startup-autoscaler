@@ -33,13 +33,6 @@ func TestRegisterKubeApiMetrics(t *testing.T) {
 	assert.Equal(t, len(allMetrics), len(descs(registry)))
 }
 
-func TestUnregisterKubeApiMetrics(t *testing.T) {
-	registry := prometheus.NewRegistry()
-	RegisterKubeApiMetrics(registry, "")
-	UnregisterKubeApiMetrics(registry)
-	assert.Equal(t, 0, len(descs(registry)))
-}
-
 func TestResetKubeApiMetrics(t *testing.T) {
 	Retry("").Inc()
 	value, _ := testutil.GetCounterMetricValue(Retry(""))

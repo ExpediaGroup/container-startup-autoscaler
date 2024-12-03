@@ -31,11 +31,3 @@ func RegisterAllMetrics(registry metrics.RegistererGatherer, controllerName stri
 	scale.RegisterMetrics(registry, controllerName)
 	informercache.RegisterMetrics(registry, controllerName)
 }
-
-// UnregisterAllMetrics unregisters all metrics within the supplied registry.
-func UnregisterAllMetrics(registry metrics.RegistererGatherer) {
-	reconciler.UnregisterMetrics(registry)
-	retry.UnregisterKubeApiMetrics(registry)
-	scale.UnregisterMetrics(registry)
-	informercache.UnregisterMetrics(registry)
-}

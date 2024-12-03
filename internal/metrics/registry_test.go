@@ -42,18 +42,6 @@ func TestRegisterAllMetrics(t *testing.T) {
 	assert.True(t, gotInformerCache)
 }
 
-func TestUnregisterAllMetrics(t *testing.T) {
-	registry := prometheus.NewRegistry()
-	RegisterAllMetrics(registry, "")
-	UnregisterAllMetrics(registry)
-
-	gotReconciler, gotRetryKubeapi, gotScale, gotInformerCache := gotSubsystems(registry)
-	assert.False(t, gotReconciler)
-	assert.False(t, gotScale)
-	assert.False(t, gotRetryKubeapi)
-	assert.False(t, gotInformerCache)
-}
-
 func gotSubsystems(registry *prometheus.Registry) (bool, bool, bool, bool) {
 	descCh := make(chan *prometheus.Desc)
 	doneCh := make(chan struct{})

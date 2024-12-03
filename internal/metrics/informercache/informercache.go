@@ -63,12 +63,6 @@ func RegisterMetrics(registry metrics.RegistererGatherer, controllerName string)
 	registry.MustRegister(allMetrics...)
 }
 
-func UnregisterMetrics(registry metrics.RegistererGatherer) {
-	for _, metric := range allMetrics {
-		registry.Unregister(metric)
-	}
-}
-
 func ResetMetrics() {
 	metricscommon.ResetMetrics(allMetrics)
 }

@@ -123,7 +123,6 @@ func (c *controller) Initialize(runtimeController ...runtimecontroller.Controlle
 	}
 
 	csametrics.RegisterAllMetrics(metrics.Registry, Name)
-	defer csametrics.UnregisterAllMetrics(metrics.Registry)
 	c.initialized = true
 
 	return nil

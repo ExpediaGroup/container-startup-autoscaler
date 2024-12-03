@@ -51,12 +51,6 @@ func RegisterKubeApiMetrics(registry metrics.RegistererGatherer, controllerName 
 	registry.MustRegister(allMetrics...)
 }
 
-func UnregisterKubeApiMetrics(registry metrics.RegistererGatherer) {
-	for _, metric := range allMetrics {
-		registry.Unregister(metric)
-	}
-}
-
 func ResetKubeApiMetrics() {
 	metricscommon.ResetMetrics(allMetrics)
 }

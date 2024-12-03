@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// TODO(wt) fix non-existent metrics
 // TODO(wt) resize subresource switch done - try out with sandbox scripts
 // TODO(wt) check integration tests
 // TODO(wt) check for csa metrics in integration tests
