@@ -31,25 +31,21 @@ const (
 	patchSyncTimeoutName = "patch_sync_timeout"
 )
 
-var cName string
-
 var (
-	// TODO(wt) add to docs
 	patchSyncPoll = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      patchSyncPollName,
-		Help:      "Number of informer cache sync polls after Kube API patch performed",
+		Help:      "Number of informer cache sync polls after a Kube API patch was performed",
 		Buckets:   []float64{1, 2, 4, 8, 16, 32, 64},
-	}, []string{metricscommon.ControllerNameLabelName})
+	}, []string{})
 
-	// TODO(wt) add to docs
 	patchSyncTimeout = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      patchSyncTimeoutName,
-		Help:      "Number of informer cache sync timeouts after Kube API patch performed (may result in inconsistent CSA status updates)",
-	}, []string{metricscommon.ControllerNameLabelName})
+		Help:      "Number of informer cache sync timeouts after a Kube API patch was performed (may result in inconsistent CSA status updates)",
+	}, []string{})
 )
 
 // allMetrics must include all metrics defined above.
@@ -58,8 +54,7 @@ var allMetrics = []prometheus.Collector{
 	patchSyncTimeout,
 }
 
-func RegisterMetrics(registry metrics.RegistererGatherer, controllerName string) {
-	cName = controllerName
+func RegisterMetrics(registry metrics.RegistererGatherer) {
 	registry.MustRegister(allMetrics...)
 }
 
@@ -68,9 +63,9 @@ func ResetMetrics() {
 }
 
 func PatchSyncPoll() prometheus.Observer {
-	return patchSyncPoll.WithLabelValues(cName)
+	return patchSyncPoll.WithLabelValues()
 }
 
 func PatchSyncTimeout() prometheus.Counter {
-	return patchSyncTimeout.WithLabelValues(cName)
+	return patchSyncTimeout.WithLabelValues()
 }

@@ -29,7 +29,7 @@ import (
 
 func TestRegisterMetrics(t *testing.T) {
 	registry := prometheus.NewRegistry()
-	RegisterMetrics(registry, "")
+	RegisterMetrics(registry)
 	assert.Equal(t, len(allMetrics), len(descs(registry)))
 }
 

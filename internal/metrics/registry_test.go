@@ -33,7 +33,7 @@ import (
 
 func TestRegisterAllMetrics(t *testing.T) {
 	registry := prometheus.NewRegistry()
-	RegisterAllMetrics(registry, "test")
+	RegisterAllMetrics(registry)
 
 	gotReconciler, gotRetryKubeapi, gotScale, gotInformerCache := gotSubsystems(registry)
 	assert.True(t, gotReconciler)

@@ -25,9 +25,9 @@ import (
 )
 
 // RegisterAllMetrics registers all metrics with the supplied registry.
-func RegisterAllMetrics(registry metrics.RegistererGatherer, controllerName string) {
-	reconciler.RegisterMetrics(registry, controllerName)
-	retry.RegisterKubeApiMetrics(registry, controllerName)
-	scale.RegisterMetrics(registry, controllerName)
-	informercache.RegisterMetrics(registry, controllerName)
+func RegisterAllMetrics(registry metrics.RegistererGatherer) {
+	reconciler.RegisterMetrics(registry)
+	retry.RegisterKubeApiMetrics(registry)
+	scale.RegisterMetrics(registry)
+	informercache.RegisterMetrics(registry)
 }

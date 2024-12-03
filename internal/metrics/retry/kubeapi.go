@@ -30,15 +30,13 @@ const (
 	retryName = "retry"
 )
 
-var cName string
-
 var (
 	retry = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: SubsystemKubeApi,
 		Name:      retryName,
 		Help:      "Number of Kube API retries (by reason)",
-	}, []string{metricscommon.ControllerNameLabelName, metricscommon.ReasonLabelName})
+	}, []string{metricscommon.ReasonLabelName})
 )
 
 // allMetrics must include all metrics defined above.
@@ -46,8 +44,7 @@ var allMetrics = []prometheus.Collector{
 	retry,
 }
 
-func RegisterKubeApiMetrics(registry metrics.RegistererGatherer, controllerName string) {
-	cName = controllerName
+func RegisterKubeApiMetrics(registry metrics.RegistererGatherer) {
 	registry.MustRegister(allMetrics...)
 }
 
@@ -56,5 +53,5 @@ func ResetKubeApiMetrics() {
 }
 
 func Retry(reason string) prometheus.Counter {
-	return retry.WithLabelValues(cName, reason)
+	return retry.WithLabelValues(reason)
 }

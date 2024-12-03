@@ -29,7 +29,7 @@ import (
 
 func TestRegisterKubeApiMetrics(t *testing.T) {
 	registry := prometheus.NewRegistry()
-	RegisterKubeApiMetrics(registry, "")
+	RegisterKubeApiMetrics(registry)
 	assert.Equal(t, len(allMetrics), len(descs(registry)))
 }
 

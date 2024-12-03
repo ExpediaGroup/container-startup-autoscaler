@@ -44,8 +44,10 @@ non-production Kubernetes clusters.
     * [Reconciler](#reconciler)
     * [Scale](#scale)
     * [Kube API Retry](#kube-api-retry)
+    * [Informer Cache](#informer-cache)
   * [Retry](#retry)
     * [Kube API](#kube-api)
+  * [Informer Cache Sync](#informer-cache-sync)
   * [Encountering Unknown Resources](#encountering-unknown-resources)
   * [CSA Configuration](#csa-configuration)
     * [Controller](#controller)
@@ -338,30 +340,26 @@ values.
 ### Reconciler
 Prefixed with `csa_reconciler_`:
 
-| Metric Name                    | Type    | Labels       | Description                                                                                                          |
-|--------------------------------|---------|--------------|----------------------------------------------------------------------------------------------------------------------|
-| `skipped_only_status_change`   | Counter | `controller` | Number of reconciles that were skipped because only the scaler controller status changed.                            |
-| `existing_in_progress`         | Counter | `controller` | Number of attempted reconciles where one was already in progress for the same namespace/name (results in a requeue). |
-| `failure_unable_to_get_pod`    | Counter | `controller` | Number of reconciles where there was a failure to get the pod (results in a requeue).                                |
-| `failure_pod_doesnt_exist`     | Counter | `controller` | Number of reconciles where the pod was found not to exist (results in failure).                                      |
-| `failure_validation`           | Counter | `controller` | Number of reconciles where there was a failure to validate (results in failure).                                     |
-| `failure_states_determination` | Counter | `controller` | Number of reconciles where there was a failure to determine states (results in failure).                             |
-| `failure_states_action`        | Counter | `controller` | Number of reconciles where there was a failure to action the determined states (results in failure).                 |
-
-Labels:
-- `controller`: the CSA controller name.
+| Metric Name                    | Type    | Labels | Description                                                                                                          |
+|--------------------------------|---------|--------|----------------------------------------------------------------------------------------------------------------------|
+| `skipped_only_status_change`   | Counter | None   | Number of reconciles that were skipped because only the scaler controller status changed.                            |
+| `existing_in_progress`         | Counter | None   | Number of attempted reconciles where one was already in progress for the same namespace/name (results in a requeue). |
+| `failure_unable_to_get_pod`    | Counter | None   | Number of reconciles where there was a failure to get the pod (results in a requeue).                                |
+| `failure_pod_doesnt_exist`     | Counter | None   | Number of reconciles where the pod was found not to exist (results in failure).                                      |
+| `failure_validation`           | Counter | None   | Number of reconciles where there was a failure to validate (results in failure).                                     |
+| `failure_states_determination` | Counter | None   | Number of reconciles where there was a failure to determine states (results in failure).                             |
+| `failure_states_action`        | Counter | None   | Number of reconciles where there was a failure to action the determined states (results in failure).                 |
 
 ### Scale
 Prefixed with `csa_scale_`:
 
-| Metric Name                   | Type      | Labels                               | Description                                                                                                   |
-|-------------------------------|-----------|--------------------------------------|---------------------------------------------------------------------------------------------------------------|
-| `failure`                     | Counter   | `controller`, `direction`, `reason`  | Number of scale failures.                                                                                     |
-| `commanded_unknown_resources` | Counter   | `controller`                         | Number of scales commanded upon encountering unknown resources (see [here](#encountering-unknown-resources)). |
-| `duration_seconds`            | Histogram | `controller`, `direction`, `outcome` | Scale duration (from commanded to enacted).                                                                   |
+| Metric Name                   | Type      | Labels                 | Description                                                                                                   |
+|-------------------------------|-----------|------------------------|---------------------------------------------------------------------------------------------------------------|
+| `failure`                     | Counter   | `direction`, `reason`  | Number of scale failures.                                                                                     |
+| `commanded_unknown_resources` | Counter   | None                   | Number of scales commanded upon encountering unknown resources (see [here](#encountering-unknown-resources)). |
+| `duration_seconds`            | Histogram | `direction`, `outcome` | Scale duration (from commanded to enacted).                                                                   |
 
 Labels:
-- `controller`: the CSA controller name.
 - `direction`: the direction of the scale - `up`/`down`.
 - `reason`: the reason why the scale failed.
 - `outcome`: the outcome of the scale - `success`/`failure`.
@@ -369,15 +367,24 @@ Labels:
 ### Kube API Retry
 Prefixed with `csa_retrykubeapi_`:
 
-| Metric Name | Type    | Labels                 | Description                 |
-|-------------|---------|------------------------|-----------------------------|
-| `retry`     | Counter | `controller`, `reason` | Number of Kube API retries. |
+| Metric Name | Type    | Labels   | Description                 |
+|-------------|---------|----------|-----------------------------|
+| `retry`     | Counter | `reason` | Number of Kube API retries. |
 
 Labels:
-- `controller`: the CSA controller name.
 - `reason`: the Kube API response that caused a retry to occur.
 
 See [below](#retry) for more information on retries.
+
+### Informer Cache
+Prefixed with `csa_informercache_`:
+
+| Metric Name          | Type      | Labels | Description                                                                                                                  |
+|----------------------|-----------|--------|------------------------------------------------------------------------------------------------------------------------------|
+| `patch_sync_poll`    | Histogram | None   | Number of informer cache sync polls after a Kube API patch was performed.                                                    |
+| `patch_sync_timeout` | Counter   | None   | Number of informer cache sync timeouts after a Kube API patch was performed (may result in inconsistent CSA status updates). |
+
+See [below](#informer-cache-sync) for more information on informer cache syncs.
 
 ## Retry
 ### Kube API
@@ -386,6 +393,9 @@ retry according to CSA retry [configuration](#csa-configuration).
 
 CSA handles situations where Kube API reports a conflict upon a pod update. In this case, CSA retrieves the latest
 version of the pod and reapplies the update, before trying again (subject to retry configuration).   
+
+## Informer Cache Sync
+TODO(wt) complete
 
 ## Encountering Unknown Resources
 By default, CSA will yield an error if it encounters resources applied to a target container that it doesn't recognize

@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const Name = "container-startup-autoscaler"
+const Name = "csa"
 
 var instance *controller
 
@@ -122,7 +122,7 @@ func (c *controller) Initialize(runtimeController ...runtimecontroller.Controlle
 		return common.WrapErrorf(err, "unable to watch pods")
 	}
 
-	csametrics.RegisterAllMetrics(metrics.Registry, Name)
+	csametrics.RegisterAllMetrics(metrics.Registry)
 	c.initialized = true
 
 	return nil

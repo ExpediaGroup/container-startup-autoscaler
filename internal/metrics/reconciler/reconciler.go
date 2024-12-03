@@ -36,57 +36,55 @@ const (
 	failureStatesActionName        = "failure_states_action"
 )
 
-var cName string
-
 var (
 	skippedOnlyStatusChange = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      skippedOnlyStatusChangeName,
 		Help:      "Number of reconciles that were skipped because only the scaler controller status changed",
-	}, []string{metricscommon.ControllerNameLabelName})
+	}, []string{})
 
 	existingInProgress = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      existingInProgressName,
 		Help:      "Number of attempted reconciles where one was already in progress for the same namespace/name (results in a requeue)",
-	}, []string{metricscommon.ControllerNameLabelName})
+	}, []string{})
 
 	failureUnableToGetPod = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      failureUnableToGetPodName,
 		Help:      "Number of reconciles where there was a failure to get the pod (results in a requeue)",
-	}, []string{metricscommon.ControllerNameLabelName})
+	}, []string{})
 
 	failurePodDoesntExist = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      failurePodDoesntExistName,
 		Help:      "Number of reconciles where the pod was found not to exist (results in failure)",
-	}, []string{metricscommon.ControllerNameLabelName})
+	}, []string{})
 
 	failureValidation = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      failureValidationName,
 		Help:      "Number of reconciles where there was a failure to validate (results in failure)",
-	}, []string{metricscommon.ControllerNameLabelName})
+	}, []string{})
 
 	failureStatesDetermination = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      failureStatesDeterminationName,
 		Help:      "Number of reconciles where there was a failure to determine states (results in failure)",
-	}, []string{metricscommon.ControllerNameLabelName})
+	}, []string{})
 
 	failureStatesAction = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      failureStatesActionName,
 		Help:      "Number of reconciles where there was a failure to action the determined states (results in failure)",
-	}, []string{metricscommon.ControllerNameLabelName})
+	}, []string{})
 )
 
 // allMetrics must include all metrics defined above.
@@ -95,8 +93,7 @@ var allMetrics = []prometheus.Collector{
 	failureStatesDetermination, failureStatesAction,
 }
 
-func RegisterMetrics(registry metrics.RegistererGatherer, controllerName string) {
-	cName = controllerName
+func RegisterMetrics(registry metrics.RegistererGatherer) {
 	registry.MustRegister(allMetrics...)
 }
 
@@ -105,29 +102,29 @@ func ResetMetrics() {
 }
 
 func SkippedOnlyStatusChange() prometheus.Counter {
-	return skippedOnlyStatusChange.WithLabelValues(cName)
+	return skippedOnlyStatusChange.WithLabelValues()
 }
 
 func ExistingInProgress() prometheus.Counter {
-	return existingInProgress.WithLabelValues(cName)
+	return existingInProgress.WithLabelValues()
 }
 
 func FailureUnableToGetPod() prometheus.Counter {
-	return failureUnableToGetPod.WithLabelValues(cName)
+	return failureUnableToGetPod.WithLabelValues()
 }
 
 func FailurePodDoesntExist() prometheus.Counter {
-	return failurePodDoesntExist.WithLabelValues(cName)
+	return failurePodDoesntExist.WithLabelValues()
 }
 
 func FailureValidation() prometheus.Counter {
-	return failureValidation.WithLabelValues(cName)
+	return failureValidation.WithLabelValues()
 }
 
 func FailureStatesDetermination() prometheus.Counter {
-	return failureStatesDetermination.WithLabelValues(cName)
+	return failureStatesDetermination.WithLabelValues()
 }
 
 func FailureStatesAction() prometheus.Counter {
-	return failureStatesAction.WithLabelValues(cName)
+	return failureStatesAction.WithLabelValues()
 }
