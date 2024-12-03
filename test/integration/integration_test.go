@@ -31,7 +31,7 @@ import (
 
 /*
 
-// TODO(wt) 'In-place Update of Pod Resources' implementation bug (Kube 1.29)
+TODO(wt) 'In-place Update of Pod Resources' implementation bug (still in Kube 1.32).
 Note: there currently appears to be a bug in the 'In-place Update of Pod Resources' implementation whereby successful
 resizes are restarted - this is specifically mitigated against within csaWaitStatus(). This sometimes (depending on the
 timing of retrieving pods via kubectl) manifested in a CSA status that (correctly) stated that the resize had occurred,

@@ -9,7 +9,7 @@ works with deployments, statefulsets, daemonsets and other workload management A
 CSA is implemented using [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime).
 
 CSA is built around Kube's [In-place Update of Pod Resources](https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/1287-in-place-update-pod-resources)
-feature, which is currently in alpha state as of Kubernetes 1.31 and therefore requires the `InPlacePodVerticalScaling`
+feature, which is currently in alpha state as of Kubernetes 1.32 (TODO(wt) confirm) and therefore requires the `InPlacePodVerticalScaling`
 feature gate to be enabled. Beta/stable targets are indicated [here](https://github.com/kubernetes/enhancements/issues/1287).
 The feature implementation (along with the corresponding implementation of CSA) is likely to change until it reaches
 stable status. See [CHANGELOG.md](CHANGELOG.md) for details of CSA versions and Kubernetes version compatibility.
@@ -155,11 +155,11 @@ scaled pod.
 ## Limitations
 The following limitations are currently in place:
 
-- Originally admitted target container resources must be guaranteed (`requests` == `limits`) to match the guaranteed
-  nature of startup resources - Kube API currently rejects any change in resource QoS. This should be addressed as the
-  `In-place Update of Pod Resources` feature matures.
-- Post-startup resources must be guaranteed (`requests` == `limits`) to match the guaranteed nature of startup
-  resources per above.
+- Originally admitted target container resources must be guaranteed (`requests` == `limits`) because CSA only allows
+  guaranteed resources for its startup settings and the `In-place Update of Pod Resources` feature
+  [does not currently allow](https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/1287-in-place-update-pod-resources#qos-class)
+  changing QoS class.
+- Post-startup resources must also currently be guaranteed (`requests` == `limits`) to avoid a changing QoS class.
 - Failed target container scales are not re-attempted.
 
 ## Restrictions
@@ -379,10 +379,10 @@ See [below](#retry) for more information on retries.
 ### Informer Cache
 Prefixed with `csa_informercache_`:
 
-| Metric Name          | Type      | Labels | Description                                                                                                                  |
-|----------------------|-----------|--------|------------------------------------------------------------------------------------------------------------------------------|
-| `patch_sync_poll`    | Histogram | None   | Number of informer cache sync polls after a Kube API patch was performed.                                                    |
-| `patch_sync_timeout` | Counter   | None   | Number of informer cache sync timeouts after a Kube API patch was performed (may result in inconsistent CSA status updates). |
+| Metric Name    | Type      | Labels | Description                                                                                                                                 |
+|----------------|-----------|--------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| `sync_poll`    | Histogram | None   | Number of informer cache sync polls after a pod mutation was performed via the Kube API.                                                    |
+| `sync_timeout` | Counter   | None   | Number of informer cache sync timeouts after a pod mutation was performed via the Kube API (may result in inconsistent CSA status updates). |
 
 See [below](#informer-cache-sync) for more information on informer cache syncs.
 
@@ -395,7 +395,24 @@ CSA handles situations where Kube API reports a conflict upon a pod update. In t
 version of the pod and reapplies the update, before trying again (subject to retry configuration).   
 
 ## Informer Cache Sync
-TODO(wt) complete
+The CSA [status](#status) includes timestamps that CSA uses itself internally, such as for calculating scale durations.
+When status is updated, CSA waits for the updated pod to be reflected in the informer cache prior to finishing
+the reconcile to ensure following reconciles have the latest status available to work upon. Without this mechanism, the
+rapid pace of pod updates during resizes can prevent subsequent reconciles from retrieving the latest status. This
+occurs because the informer may not have cached the updated pod in time, resulting in inaccurate status updates.
+
+The CSA reconciler doesn't allow concurrent reconciles for same pod so subsequent reconciles will not start until this
+wait described above has completed.
+
+The informer cache metrics described [above](#informer-cache) provide insight into how quickly the informer cache is
+updated (synced) after status is updated, and whether any timeouts occur:
+
+- `patch_sync_poll`: the number of cache polls that were required to confirm the cache was populated with the updated
+  pod. The cache is polled periodically per the `waitForCacheUpdatePollMillis` configuration [here](internal/pod/kubehelper.go).
+  Higher values indicate longer cache sync times.
+- `patch_sync_timeout`: the number of times the cache sync timed out per the`waitForCacheUpdateTimeoutMillis`
+  configuration [here](internal/pod/kubehelper.go). Timeouts do not result in an error or termination of the reconcile,
+  but may result in inconsistent CSA status updates.  
 
 ## Encountering Unknown Resources
 By default, CSA will yield an error if it encounters resources applied to a target container that it doesn't recognize

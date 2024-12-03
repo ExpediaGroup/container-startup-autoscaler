@@ -155,7 +155,7 @@ func csaWaitStatus(
 		logMessage(t, fmt.Sprintf("current csa status for pod '%s/%s': %s", podNamespace, podName, lastStatusAnnJson))
 
 		if strings.Contains(statusAnn.Status, waitMsgContains) {
-			// TODO(wt) 'In-place Update of Pod Resources' implementation bug (Kube 1.29)
+			// TODO(wt) 'In-place Update of Pod Resources' implementation bug (still in Kube 1.32).
 			//  See large comment at top of integration_test.go - need to re-get pod in case resize is restarted.
 			//  Remove once fixed.
 			if getAgain {

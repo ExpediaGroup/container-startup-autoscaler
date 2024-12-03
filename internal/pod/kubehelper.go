@@ -293,13 +293,13 @@ func (h *kubeHelper) waitForCacheUpdate(ctx context.Context, pod *v1.Pod) *v1.Po
 			exists, podFromCache, err := h.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name})
 			if err == nil && exists && podFromCache.ResourceVersion >= pod.ResourceVersion {
 				logging.Infof(ctx, logging.VTrace, "pod polled from cache %d time(s) in total", pollCount)
-				informercache.PatchSyncPoll().Observe(float64(pollCount))
+				informercache.SyncPoll().Observe(float64(pollCount))
 				return podFromCache
 			}
 
 		case <-timeout:
 			logging.Infof(ctx, logging.VDebug, "cache wasn't updated in time")
-			informercache.PatchSyncTimeout().Inc()
+			informercache.SyncTimeout().Inc()
 			return nil
 		}
 	}

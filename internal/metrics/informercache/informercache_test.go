@@ -34,30 +34,30 @@ func TestRegisterMetrics(t *testing.T) {
 }
 
 func TestResetMetrics(t *testing.T) {
-	PatchSyncTimeout().Inc()
-	value, _ := testutil.GetCounterMetricValue(PatchSyncTimeout())
+	SyncTimeout().Inc()
+	value, _ := testutil.GetCounterMetricValue(SyncTimeout())
 	assert.Equal(t, float64(1), value)
 	ResetMetrics()
 
-	value, _ = testutil.GetCounterMetricValue(PatchSyncTimeout())
+	value, _ = testutil.GetCounterMetricValue(SyncTimeout())
 	assert.Equal(t, float64(0), value)
 }
 
 func TestPatchSyncPoll(t *testing.T) {
-	m := PatchSyncPoll().(prometheus.Metric)
+	m := SyncPoll().(prometheus.Metric)
 	assert.Contains(
 		t,
 		m.Desc().String(),
-		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, patchSyncPollName),
+		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, syncPollName),
 	)
 }
 
 func TestPatchSyncTimeout(t *testing.T) {
-	m := PatchSyncTimeout()
+	m := SyncTimeout()
 	assert.Contains(
 		t,
 		m.Desc().String(),
-		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, patchSyncTimeoutName),
+		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, syncTimeoutName),
 	)
 }
 
