@@ -2,6 +2,19 @@
 - Based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.4.0
+2024-12-?? TODO(wt)
+
+### Added
+- Support for Kube 1.32.
+  - Cluster role includes `pods/resize` rule.
+
+### Changed
+- CSA version.
+
+### CSA Version
+[0.5.0](../../CHANGELOG.md#050)
+
 ## 1.3.0
 2024-11-29
 
