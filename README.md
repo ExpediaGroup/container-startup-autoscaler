@@ -306,7 +306,7 @@ Example `info`-level log:
 ```json
 {
 	"level": "info",
-	"controller": "container-startup-autoscaler",
+	"controller": "csa",
 	"namespace": "echoserver",
 	"name": "echoserver-5f65d8f65d-mvqt8",
 	"reconcileID": "6157dd49-7aa9-4cac-bbaf-a739fa48cc61",
