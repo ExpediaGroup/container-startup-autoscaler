@@ -105,10 +105,7 @@ func run(_ *cobra.Command, _ []string) {
 		logging.Fatalf(nil, err, "unable to add healthz check")
 	}
 
-	csaController, err := controller.NewController(controllerConfig, runtimeManager)
-	if err != nil {
-		logging.Fatalf(nil, err, "unable to create controller")
-	}
+	csaController := controller.NewController(controllerConfig, runtimeManager)
 
 	if err = csaController.Initialize(); err != nil {
 		logging.Fatalf(nil, err, "unable to initialize controller")
