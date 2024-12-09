@@ -63,7 +63,7 @@ func NewController(
 }
 
 // Initialize performs the tasks necessary to initialize the controller and register it with the controller-runtime
-// manager. May only be invoked once. runtimeController parameter is provided for test injection.
+// manager. Will only be invoked once. runtimeController parameter is provided for test injection.
 func (c *controller) Initialize(runtimeController ...runtimecontroller.Controller) error {
 	var retErr error
 
