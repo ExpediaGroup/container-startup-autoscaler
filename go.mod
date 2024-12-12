@@ -13,10 +13,10 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
 	github.com/tonglil/buflogr v1.1.1
-	k8s.io/api v0.32.0-rc.0 // TODO(wt) change to v1.32.0 when released
-	k8s.io/apimachinery v0.32.0-rc.0 // TODO(wt) change to v1.32.0 when released
-	k8s.io/client-go v0.32.0-rc.0 // TODO(wt) change to v1.32.0 when released
-	k8s.io/component-base v0.32.0-rc.0 // TODO(wt) change to v1.32.0 when released
+	k8s.io/api v0.32.0
+	k8s.io/apimachinery v0.32.0
+	k8s.io/client-go v0.32.0
+	k8s.io/component-base v0.32.0
 	sigs.k8s.io/controller-runtime v0.19.2
 )
 

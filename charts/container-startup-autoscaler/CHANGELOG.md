@@ -3,7 +3,7 @@
 - This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 1.4.0
-2024-12-?? TODO(wt)
+2024-12-12
 
 ### Added
 - Support for Kube 1.32.

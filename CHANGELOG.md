@@ -3,7 +3,7 @@
 - This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.5.0
-2024-12-?? TODO(wt)
+2024-12-12
 
 ### Added
 - Support for Kube 1.32.
@@ -30,7 +30,7 @@
 
 | Kube Version | Compatible? | `In-place Update of Pod Resources` Maturity |
 |:------------:|:-----------:|:-------------------------------------------:|
-|     1.32     |     ✔️      |          Alpha (TODO(wt) confirm)           |
+|     1.32     |     ✔️      |                    Alpha                    |
 |     1.31     |      ❌      |                    Alpha                    |
 |     1.30     |      ❌      |                    Alpha                    |
 |     1.29     |      ❌      |                    Alpha                    |
