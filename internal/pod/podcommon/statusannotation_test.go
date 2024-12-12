@@ -49,14 +49,14 @@ func TestNewStatusAnnotation(t *testing.T) {
 func TestStatusAnnotationJson(t *testing.T) {
 	j := NewStatusAnnotation(
 		"status",
-		NewStates("1", "2", "3", "4", "5", "6", "7", "8"),
+		NewStates("1", "2", "3", "4", "5", "6", "7"),
 		NewStatusAnnotationScale("lastCommanded", "lastEnacted", "lastFailed"),
 		"lastUpdated",
 	).Json()
 	assert.Equal(
 		t,
 		"{\"status\":\"status\","+
-			"\"states\":{\"startupProbe\":\"1\",\"readinessProbe\":\"2\",\"container\":\"3\",\"started\":\"4\",\"ready\":\"5\",\"resources\":\"6\",\"allocatedResources\":\"7\",\"statusResources\":\"8\"},"+
+			"\"states\":{\"startupProbe\":\"1\",\"readinessProbe\":\"2\",\"container\":\"3\",\"started\":\"4\",\"ready\":\"5\",\"resources\":\"6\",\"statusResources\":\"7\"},"+
 			"\"scale\":{\"lastCommanded\":\"lastCommanded\",\"lastEnacted\":\"lastEnacted\",\"lastFailed\":\"lastFailed\"},"+
 			"\"lastUpdated\":\"lastUpdated\"}",
 		j,
@@ -116,7 +116,7 @@ func TestStatusAnnotationFromString(t *testing.T) {
 	t.Run("Ok", func(t *testing.T) {
 		got, err := StatusAnnotationFromString(
 			"{\"status\":\"status\"," +
-				"\"states\":{\"startupProbe\":\"1\",\"readinessProbe\":\"2\",\"container\":\"3\",\"started\":\"4\",\"ready\":\"5\",\"resources\":\"6\",\"allocatedResources\":\"7\",\"statusResources\":\"8\"}," +
+				"\"states\":{\"startupProbe\":\"1\",\"readinessProbe\":\"2\",\"container\":\"3\",\"started\":\"4\",\"ready\":\"5\",\"resources\":\"6\",\"statusResources\":\"7\"}," +
 				"\"scale\":{\"lastCommanded\":\"lastCommanded\",\"lastEnacted\":\"lastEnacted\",\"lastFailed\":\"lastFailed\"}," +
 				"\"lastUpdated\":\"lastUpdated\"}",
 		)
@@ -125,7 +125,7 @@ func TestStatusAnnotationFromString(t *testing.T) {
 			t,
 			NewStatusAnnotation(
 				"status",
-				NewStates("1", "2", "3", "4", "5", "6", "7", "8"),
+				NewStates("1", "2", "3", "4", "5", "6", "7"),
 				NewStatusAnnotationScale("lastCommanded", "lastEnacted", "lastFailed"),
 				"lastUpdated",
 			),

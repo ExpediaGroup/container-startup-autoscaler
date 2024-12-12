@@ -19,10 +19,9 @@ package metricscommon
 const (
 	Namespace = "csa"
 
-	ControllerNameLabelName = "controller"
-	DirectionLabelName      = "direction"
-	OutcomeLabelName        = "outcome"
-	ReasonLabelName         = "reason"
+	DirectionLabelName = "direction"
+	OutcomeLabelName   = "outcome"
+	ReasonLabelName    = "reason"
 )
 
 // Direction indicates the direction of a scale.

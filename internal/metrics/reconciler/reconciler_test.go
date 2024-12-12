@@ -29,15 +29,8 @@ import (
 
 func TestRegisterMetrics(t *testing.T) {
 	registry := prometheus.NewRegistry()
-	RegisterMetrics(registry, "")
+	RegisterMetrics(registry)
 	assert.Equal(t, len(allMetrics), len(descs(registry)))
-}
-
-func TestUnregisterMetrics(t *testing.T) {
-	registry := prometheus.NewRegistry()
-	RegisterMetrics(registry, "")
-	UnregisterMetrics(registry)
-	assert.Equal(t, 0, len(descs(registry)))
 }
 
 func TestResetMetrics(t *testing.T) {

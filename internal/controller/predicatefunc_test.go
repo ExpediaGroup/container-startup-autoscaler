@@ -29,18 +29,18 @@ import (
 )
 
 func TestPredicateCreateFunc(t *testing.T) {
-	assert.True(t, PredicateCreateFunc(event.CreateEvent{}))
+	assert.True(t, PredicateCreateFunc(event.TypedCreateEvent[*v1.Pod]{}))
 }
 
 func TestPredicateDeleteFunc(t *testing.T) {
-	assert.False(t, PredicateDeleteFunc(event.DeleteEvent{}))
+	assert.False(t, PredicateDeleteFunc(event.TypedDeleteEvent[*v1.Pod]{}))
 }
 
 func TestPredicateUpdateFunc(t *testing.T) {
 	t.Run("ResourceVersionSame", func(t *testing.T) {
 		oldPod, newPod := &v1.Pod{}, &v1.Pod{}
 		oldPod.ResourceVersion, newPod.ResourceVersion = "1", "1"
-		evt := event.UpdateEvent{
+		evt := event.TypedUpdateEvent[*v1.Pod]{
 			ObjectOld: oldPod,
 			ObjectNew: newPod,
 		}
@@ -52,7 +52,7 @@ func TestPredicateUpdateFunc(t *testing.T) {
 		oldPod.ResourceVersion, newPod.ResourceVersion = "1", "2"
 		now := metav1.Now()
 		newPod.DeletionTimestamp = &now
-		evt := event.UpdateEvent{
+		evt := event.TypedUpdateEvent[*v1.Pod]{
 			ObjectOld: oldPod,
 			ObjectNew: newPod,
 		}
@@ -62,7 +62,7 @@ func TestPredicateUpdateFunc(t *testing.T) {
 	t.Run("StatusMissingOldNew", func(t *testing.T) {
 		oldPod, newPod := &v1.Pod{}, &v1.Pod{}
 		oldPod.ResourceVersion, newPod.ResourceVersion = "1", "2"
-		evt := event.UpdateEvent{
+		evt := event.TypedUpdateEvent[*v1.Pod]{
 			ObjectOld: oldPod,
 			ObjectNew: newPod,
 		}
@@ -74,7 +74,7 @@ func TestPredicateUpdateFunc(t *testing.T) {
 		oldPod.ResourceVersion, newPod.ResourceVersion = "1", "2"
 		oldPod.Annotations = map[string]string{podcommon.AnnotationStatus: "test1"}
 		newPod.Annotations = map[string]string{podcommon.AnnotationStatus: "test2"}
-		evt := event.UpdateEvent{
+		evt := event.TypedUpdateEvent[*v1.Pod]{
 			ObjectOld: oldPod,
 			ObjectNew: newPod,
 		}
@@ -89,7 +89,7 @@ func TestPredicateUpdateFunc(t *testing.T) {
 		oldPod.Annotations = map[string]string{podcommon.AnnotationStatus: "test1"}
 		newPod.Annotations = map[string]string{podcommon.AnnotationStatus: "test1"}
 		oldPod.ObjectMeta.Name, oldPod.ObjectMeta.Name = "test1", "test2"
-		evt := event.UpdateEvent{
+		evt := event.TypedUpdateEvent[*v1.Pod]{
 			ObjectOld: oldPod,
 			ObjectNew: newPod,
 		}
@@ -98,5 +98,5 @@ func TestPredicateUpdateFunc(t *testing.T) {
 }
 
 func TestPredicateGenericFunc(t *testing.T) {
-	assert.False(t, PredicateGenericFunc(event.GenericEvent{}))
+	assert.False(t, PredicateGenericFunc(event.TypedGenericEvent[*v1.Pod]{}))
 }

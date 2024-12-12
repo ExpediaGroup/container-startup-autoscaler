@@ -39,7 +39,7 @@ func NewValidationError(message string, toWrap error) error {
 
 func (e ValidationError) Error() string {
 	if e.wrapped == nil {
-		return fmt.Sprintf("validation error: %s", e.message)
+		return "validation error: " + e.message
 	}
 
 	return fmt.Errorf("validation error: %s: %w", e.message, e.wrapped).Error()
@@ -58,18 +58,6 @@ func NewContainerStatusNotPresentError() error {
 
 func (e ContainerStatusNotPresentError) Error() string {
 	return "container status not present"
-}
-
-// ContainerStatusAllocatedResourcesNotPresentError is an error that indicates container status allocated resources
-// is not present.
-type ContainerStatusAllocatedResourcesNotPresentError struct{}
-
-func NewContainerStatusAllocatedResourcesNotPresentError() error {
-	return ContainerStatusAllocatedResourcesNotPresentError{}
-}
-
-func (e ContainerStatusAllocatedResourcesNotPresentError) Error() string {
-	return "container status allocated resources not present"
 }
 
 // ContainerStatusResourcesNotPresentError is an error that indicates container status resources is not present.

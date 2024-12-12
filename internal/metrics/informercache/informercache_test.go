@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package retry
+package informercache
 
 import (
 	"fmt"
@@ -27,28 +27,37 @@ import (
 	"k8s.io/component-base/metrics/testutil"
 )
 
-func TestRegisterKubeApiMetrics(t *testing.T) {
+func TestRegisterMetrics(t *testing.T) {
 	registry := prometheus.NewRegistry()
-	RegisterKubeApiMetrics(registry)
+	RegisterMetrics(registry)
 	assert.Equal(t, len(allMetrics), len(descs(registry)))
 }
 
-func TestResetKubeApiMetrics(t *testing.T) {
-	Retry("").Inc()
-	value, _ := testutil.GetCounterMetricValue(Retry(""))
+func TestResetMetrics(t *testing.T) {
+	SyncTimeout().Inc()
+	value, _ := testutil.GetCounterMetricValue(SyncTimeout())
 	assert.Equal(t, float64(1), value)
-	ResetKubeApiMetrics()
+	ResetMetrics()
 
-	value, _ = testutil.GetCounterMetricValue(Retry(""))
+	value, _ = testutil.GetCounterMetricValue(SyncTimeout())
 	assert.Equal(t, float64(0), value)
 }
 
-func TestRetry(t *testing.T) {
-	m := Retry("")
+func TestPatchSyncPoll(t *testing.T) {
+	m := SyncPoll().(prometheus.Metric)
 	assert.Contains(
 		t,
 		m.Desc().String(),
-		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, SubsystemKubeApi, retryName),
+		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, syncPollName),
+	)
+}
+
+func TestPatchSyncTimeout(t *testing.T) {
+	m := SyncTimeout()
+	assert.Contains(
+		t,
+		m.Desc().String(),
+		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, syncTimeoutName),
 	)
 }
 

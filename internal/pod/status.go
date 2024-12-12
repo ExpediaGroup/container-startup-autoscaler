@@ -37,7 +37,7 @@ const (
 // Status performs operations relating to controller status.
 type Status interface {
 	Update(context.Context, *v1.Pod, string, podcommon.States, podcommon.StatusScaleState) (*v1.Pod, error)
-	UpdateMutatePodFunc(context.Context, string, podcommon.States, podcommon.StatusScaleState) func(pod *v1.Pod) (bool, *v1.Pod, error)
+	PodMutationFunc(context.Context, string, podcommon.States, podcommon.StatusScaleState) func(pod *v1.Pod) (bool, *v1.Pod, error)
 }
 
 // status is the default implementation of Status.
@@ -58,9 +58,9 @@ func (s *status) Update(
 	states podcommon.States,
 	scaleState podcommon.StatusScaleState,
 ) (*v1.Pod, error) {
-	mutatePodFunc := s.UpdateMutatePodFunc(ctx, status, states, scaleState)
+	mutatePodFunc := s.PodMutationFunc(ctx, status, states, scaleState)
 
-	newPod, err := s.kubeHelper.Patch(ctx, pod, mutatePodFunc)
+	newPod, err := s.kubeHelper.Patch(ctx, pod, mutatePodFunc, false, true)
 	if err != nil {
 		return nil, common.WrapErrorf(err, "unable to patch pod")
 	}
@@ -68,9 +68,9 @@ func (s *status) Update(
 	return newPod, nil
 }
 
-// UpdateMutatePodFunc returns a function that performs the actual work of updating controller status. This is used
-// both by Update and elsewhere (package-externally) as additional mutations when patching for something else.
-func (s *status) UpdateMutatePodFunc(
+// PodMutationFunc returns a function that performs the actual work of updating controller status. This is used both by
+// Update and elsewhere (package-externally) as additional mutations when patching for something else.
+func (s *status) PodMutationFunc(
 	ctx context.Context,
 	status string,
 	states podcommon.States,
@@ -139,9 +139,8 @@ func (s *status) UpdateMutatePodFunc(
 			return false, pod, nil
 		}
 
-		mutatedPod := pod.DeepCopy()
-		mutatedPod.Annotations[podcommon.AnnotationStatus] = newStat.Json()
-		return true, mutatedPod, nil
+		pod.Annotations[podcommon.AnnotationStatus] = newStat.Json()
+		return true, pod, nil
 	}
 }
 

@@ -81,15 +81,6 @@ func (m *MockContainerKubeHelper) ResizePolicy(
 	return args.Get(0).(v1.ResourceResizeRestartPolicy), args.Error(1)
 }
 
-func (m *MockContainerKubeHelper) AllocatedResources(
-	pod *v1.Pod,
-	containerName string,
-	resourceName v1.ResourceName,
-) (resource.Quantity, error) {
-	args := m.Called(pod, containerName, resourceName)
-	return args.Get(0).(resource.Quantity), args.Error(1)
-}
-
 func (m *MockContainerKubeHelper) CurrentRequests(
 	pod *v1.Pod,
 	containerName string,
@@ -144,11 +135,6 @@ func (m *MockContainerKubeHelper) LimitsDefault() {
 
 func (m *MockContainerKubeHelper) ResizePolicyDefault() {
 	m.On("ResizePolicy", mock.Anything, mock.Anything).Return(v1.NotRequired, nil)
-}
-
-func (m *MockContainerKubeHelper) AllocatedResourcesDefault() {
-	m.On("AllocatedResources", mock.Anything, mock.Anything, v1.ResourceCPU).Return(MockDefaultCpuQuantity, nil)
-	m.On("AllocatedResources", mock.Anything, mock.Anything, v1.ResourceMemory).Return(MockDefaultMemoryQuantity, nil)
 }
 
 func (m *MockContainerKubeHelper) CurrentRequestsDefault() {

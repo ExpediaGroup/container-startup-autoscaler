@@ -32,22 +32,20 @@ const (
 	durationName            = "duration_seconds"
 )
 
-var cName string
-
 var (
 	failure = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      failureName,
 		Help:      "Number of scale failures (by scale direction, reason)",
-	}, []string{metricscommon.ControllerNameLabelName, metricscommon.DirectionLabelName, metricscommon.ReasonLabelName})
+	}, []string{metricscommon.DirectionLabelName, metricscommon.ReasonLabelName})
 
 	commandedUnknownRes = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      commandedUnknownResName,
 		Help:      "Number of scales commanded upon encountering unknown resources",
-	}, []string{metricscommon.ControllerNameLabelName})
+	}, []string{})
 
 	duration = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metricscommon.Namespace,
@@ -55,7 +53,7 @@ var (
 		Name:      durationName,
 		Help:      "Scale duration (from commanded to enacted) in seconds (by scale direction, outcome)",
 		Buckets:   []float64{1, 2, 4, 8, 16, 32, 64, 128},
-	}, []string{metricscommon.ControllerNameLabelName, metricscommon.DirectionLabelName, metricscommon.OutcomeLabelName})
+	}, []string{metricscommon.DirectionLabelName, metricscommon.OutcomeLabelName})
 )
 
 // allMetrics must include all metrics defined above.
@@ -63,15 +61,8 @@ var allMetrics = []prometheus.Collector{
 	failure, commandedUnknownRes, duration,
 }
 
-func RegisterMetrics(registry metrics.RegistererGatherer, controllerName string) {
-	cName = controllerName
+func RegisterMetrics(registry metrics.RegistererGatherer) {
 	registry.MustRegister(allMetrics...)
-}
-
-func UnregisterMetrics(registry metrics.RegistererGatherer) {
-	for _, metric := range allMetrics {
-		registry.Unregister(metric)
-	}
 }
 
 func ResetMetrics() {
@@ -79,13 +70,13 @@ func ResetMetrics() {
 }
 
 func Failure(direction metricscommon.Direction, reason string) prometheus.Counter {
-	return failure.WithLabelValues(cName, string(direction), reason)
+	return failure.WithLabelValues(string(direction), reason)
 }
 
 func CommandedUnknownRes() prometheus.Counter {
-	return commandedUnknownRes.WithLabelValues(cName)
+	return commandedUnknownRes.WithLabelValues()
 }
 
 func Duration(direction metricscommon.Direction, outcome metricscommon.Outcome) prometheus.Observer {
-	return duration.WithLabelValues(cName, string(direction), string(outcome))
+	return duration.WithLabelValues(string(direction), string(outcome))
 }

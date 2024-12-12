@@ -53,7 +53,6 @@ func (m *MockTargetContainerState) StatesDefault() {
 			podcommon.StateBoolTrue,
 			podcommon.StateBoolTrue,
 			podcommon.StateResourcesStartup,
-			podcommon.StateAllocatedResourcesContainerRequestsMatch,
 			podcommon.StateStatusResourcesContainerResourcesMatch,
 		),
 		nil,

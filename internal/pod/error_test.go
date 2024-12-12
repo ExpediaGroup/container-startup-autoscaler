@@ -52,15 +52,6 @@ func TestContainerStatusNotPresentErrorError(t *testing.T) {
 	assert.Equal(t, "container status not present", e.Error())
 }
 
-func TestNewContainerStatusAllocatedResourcesNotPresentError(t *testing.T) {
-	assert.True(t, errors.As(NewContainerStatusAllocatedResourcesNotPresentError(), &ContainerStatusAllocatedResourcesNotPresentError{}))
-}
-
-func TestContainerStatusAllocatedResourcesNotPresentErrorError(t *testing.T) {
-	e := NewContainerStatusAllocatedResourcesNotPresentError()
-	assert.Equal(t, "container status allocated resources not present", e.Error())
-}
-
 func TestNewContainerStatusResourcesNotPresentError(t *testing.T) {
 	assert.True(t, errors.As(NewContainerStatusResourcesNotPresentError(), &ContainerStatusResourcesNotPresentError{}))
 }

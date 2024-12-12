@@ -36,7 +36,7 @@ import (
 func TestStatusUpdateCore(t *testing.T) {
 	t.Run("UnableToPatchPod", func(t *testing.T) {
 		s := newStatus(newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewSimpleClientset() },
+			func() *kubefake.Clientset { return kubefake.NewClientset() },
 			func() interceptor.Funcs { return interceptor.Funcs{Patch: podtest.InterceptorFuncPatchFail()} },
 		)))
 
@@ -54,7 +54,7 @@ func TestStatusUpdateCore(t *testing.T) {
 	t.Run("UnableToGetStatusAnnotationFromString", func(t *testing.T) {
 		s := newStatus(newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
 			func() *kubefake.Clientset {
-				return kubefake.NewSimpleClientset(
+				return kubefake.NewClientset(
 					podtest.NewPodBuilder(podtest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
 				)
 			},
@@ -76,7 +76,7 @@ func TestStatusUpdateCore(t *testing.T) {
 	t.Run("OkNoPreviousStatus", func(t *testing.T) {
 		pod := podtest.NewPodBuilder(podtest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build()
 		s := newStatus(newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewSimpleClientset(pod) },
+			func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
 			func() interceptor.Funcs { return interceptor.Funcs{} },
 		)))
 
@@ -103,7 +103,7 @@ func TestStatusUpdateCore(t *testing.T) {
 	t.Run("OkPreviousStatusSame", func(t *testing.T) {
 		s := newStatus(newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
 			func() *kubefake.Clientset {
-				return kubefake.NewSimpleClientset(
+				return kubefake.NewClientset(
 					podtest.NewPodBuilder(podtest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
 				)
 			},
@@ -235,7 +235,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := newStatus(newKubeHelper(podtest.ControllerRuntimeFakeClientWithKubeFake(
 				func() *kubefake.Clientset {
-					return kubefake.NewSimpleClientset(
+					return kubefake.NewClientset(
 						podtest.NewPodBuilder(podtest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
 					)
 				},

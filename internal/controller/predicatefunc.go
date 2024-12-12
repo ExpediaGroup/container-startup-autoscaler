@@ -20,7 +20,7 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/reconciler"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
@@ -53,21 +53,21 @@ import (
 */
 
 // PredicateCreateFunc reports whether create events should be reconciled.
-func PredicateCreateFunc(_ event.CreateEvent) bool {
+func PredicateCreateFunc(_ event.TypedCreateEvent[*v1.Pod]) bool {
 	// Never filter.
 	return true
 }
 
 // PredicateDeleteFunc reports whether delete events should be reconciled.
-func PredicateDeleteFunc(_ event.DeleteEvent) bool {
+func PredicateDeleteFunc(_ event.TypedDeleteEvent[*v1.Pod]) bool {
 	// Don't need to reconcile deletes.
 	return false
 }
 
 // PredicateUpdateFunc reports whether update events should be reconciled.
-func PredicateUpdateFunc(event event.UpdateEvent) bool {
-	oldPod := event.ObjectOld.(*v1.Pod)
-	newPod := event.ObjectNew.(*v1.Pod)
+func PredicateUpdateFunc(event event.TypedUpdateEvent[*v1.Pod]) bool {
+	oldPod := event.ObjectOld
+	newPod := event.ObjectNew
 
 	if oldPod.ResourceVersion == newPod.ResourceVersion {
 		// Shouldn't really find ourselves here...
@@ -118,6 +118,6 @@ func PredicateUpdateFunc(event event.UpdateEvent) bool {
 }
 
 // PredicateGenericFunc reports whether generic events should be reconciled.
-func PredicateGenericFunc(_ event.GenericEvent) bool {
+func PredicateGenericFunc(_ event.TypedGenericEvent[*v1.Pod]) bool {
 	return false
 }

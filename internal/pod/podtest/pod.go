@@ -71,28 +71,26 @@ var (
 
 // podConfig holds configuration for generating a test pod.
 type podConfig struct {
-	namespace                               string
-	name                                    string
-	labelEnabledValue                       string
-	annotationTargetContainerName           string
-	annotationCpuStartup                    string
-	annotationCpuPostStartupRequests        string
-	annotationCpuPostStartupLimits          string
-	annotationMemoryStartup                 string
-	annotationMemoryPostStartupRequests     string
-	annotationMemoryPostStartupLimits       string
-	statusContainerName                     string
-	statusContainerState                    corev1.ContainerState
-	statusContainerStarted                  bool
-	statusContainerReady                    bool
-	statusContainerAllocatedResourcesCpu    string
-	statusContainerAllocatedResourcesMemory string
-	statusContainerResourcesCpuRequests     string
-	statusContainerResourcesCpuLimits       string
-	statusContainerResourcesMemoryRequests  string
-	statusContainerResourcesMemoryLimits    string
-	statusResize                            corev1.PodResizeStatus
-	containerConfig                         containerConfig
+	namespace                              string
+	name                                   string
+	labelEnabledValue                      string
+	annotationTargetContainerName          string
+	annotationCpuStartup                   string
+	annotationCpuPostStartupRequests       string
+	annotationCpuPostStartupLimits         string
+	annotationMemoryStartup                string
+	annotationMemoryPostStartupRequests    string
+	annotationMemoryPostStartupLimits      string
+	statusContainerName                    string
+	statusContainerState                   corev1.ContainerState
+	statusContainerStarted                 bool
+	statusContainerReady                   bool
+	statusContainerResourcesCpuRequests    string
+	statusContainerResourcesCpuLimits      string
+	statusContainerResourcesMemoryRequests string
+	statusContainerResourcesMemoryLimits   string
+	statusResize                           corev1.PodResizeStatus
+	containerConfig                        containerConfig
 }
 
 func NewStartupPodConfig(stateStarted podcommon.StateBool, stateReady podcommon.StateBool) podConfig {
@@ -149,24 +147,18 @@ func newPodConfigForState(
 
 	switch stateResources {
 	case podcommon.StateResourcesStartup:
-		config.statusContainerAllocatedResourcesCpu = PodAnnotationCpuStartup
-		config.statusContainerAllocatedResourcesMemory = PodAnnotationMemoryStartup
 		config.statusContainerResourcesCpuRequests = PodAnnotationCpuStartup
 		config.statusContainerResourcesCpuLimits = PodAnnotationCpuStartup
 		config.statusContainerResourcesMemoryRequests = PodAnnotationMemoryStartup
 		config.statusContainerResourcesMemoryLimits = PodAnnotationMemoryStartup
 
 	case podcommon.StateResourcesPostStartup:
-		config.statusContainerAllocatedResourcesCpu = PodAnnotationCpuPostStartupRequests
-		config.statusContainerAllocatedResourcesMemory = PodAnnotationMemoryPostStartupRequests
 		config.statusContainerResourcesCpuRequests = PodAnnotationCpuPostStartupRequests
 		config.statusContainerResourcesCpuLimits = PodAnnotationCpuPostStartupLimits
 		config.statusContainerResourcesMemoryRequests = PodAnnotationMemoryPostStartupRequests
 		config.statusContainerResourcesMemoryLimits = PodAnnotationMemoryPostStartupLimits
 
 	case podcommon.StateResourcesUnknown:
-		config.statusContainerAllocatedResourcesCpu = PodAnnotationCpuUnknown
-		config.statusContainerAllocatedResourcesMemory = PodAnnotationMemoryUnknown
 		config.statusContainerResourcesCpuRequests = PodAnnotationCpuUnknown
 		config.statusContainerResourcesCpuLimits = PodAnnotationCpuUnknown
 		config.statusContainerResourcesMemoryRequests = PodAnnotationMemoryUnknown
@@ -214,10 +206,6 @@ func pod(config podConfig) *corev1.Pod {
 					State:   config.statusContainerState,
 					Started: &config.statusContainerStarted,
 					Ready:   config.statusContainerReady,
-					AllocatedResources: map[corev1.ResourceName]resource.Quantity{
-						corev1.ResourceCPU:    resource.MustParse(config.statusContainerAllocatedResourcesCpu),
-						corev1.ResourceMemory: resource.MustParse(config.statusContainerAllocatedResourcesMemory),
-					},
 					Resources: &corev1.ResourceRequirements{
 						Requests: map[corev1.ResourceName]resource.Quantity{
 							corev1.ResourceCPU:    resource.MustParse(config.statusContainerResourcesCpuRequests),

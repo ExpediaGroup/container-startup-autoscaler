@@ -46,7 +46,7 @@ const (
 
 	FlagRequeueDurationSecsName    = "requeue-duration-secs"
 	FlagRequeueDurationSecsDesc    = "how long to wait before requeuing a reconcile"
-	FlagRequeueDurationSecsDefault = 3
+	FlagRequeueDurationSecsDefault = 1
 
 	FlagMaxConcurrentReconcilesName    = "max-concurrent-reconciles"
 	FlagMaxConcurrentReconcilesDesc    = "the maximum number of concurrent reconciles"

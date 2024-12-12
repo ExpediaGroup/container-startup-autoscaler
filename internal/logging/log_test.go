@@ -287,7 +287,6 @@ func testContextPodInfo() context.Context {
 		podcommon.StateBoolFalse,
 		podcommon.StateBoolFalse,
 		podcommon.StateResourcesUnknown,
-		podcommon.StateAllocatedResourcesUnknown,
 		podcommon.StateStatusResourcesUnknown,
 	))
 	return ctx

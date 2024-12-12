@@ -17,7 +17,7 @@ limitations under the License.
 package controller
 
 import (
-	"errors"
+	"sync"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
@@ -35,93 +35,97 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const Name = "container-startup-autoscaler"
+const Name = "csa"
 
+var onceInstance sync.Once
 var instance *controller
 
 // controller represents the CSA controller itself.
 type controller struct {
-	initialized bool
-
 	controllerConfig controllercommon.ControllerConfig
 	runtimeManager   manager.Manager
+
+	onceInit sync.Once
 }
 
 func NewController(
 	controllerConfig controllercommon.ControllerConfig,
 	runtimeManager manager.Manager,
-) (*controller, error) {
-	if instance != nil {
-		return &controller{}, errors.New("controller already previously created")
-	}
+) *controller {
+	onceInstance.Do(func() {
+		instance = &controller{
+			controllerConfig: controllerConfig,
+			runtimeManager:   runtimeManager,
+		}
+	})
 
-	return &controller{
-		controllerConfig: controllerConfig,
-		runtimeManager:   runtimeManager,
-	}, nil
+	return instance
 }
 
 // Initialize performs the tasks necessary to initialize the controller and register it with the controller-runtime
-// manager. May only be invoked once. runtimeController parameter is provided for test injection.
+// manager. Will only be invoked once. runtimeController parameter is provided for test injection.
 func (c *controller) Initialize(runtimeController ...runtimecontroller.Controller) error {
-	if c.initialized {
-		return errors.New("controller already initialized")
-	}
+	var retErr error
 
-	reconciler := NewContainerStartupAutoscalerReconciler(
-		pod.NewPod(c.controllerConfig, c.runtimeManager.GetClient(), c.runtimeManager.GetEventRecorderFor(Name)),
-		c.controllerConfig,
-	)
-
-	var actualRuntimeController runtimecontroller.Controller
-
-	if len(runtimeController) == 0 {
-		var err error
-		actualRuntimeController, err = runtimecontroller.New(
-			Name,
-			c.runtimeManager,
-			runtimecontroller.Options{
-				MaxConcurrentReconciles: c.controllerConfig.MaxConcurrentReconciles,
-				Reconciler:              reconciler,
-				LogConstructor: func(req *reconcile.Request) logr.Logger {
-					log := logging.Logger
-					log = log.WithValues("controller", Name)
-
-					if req != nil {
-						log = log.WithValues(
-							"namespace", req.Namespace,
-							"name", req.Name,
-						)
-					}
-
-					return log
-				},
-			},
+	c.onceInit.Do(func() {
+		reconciler := NewContainerStartupAutoscalerReconciler(
+			pod.NewPod(c.controllerConfig, c.runtimeManager.GetClient(), c.runtimeManager.GetEventRecorderFor(Name)),
+			c.controllerConfig,
 		)
-		if err != nil {
-			return common.WrapErrorf(err, "unable to create controller-runtime controller")
+
+		var actualRuntimeController runtimecontroller.Controller
+
+		if len(runtimeController) == 0 {
+			var err error
+			actualRuntimeController, err = runtimecontroller.New(
+				Name,
+				c.runtimeManager,
+				runtimecontroller.Options{
+					MaxConcurrentReconciles: c.controllerConfig.MaxConcurrentReconciles,
+					Reconciler:              reconciler,
+					LogConstructor: func(req *reconcile.Request) logr.Logger {
+						log := logging.Logger
+						log = log.WithValues("controller", Name)
+
+						if req != nil {
+							log = log.WithValues(
+								"namespace", req.Namespace,
+								"name", req.Name,
+							)
+						}
+
+						return log
+					},
+				},
+			)
+			if err != nil {
+				retErr = common.WrapErrorf(err, "unable to create controller-runtime controller")
+				return
+			}
+		} else {
+			actualRuntimeController = runtimeController[0]
 		}
-	} else {
-		actualRuntimeController = runtimeController[0]
-	}
 
-	// Predicates are employed to filter out pod changes that are not necessary to reconcile.
-	if err := actualRuntimeController.Watch(
-		source.Kind(c.runtimeManager.GetCache(), &v1.Pod{}),
-		&handler.EnqueueRequestForObject{},
-		predicate.Funcs{
-			CreateFunc:  PredicateCreateFunc,
-			DeleteFunc:  PredicateDeleteFunc,
-			UpdateFunc:  PredicateUpdateFunc,
-			GenericFunc: PredicateGenericFunc,
-		},
-	); err != nil {
-		return common.WrapErrorf(err, "unable to watch pods")
-	}
+		// Predicates are employed to filter out pod changes that are not necessary to reconcile.
+		if err := actualRuntimeController.Watch(
+			source.Kind(
+				c.runtimeManager.GetCache(),
+				&v1.Pod{},
+				&handler.TypedEnqueueRequestForObject[*v1.Pod]{},
+				predicate.TypedFuncs[*v1.Pod]{
+					CreateFunc:  PredicateCreateFunc,
+					DeleteFunc:  PredicateDeleteFunc,
+					UpdateFunc:  PredicateUpdateFunc,
+					GenericFunc: PredicateGenericFunc,
+				},
+			),
+		); err != nil {
+			retErr = common.WrapErrorf(err, "unable to watch pods")
+			return
+		}
 
-	csametrics.RegisterAllMetrics(metrics.Registry, Name)
-	defer csametrics.UnregisterAllMetrics(metrics.Registry)
-	c.initialized = true
+		csametrics.RegisterAllMetrics(metrics.Registry)
+	})
 
-	return nil
+	return retErr
 }

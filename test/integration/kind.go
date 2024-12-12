@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -66,12 +67,12 @@ func kindSetupCluster(t *testing.T) {
 			os.Exit(1)
 		}
 
-		dockerTag := fmt.Sprintf("kindest/node:%s", kubeFullVersion)
+		dockerTag := "kindest/node:" + kubeFullVersion
 
 		output, _ = cmdRun(
 			t,
 			exec.Command("docker", "images",
-				"--filter", fmt.Sprintf("reference=%s", dockerTag),
+				"--filter", "reference="+dockerTag,
 				"--format", "{{.Repository}}:{{.Tag}}",
 			),
 			"getting existing docker images...",
@@ -80,16 +81,82 @@ func kindSetupCluster(t *testing.T) {
 		)
 
 		if output == "" {
-			_, _ = cmdRun(
-				t,
-				exec.Command("kind", "build", "node-image",
-					"--type", "release", kubeFullVersion,
-					"--image", dockerTag,
-				),
-				"building kind node image...",
-				"unable to build kind node image",
-				true,
-			)
+			if suppliedConfig.extraCaCertPath != "" {
+				output, _ = cmdRun(
+					t,
+					exec.Command("kind", "build", "node-image", "--help"),
+					"getting kind default node image...",
+					"unable to get kind default node image",
+					true,
+				)
+
+				defaultKindBaseImage := regexp.MustCompile(`kindest/base:v[0-9]+-[a-f0-9]+`).FindString(output)
+				if defaultKindBaseImage == "" {
+					logMessage(t, "unable to locate default base image")
+					os.Exit(1)
+				}
+
+				builtKindBaseImageTag := defaultKindBaseImage + "-extracacert"
+
+				tempDir, err := os.MkdirTemp("", "*")
+				if err != nil {
+					logMessage(t, common.WrapErrorf(err, "unable to create temporary directory"))
+					os.Exit(1)
+				}
+				defer func(path string) {
+					_ = os.RemoveAll(path)
+				}(tempDir)
+
+				copiedExtraCaCertFilename := "extra-ca-cert.crt"
+
+				cert, err := os.ReadFile(suppliedConfig.extraCaCertPath)
+				if err != nil {
+					logMessage(t, common.WrapErrorf(err, "unable to read extra CA certificate file"))
+					os.Exit(1)
+				}
+
+				if err := os.WriteFile(tempDir+pathSeparator+copiedExtraCaCertFilename, cert, 0644); err != nil {
+					logMessage(t, common.WrapErrorf(err, "unable to write CA certificate file in temporary directory"))
+					os.Exit(1)
+				}
+
+				_, _ = cmdRun(
+					t,
+					exec.Command("docker", "build",
+						"-f", "extracacert/Dockerfile",
+						"-t", builtKindBaseImageTag,
+						"--build-arg", "BASE_IMAGE="+defaultKindBaseImage,
+						"--build-arg", "EXTRA_CA_CERT_FILENAME="+copiedExtraCaCertFilename,
+						tempDir,
+					),
+					"building kind base image...",
+					"unable to build kind base image",
+					true,
+				)
+
+				_, _ = cmdRun(
+					t,
+					exec.Command("kind", "build", "node-image",
+						"--type", "release", kubeFullVersion,
+						"--base-image", builtKindBaseImageTag,
+						"--image", dockerTag,
+					),
+					"building kind node image...",
+					"unable to build kind node image",
+					true,
+				)
+			} else {
+				_, _ = cmdRun(
+					t,
+					exec.Command("kind", "build", "node-image",
+						"--type", "release", kubeFullVersion,
+						"--image", dockerTag,
+					),
+					"building kind node image...",
+					"unable to build kind node image",
+					true,
+				)
+			}
 		}
 
 		_, _ = cmdRun(

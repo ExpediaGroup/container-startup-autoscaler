@@ -159,14 +159,13 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			configHelperMockFunc:     func(m *podtest.MockKubeHelper) {},
 			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
 			states: podcommon.States{
-				StartupProbe:       podcommon.StateBoolFalse,
-				ReadinessProbe:     podcommon.StateBoolFalse,
-				Container:          podcommon.StateContainerRunning,
-				Started:            podcommon.StateBoolFalse,
-				Ready:              podcommon.StateBoolFalse,
-				Resources:          podcommon.StateResourcesStartup,
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResourcesContainerResourcesMatch,
+				StartupProbe:    podcommon.StateBoolFalse,
+				ReadinessProbe:  podcommon.StateBoolFalse,
+				Container:       podcommon.StateContainerRunning,
+				Started:         podcommon.StateBoolFalse,
+				Ready:           podcommon.StateBoolFalse,
+				Resources:       podcommon.StateResourcesStartup,
+				StatusResources: podcommon.StateStatusResourcesContainerResourcesMatch,
 			},
 			wantPanicErrMsg: "neither startup probe or readiness probe present",
 		},
@@ -180,14 +179,13 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			},
 			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
 			states: podcommon.States{
-				StartupProbe:       podcommon.StateBoolTrue,
-				ReadinessProbe:     podcommon.StateBoolFalse,
-				Container:          podcommon.StateContainerRunning,
-				Started:            podcommon.StateBoolFalse,
-				Ready:              podcommon.StateBoolFalse,
-				Resources:          podcommon.StateResourcesStartup,
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResourcesContainerResourcesMatch,
+				StartupProbe:    podcommon.StateBoolTrue,
+				ReadinessProbe:  podcommon.StateBoolFalse,
+				Container:       podcommon.StateContainerRunning,
+				Started:         podcommon.StateBoolFalse,
+				Ready:           podcommon.StateBoolFalse,
+				Resources:       podcommon.StateResourcesStartup,
+				StatusResources: podcommon.StateStatusResourcesContainerResourcesMatch,
 			},
 			wantLogMsg:       "startup resources enacted",
 			wantStatusUpdate: true,
@@ -202,14 +200,13 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			},
 			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
 			states: podcommon.States{
-				StartupProbe:       podcommon.StateBoolFalse,
-				ReadinessProbe:     podcommon.StateBoolTrue,
-				Container:          podcommon.StateContainerRunning,
-				Started:            podcommon.StateBoolFalse,
-				Ready:              podcommon.StateBoolFalse,
-				Resources:          podcommon.StateResourcesStartup,
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResourcesContainerResourcesMatch,
+				StartupProbe:    podcommon.StateBoolFalse,
+				ReadinessProbe:  podcommon.StateBoolTrue,
+				Container:       podcommon.StateContainerRunning,
+				Started:         podcommon.StateBoolFalse,
+				Ready:           podcommon.StateBoolFalse,
+				Resources:       podcommon.StateResourcesStartup,
+				StatusResources: podcommon.StateStatusResourcesContainerResourcesMatch,
 			},
 			wantLogMsg:       "startup resources enacted",
 			wantStatusUpdate: true,
@@ -217,7 +214,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 		{
 			name: "StartedWithStartupResAction",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -237,7 +234,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 		{
 			name: "NotStartedWithPostStartupResAction",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -264,14 +261,13 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			},
 			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
 			states: podcommon.States{
-				StartupProbe:       podcommon.StateBoolTrue,
-				ReadinessProbe:     podcommon.StateBoolTrue,
-				Container:          podcommon.StateContainerRunning,
-				Started:            podcommon.StateBoolTrue,
-				Ready:              podcommon.StateBoolTrue,
-				Resources:          podcommon.StateResourcesPostStartup,
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResourcesContainerResourcesMatch,
+				StartupProbe:    podcommon.StateBoolTrue,
+				ReadinessProbe:  podcommon.StateBoolTrue,
+				Container:       podcommon.StateContainerRunning,
+				Started:         podcommon.StateBoolTrue,
+				Ready:           podcommon.StateBoolTrue,
+				Resources:       podcommon.StateResourcesPostStartup,
+				StatusResources: podcommon.StateStatusResourcesContainerResourcesMatch,
 			},
 			wantLogMsg:       "post-startup resources enacted",
 			wantStatusUpdate: true,
@@ -280,7 +276,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			name:                "NotStartedWithUnknownResAction",
 			scaleWhenUnknownRes: true,
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -301,7 +297,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			name:                "StartedWithUnknownResAction",
 			scaleWhenUnknownRes: true,
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -507,9 +503,8 @@ func TestTargetContainerActionNotStartedWithStartupResAction(t *testing.T) {
 		{
 			"Error",
 			podcommon.States{
-				Resources:          podcommon.StateResourcesStartup,
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResourcesContainerResourcesMismatch,
+				Resources:       podcommon.StateResourcesStartup,
+				StatusResources: podcommon.StateStatusResourcesContainerResourcesMismatch,
 			},
 			func(m *podtest.MockStatus, run func()) {
 				m.UpdateDefaultAndRun(run)
@@ -528,8 +523,7 @@ func TestTargetContainerActionNotStartedWithStartupResAction(t *testing.T) {
 		{
 			"Ok",
 			podcommon.States{
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResourcesContainerResourcesMatch,
+				StatusResources: podcommon.StateStatusResourcesContainerResourcesMatch,
 			},
 			func(m *podtest.MockStatus, run func()) {
 				m.UpdateDefaultAndRun(run)
@@ -586,10 +580,10 @@ func TestTargetContainerActionNotStartedWithPostStartupResAction(t *testing.T) {
 		{
 			name: "UnableToPatchContainerResources",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
-				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(&v1.Pod{}, errors.New(""))
 			},
 			wantErrMsg:       "unable to patch container resources",
@@ -598,7 +592,7 @@ func TestTargetContainerActionNotStartedWithPostStartupResAction(t *testing.T) {
 		{
 			name: "Ok",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -660,10 +654,10 @@ func TestTargetContainerActionStartedWithStartupResAction(t *testing.T) {
 		{
 			name: "UnableToPatchContainerResources",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
-				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(&v1.Pod{}, errors.New(""))
 			},
 			wantErrMsg:       "unable to patch container resources",
@@ -672,7 +666,7 @@ func TestTargetContainerActionStartedWithStartupResAction(t *testing.T) {
 		{
 			name: "Ok",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -735,9 +729,8 @@ func TestTargetContainerActionStartedWithPostStartupResAction(t *testing.T) {
 		{
 			"Error",
 			podcommon.States{
-				Resources:          podcommon.StateResourcesPostStartup,
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResourcesContainerResourcesMismatch,
+				Resources:       podcommon.StateResourcesPostStartup,
+				StatusResources: podcommon.StateStatusResourcesContainerResourcesMismatch,
 			},
 			func(m *podtest.MockStatus, run func()) {
 				m.UpdateDefaultAndRun(run)
@@ -756,8 +749,7 @@ func TestTargetContainerActionStartedWithPostStartupResAction(t *testing.T) {
 		{
 			"Ok",
 			podcommon.States{
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResourcesContainerResourcesMatch,
+				StatusResources: podcommon.StateStatusResourcesContainerResourcesMatch,
 			},
 			func(m *podtest.MockStatus, run func()) {
 				m.UpdateDefaultAndRun(run)
@@ -809,10 +801,10 @@ func TestTargetContainerActionNotStartedWithUnknownResAction(t *testing.T) {
 		{
 			name: "UnableToPatchContainerResources",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
-				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(&v1.Pod{}, errors.New(""))
 			},
 			wantErrMsg:       "unable to patch container resources",
@@ -821,7 +813,7 @@ func TestTargetContainerActionNotStartedWithUnknownResAction(t *testing.T) {
 		{
 			name: "Ok",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -883,10 +875,10 @@ func TestTargetContainerActionStartedWithUnknownResAction(t *testing.T) {
 		{
 			name: "UnableToPatchContainerResources",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
-				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+				m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 					Return(&v1.Pod{}, errors.New(""))
 			},
 			wantErrMsg:       "unable to patch container resources",
@@ -895,7 +887,7 @@ func TestTargetContainerActionStartedWithUnknownResAction(t *testing.T) {
 		{
 			name: "Ok",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateMutatePodFuncDefaultAndRun(run)
+				m.PodMutationFuncDefaultAndRun(run)
 			},
 			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
 				m.UpdateContainerResourcesDefault()
@@ -1092,64 +1084,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		},
 
 		{
-			name: string(podcommon.StateAllocatedResourcesIncomplete),
-			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateDefaultAndRun(run)
-			},
-			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
-				m.ResizeStatusDefault()
-			},
-			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
-			states: podcommon.States{
-				AllocatedResources: podcommon.StateAllocatedResourcesIncomplete,
-			},
-			wantStatusUpdate: true,
-			wantLogMsg:       "target container allocated cpu and/or memory resources currently missing",
-		},
-		{
-			name: string(podcommon.StateAllocatedResourcesContainerRequestsMismatch),
-			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateDefaultAndRun(run)
-			},
-			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
-				m.ResizeStatusDefault()
-			},
-			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
-			states: podcommon.States{
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMismatch,
-			},
-			wantStatusUpdate: true,
-			wantLogMsg:       "target container allocated cpu and/or memory resources currently don't match target container's 'requests'",
-		},
-		{
-			name: string(podcommon.StateAllocatedResourcesUnknown),
-			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
-				m.UpdateDefaultAndRun(run)
-			},
-			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
-				m.ResizeStatusDefault()
-			},
-			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
-			states: podcommon.States{
-				AllocatedResources: podcommon.StateAllocatedResourcesUnknown,
-			},
-			wantStatusUpdate: true,
-			wantLogMsg:       "target container allocated cpu and/or memory resources currently unknown",
-		},
-		{
-			name:                 "UnknownAllocatedResourcesStatePanics",
-			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {},
-			configHelperMockFunc: func(m *podtest.MockKubeHelper) {
-				m.ResizeStatusDefault()
-			},
-			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
-			states: podcommon.States{
-				AllocatedResources: podcommon.StateAllocatedResources("test"),
-			},
-			wantPanicErrMsg:  "unknown state 'test'",
-			wantStatusUpdate: true,
-		},
-		{
 			name: string(podcommon.StateStatusResourcesIncomplete),
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
 				m.UpdateDefaultAndRun(run)
@@ -1159,8 +1093,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			},
 			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
 			states: podcommon.States{
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResourcesIncomplete,
+				StatusResources: podcommon.StateStatusResourcesIncomplete,
 			},
 			wantStatusUpdate: true,
 			wantLogMsg:       "target container current cpu and/or memory resources currently missing",
@@ -1175,8 +1108,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			},
 			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
 			states: podcommon.States{
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResourcesContainerResourcesMismatch,
+				StatusResources: podcommon.StateStatusResourcesContainerResourcesMismatch,
 			},
 			wantStatusUpdate: true,
 			wantLogMsg:       "target container current cpu and/or memory resources currently don't match target container's 'requests'",
@@ -1191,8 +1123,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			},
 			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
 			states: podcommon.States{
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResourcesUnknown,
+				StatusResources: podcommon.StateStatusResourcesUnknown,
 			},
 			wantStatusUpdate: true,
 			wantLogMsg:       "target container current cpu and/or memory resources currently unknown",
@@ -1205,8 +1136,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			},
 			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
 			states: podcommon.States{
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResources("test"),
+				StatusResources: podcommon.StateStatusResources("test"),
 			},
 			wantPanicErrMsg:  "unknown state 'test'",
 			wantStatusUpdate: true,
@@ -1221,9 +1151,8 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			},
 			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
 			states: podcommon.States{
-				Resources:          podcommon.StateResourcesPostStartup,
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResourcesContainerResourcesMatch,
+				Resources:       podcommon.StateResourcesPostStartup,
+				StatusResources: podcommon.StateStatusResourcesContainerResourcesMatch,
 			},
 			wantStatusUpdate: true,
 			wantLogMsg:       "post-startup resources enacted",
@@ -1239,9 +1168,8 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			},
 			configContHelperMockFunc: func(m *podtest.MockContainerKubeHelper) {},
 			states: podcommon.States{
-				Resources:          podcommon.StateResourcesStartup,
-				AllocatedResources: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-				StatusResources:    podcommon.StateStatusResourcesContainerResourcesMatch,
+				Resources:       podcommon.StateResourcesStartup,
+				StatusResources: podcommon.StateStatusResourcesContainerResourcesMatch,
 			},
 			wantStatusUpdate: true,
 			wantLogMsg:       "startup resources enacted",

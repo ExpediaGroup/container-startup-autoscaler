@@ -9,7 +9,7 @@ works with deployments, statefulsets, daemonsets and other workload management A
 CSA is implemented using [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime).
 
 CSA is built around Kube's [In-place Update of Pod Resources](https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/1287-in-place-update-pod-resources)
-feature, which is currently in alpha state as of Kubernetes 1.31 and therefore requires the `InPlacePodVerticalScaling`
+feature, which is currently in alpha state as of Kubernetes 1.32 and therefore requires the `InPlacePodVerticalScaling`
 feature gate to be enabled. Beta/stable targets are indicated [here](https://github.com/kubernetes/enhancements/issues/1287).
 The feature implementation (along with the corresponding implementation of CSA) is likely to change until it reaches
 stable status. See [CHANGELOG.md](CHANGELOG.md) for details of CSA versions and Kubernetes version compatibility.
@@ -44,8 +44,10 @@ non-production Kubernetes clusters.
     * [Reconciler](#reconciler)
     * [Scale](#scale)
     * [Kube API Retry](#kube-api-retry)
+    * [Informer Cache](#informer-cache)
   * [Retry](#retry)
     * [Kube API](#kube-api)
+  * [Informer Cache Sync](#informer-cache-sync)
   * [Encountering Unknown Resources](#encountering-unknown-resources)
   * [CSA Configuration](#csa-configuration)
     * [Controller](#controller)
@@ -153,11 +155,11 @@ scaled pod.
 ## Limitations
 The following limitations are currently in place:
 
-- Originally admitted target container resources must be guaranteed (`requests` == `limits`) to match the guaranteed
-  nature of startup resources - Kube API currently rejects any change in resource QoS. This should be addressed as the
-  `In-place Update of Pod Resources` feature matures.
-- Post-startup resources must be guaranteed (`requests` == `limits`) to match the guaranteed nature of startup
-  resources per above.
+- Originally admitted target container resources must be guaranteed (`requests` == `limits`) because CSA only allows
+  guaranteed resources for its startup settings and the `In-place Update of Pod Resources` feature
+  [does not currently allow](https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/1287-in-place-update-pod-resources#qos-class)
+  changing QoS class.
+- Post-startup resources must also currently be guaranteed (`requests` == `limits`) to avoid a changing QoS class.
 - Failed target container scales are not re-attempted.
 
 ## Restrictions
@@ -243,7 +245,6 @@ Example output:
     "started": "true",
     "ready": "false",
     "resources": "poststartup",
-    "allocatedResources": "containerrequestsmatch",
     "statusResources": "containerresourcesmatch"
   },
   "scale": {
@@ -267,8 +268,7 @@ Explanation of status items:
 | `states`      | `started`            | Whether the container is signalled as started by Kube.                                                 |
 | `states`      | `ready`              | Whether the container is signalled as ready by Kube.                                                   |
 | `states`      | `resources`          | The type of resources (startup/post-startup) that are currently applied (but not necessarily enacted). |
-| `states`      | `allocatedResources` | How the reported container allocated resources relate to container requests.                           |
-| `states`      | `statusResources`    | How the reported currently allocated resources relate to container resources.                          |
+| `states`      | `statusResources`    | How the reported current enacted resources relate to container resources.                              |
 | `scale`       | -                    | Information around scaling activity.                                                                   |
 | `scale`       | `lastCommanded`      | The last time a scale was commanded (UTC).                                                             |
 | `scale`       | `lastEnacted`        | The last time a scale was enacted (UTC; empty if failed).                                              |
@@ -306,7 +306,7 @@ Example `info`-level log:
 ```json
 {
 	"level": "info",
-	"controller": "container-startup-autoscaler",
+	"controller": "csa",
 	"namespace": "echoserver",
 	"name": "echoserver-5f65d8f65d-mvqt8",
 	"reconcileID": "6157dd49-7aa9-4cac-bbaf-a739fa48cc61",
@@ -318,7 +318,6 @@ Example `info`-level log:
 		"started": "true",
 		"ready": "false",
 		"resources": "poststartup",
-		"allocatedResources": "containerrequestsmatch",
 		"statusResources": "containerresourcesmatch"
 	},
 	"caller": "container-startup-autoscaler/internal/pod/targetcontaineraction.go:472",
@@ -341,30 +340,26 @@ values.
 ### Reconciler
 Prefixed with `csa_reconciler_`:
 
-| Metric Name                    | Type    | Labels       | Description                                                                                                          |
-|--------------------------------|---------|--------------|----------------------------------------------------------------------------------------------------------------------|
-| `skipped_only_status_change`   | Counter | `controller` | Number of reconciles that were skipped because only the scaler controller status changed.                            |
-| `existing_in_progress`         | Counter | `controller` | Number of attempted reconciles where one was already in progress for the same namespace/name (results in a requeue). |
-| `failure_unable_to_get_pod`    | Counter | `controller` | Number of reconciles where there was a failure to get the pod (results in a requeue).                                |
-| `failure_pod_doesnt_exist`     | Counter | `controller` | Number of reconciles where the pod was found not to exist (results in failure).                                      |
-| `failure_validation`           | Counter | `controller` | Number of reconciles where there was a failure to validate (results in failure).                                     |
-| `failure_states_determination` | Counter | `controller` | Number of reconciles where there was a failure to determine states (results in failure).                             |
-| `failure_states_action`        | Counter | `controller` | Number of reconciles where there was a failure to action the determined states (results in failure).                 |
-
-Labels:
-- `controller`: the CSA controller name.
+| Metric Name                    | Type    | Labels | Description                                                                                                          |
+|--------------------------------|---------|--------|----------------------------------------------------------------------------------------------------------------------|
+| `skipped_only_status_change`   | Counter | None   | Number of reconciles that were skipped because only the scaler controller status changed.                            |
+| `existing_in_progress`         | Counter | None   | Number of attempted reconciles where one was already in progress for the same namespace/name (results in a requeue). |
+| `failure_unable_to_get_pod`    | Counter | None   | Number of reconciles where there was a failure to get the pod (results in a requeue).                                |
+| `failure_pod_doesnt_exist`     | Counter | None   | Number of reconciles where the pod was found not to exist (results in failure).                                      |
+| `failure_validation`           | Counter | None   | Number of reconciles where there was a failure to validate (results in failure).                                     |
+| `failure_states_determination` | Counter | None   | Number of reconciles where there was a failure to determine states (results in failure).                             |
+| `failure_states_action`        | Counter | None   | Number of reconciles where there was a failure to action the determined states (results in failure).                 |
 
 ### Scale
 Prefixed with `csa_scale_`:
 
-| Metric Name                   | Type      | Labels                               | Description                                                                                                   |
-|-------------------------------|-----------|--------------------------------------|---------------------------------------------------------------------------------------------------------------|
-| `failure`                     | Counter   | `controller`, `direction`, `reason`  | Number of scale failures.                                                                                     |
-| `commanded_unknown_resources` | Counter   | `controller`                         | Number of scales commanded upon encountering unknown resources (see [here](#encountering-unknown-resources)). |
-| `duration_seconds`            | Histogram | `controller`, `direction`, `outcome` | Scale duration (from commanded to enacted).                                                                   |
+| Metric Name                   | Type      | Labels                 | Description                                                                                                   |
+|-------------------------------|-----------|------------------------|---------------------------------------------------------------------------------------------------------------|
+| `failure`                     | Counter   | `direction`, `reason`  | Number of scale failures.                                                                                     |
+| `commanded_unknown_resources` | Counter   | None                   | Number of scales commanded upon encountering unknown resources (see [here](#encountering-unknown-resources)). |
+| `duration_seconds`            | Histogram | `direction`, `outcome` | Scale duration (from commanded to enacted).                                                                   |
 
 Labels:
-- `controller`: the CSA controller name.
 - `direction`: the direction of the scale - `up`/`down`.
 - `reason`: the reason why the scale failed.
 - `outcome`: the outcome of the scale - `success`/`failure`.
@@ -372,15 +367,24 @@ Labels:
 ### Kube API Retry
 Prefixed with `csa_retrykubeapi_`:
 
-| Metric Name | Type    | Labels                 | Description                 |
-|-------------|---------|------------------------|-----------------------------|
-| `retry`     | Counter | `controller`, `reason` | Number of Kube API retries. |
+| Metric Name | Type    | Labels   | Description                 |
+|-------------|---------|----------|-----------------------------|
+| `retry`     | Counter | `reason` | Number of Kube API retries. |
 
 Labels:
-- `controller`: the CSA controller name.
 - `reason`: the Kube API response that caused a retry to occur.
 
 See [below](#retry) for more information on retries.
+
+### Informer Cache
+Prefixed with `csa_informercache_`:
+
+| Metric Name    | Type      | Labels | Description                                                                                                                                 |
+|----------------|-----------|--------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| `sync_poll`    | Histogram | None   | Number of informer cache sync polls after a pod mutation was performed via the Kube API.                                                    |
+| `sync_timeout` | Counter   | None   | Number of informer cache sync timeouts after a pod mutation was performed via the Kube API (may result in inconsistent CSA status updates). |
+
+See [below](#informer-cache-sync) for more information on informer cache syncs.
 
 ## Retry
 ### Kube API
@@ -389,6 +393,26 @@ retry according to CSA retry [configuration](#csa-configuration).
 
 CSA handles situations where Kube API reports a conflict upon a pod update. In this case, CSA retrieves the latest
 version of the pod and reapplies the update, before trying again (subject to retry configuration).   
+
+## Informer Cache Sync
+The CSA [status](#status) includes timestamps that CSA uses itself internally, such as for calculating scale durations.
+When status is updated, CSA waits for the updated pod to be reflected in the informer cache prior to finishing
+the reconcile to ensure following reconciles have the latest status available to work upon. Without this mechanism, the
+rapid pace of pod updates during resizes can prevent subsequent reconciles from retrieving the latest status. This
+occurs because the informer may not have cached the updated pod in time, resulting in inaccurate status updates.
+
+The CSA reconciler doesn't allow concurrent reconciles for same pod so subsequent reconciles will not start until this
+wait described above has completed.
+
+The informer cache metrics described [above](#informer-cache) provide insight into how quickly the informer cache is
+updated (synced) after status is updated, and whether any timeouts occur:
+
+- `patch_sync_poll`: the number of cache polls that were required to confirm the cache was populated with the updated
+  pod. The cache is polled periodically per the `waitForCacheUpdatePollMillis` configuration [here](internal/pod/kubehelper.go).
+  Higher values indicate longer cache sync times.
+- `patch_sync_timeout`: the number of times the cache sync timed out per the`waitForCacheUpdateTimeoutMillis`
+  configuration [here](internal/pod/kubehelper.go). Timeouts do not result in an error or termination of the reconcile,
+  but may result in inconsistent CSA status updates.  
 
 ## Encountering Unknown Resources
 By default, CSA will yield an error if it encounters resources applied to a target container that it doesn't recognize
@@ -418,7 +442,7 @@ All configuration flags are always logged upon CSA start.
 | `--leader-election-resource-namespace` | String  | -             | The namespace to create resources in if leader election is enabled (uses current namespace if not supplied). |
 | `--cache-sync-period-mins`             | Integer | `60`          | How frequently the informer should re-sync.                                                                  |
 | `--graceful-shutdown-timeout-secs`     | Integer | `10`          | How long to allow busy workers to complete upon shutdown.                                                    |
-| `--requeue-duration-secs`              | Integer | `3`           | How long to wait before requeuing a reconcile.                                                               |
+| `--requeue-duration-secs`              | Integer | `1`           | How long to wait before requeuing a reconcile.                                                               |
 | `--max-concurrent-reconciles`          | Integer | `10`          | The maximum number of concurrent reconciles.                                                                 |
 | `--scale-when-unknown-resources`       | Boolean | `false`       | Whether to scale when [unknown resources](#encountering-unknown-resources) are encountered.                  |
 
@@ -514,12 +538,13 @@ Integration tests are implemented as Go tests and located in `test/integration`.
 The integration tests use [echo-server](https://github.com/Ealenn/Echo-Server) for containers. Note: the very first
 execution might take some time to complete.
 
-A number of environment variable-based configuration options are available:
+A number of environment variable-based configuration items are available:
 
 | Name                     | Default | Description                                                                                                                          |
 |--------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------|
 | `KUBE_VERSION`           | -       | The _major.minor_ version of Kube to run tests against e.g. `1.31`.                                                                  |
 | `MAX_PARALLELISM`        | `4`     | The maximum number of tests that can run in parallel.                                                                                |
+| `EXTRA_CA_CERT_PATH`     | -       | See below.                                                                                                                              |
 | `REUSE_CLUSTER`          | `false` | Whether to reuse an existing CSA kind cluster (if it already exists). `KUBE_VERSION` has no effect if an existing cluster is reused. |
 | `INSTALL_METRICS_SERVER` | `false` | Whether to install metrics-server.                                                                                                   |
 | `KEEP_CSA`               | `false` | Whether to keep the CSA installation after tests finish.                                                                             |
@@ -530,6 +555,10 @@ Integration tests are executed in parallel due to their long-running nature. Eac
 namespace (but using the same single CSA installation). If local resources are limited, reduce `MAX_PARALLELISM`
 accordingly and ensure `DELETE_NS_AFTER_TEST` is `true`. Each test typically spins up 2 pods, each with 2 containers;
 see source for resource allocations.
+
+`EXTRA_CA_CERT_PATH` is an optional configuration item that allows registration of an additional CA certificate
+(or chain) when building the kind node image. This will be required if a technology that intercepts encrypted network
+traffic via insertion of its own CA is being used. The path must be absolute and reference a PEM-formatted file. 
 
 ## Running Locally
 A number of Bash scripts are supplied in the `scripts/sandbox` directory that allow you to try out CSA using
@@ -551,7 +580,10 @@ Executing `csa-install.sh`:
   - [Leader election](#controller) is enabled; 2 pods are created.
   - [Log verbosity level](#log) is `2` (trace).
 
-Note: the very first execution might take some time to complete.
+Note:
+- To register an additional CA certificate (or chain) when building the kind node image as described
+  [above](#integration), pass `--extra-ca-cert-path=/path/to/ca.pem` when executing the script.
+- The very first execution might take some time to complete.
 
 ### Tailing CSA Logs
 Executing `csa-tail-logs.sh` tails logs from the current CSA leader pod.

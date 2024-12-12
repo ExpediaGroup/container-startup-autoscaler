@@ -14,13 +14,61 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+extra_ca_cert_path=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --extra-ca-cert-path=*)
+      extra_ca_cert_path="${1#*=}"
+      ;;
+    *)
+      echo "Unrecognized argument: $1. Supported: --extra-ca-cert-path (optional)."
+      exit 1
+  esac
+  shift
+done
+
 source config/vars.sh
 source csa-uninstall.sh
 
 # shellcheck disable=SC2154
 if [ -z "$(docker images --filter "reference=$kind_node_docker_tag" --format '{{.Repository}}:{{.Tag}}')" ]; then
-  # shellcheck disable=SC2154
-  kind build node-image --type release "$kind_kube_version" --image "$kind_node_docker_tag"
+  if [ -n "$extra_ca_cert_path" ]; then
+    if [ ! -e "$extra_ca_cert_path" ]; then
+      echo "File supplied via --extra-ca-cert-path doesn't exist."
+      exit 1
+    fi
+
+    default_kind_base_image=$(kind build node-image --help | sed -n 's/.*--base-image.*default ".*\(kindest[^"]*\)".*/\1/p')
+    if [ -z "$default_kind_base_image" ]; then
+      echo "Unable to locate default base image."
+      exit 1
+    fi
+
+    # Gets overwritten if original base image tag is used, so alter.
+    built_kind_base_image_tag="$default_kind_base_image-extracacert"
+
+    temp_dir=$(mktemp -d)
+    copied_extra_ca_cert_filename="extra-ca-cert.crt"
+
+    cp "$extra_ca_cert_path" "$temp_dir/$copied_extra_ca_cert_filename"
+    docker build \
+           -f extracacert/Dockerfile \
+           -t "$built_kind_base_image_tag" \
+           --build-arg "BASE_IMAGE=$default_kind_base_image" \
+           --build-arg "EXTRA_CA_CERT_FILENAME=$copied_extra_ca_cert_filename" \
+           "$temp_dir"
+    rm -rf "$temp_dir"
+
+    kind build node-image \
+         --type release "$kind_kube_version" \
+         --base-image "$built_kind_base_image_tag" \
+         --image "$kind_node_docker_tag"
+  else
+    kind build node-image \
+         --type release "$kind_kube_version" \
+         --image "$kind_node_docker_tag"
+  fi
 fi
 
 # shellcheck disable=SC2154
@@ -39,7 +87,6 @@ kubectl apply -k config/metricsserver --kubeconfig "$kind_kubeconfig"
 
 # shellcheck disable=SC2154
 docker pull "$echo_server_docker_image_tag"
-# shellcheck disable=SC2154
 kind load docker-image "$echo_server_docker_image_tag" --name "$kind_cluster_name"
 
 # shellcheck disable=SC2154

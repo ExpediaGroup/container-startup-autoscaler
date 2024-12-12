@@ -81,14 +81,6 @@ func (s targetContainerState) States(ctx context.Context, pod *v1.Pod, config po
 		s.isPostStartupConfigApplied(container, config),
 	)
 
-	ret.AllocatedResources, err = s.stateAllocatedResources(pod, container, config)
-	if err != nil {
-		if !s.shouldReturnError(ctx, err) {
-			return ret, nil
-		}
-		return ret, common.WrapErrorf(err, "unable to determine allocated resources states")
-	}
-
 	ret.StatusResources, err = s.stateStatusResources(pod, container, config)
 	if err != nil {
 		if !s.shouldReturnError(ctx, err) {
@@ -182,37 +174,7 @@ func (s targetContainerState) stateResources(
 	}
 }
 
-// stateAllocatedResources returns the allocated resources state for the target container, using the supplied config.
-func (s targetContainerState) stateAllocatedResources(
-	pod *v1.Pod,
-	container *v1.Container,
-	config podcommon.ScaleConfig,
-) (podcommon.StateAllocatedResources, error) {
-	allocatedCpu, err := s.containerKubeHelper.AllocatedResources(pod, config.GetTargetContainerName(), v1.ResourceCPU)
-	if err != nil {
-		return podcommon.StateAllocatedResourcesUnknown, common.WrapErrorf(err, "unable to get allocated cpu resources")
-	}
-
-	allocatedMemory, err := s.containerKubeHelper.AllocatedResources(pod, config.GetTargetContainerName(), v1.ResourceMemory)
-	if err != nil {
-		return podcommon.StateAllocatedResourcesUnknown, common.WrapErrorf(err, "unable to get allocated memory resources")
-	}
-
-	if allocatedCpu.IsZero() || allocatedMemory.IsZero() {
-		return podcommon.StateAllocatedResourcesIncomplete, nil
-	}
-
-	requestsCpu := s.containerKubeHelper.Requests(container, v1.ResourceCPU)
-	requestsMemory := s.containerKubeHelper.Requests(container, v1.ResourceMemory)
-
-	if allocatedCpu.Equal(requestsCpu) && allocatedMemory.Equal(requestsMemory) {
-		return podcommon.StateAllocatedResourcesContainerRequestsMatch, nil
-	}
-
-	return podcommon.StateAllocatedResourcesContainerRequestsMismatch, nil
-}
-
-// stateAllocatedResources returns the status resources state for the target container, using the supplied config.
+// stateStatusResources returns the status resources state for the target container, using the supplied config.
 func (s targetContainerState) stateStatusResources(
 	pod *v1.Pod,
 	container *v1.Container,
@@ -290,11 +252,6 @@ func (s targetContainerState) isPostStartupConfigApplied(container *v1.Container
 func (s targetContainerState) shouldReturnError(ctx context.Context, err error) bool {
 	if errors.As(err, &ContainerStatusNotPresentError{}) {
 		logging.Infof(ctx, logging.VDebug, "container status not yet present")
-		return false
-	}
-
-	if errors.As(err, &ContainerStatusAllocatedResourcesNotPresentError{}) {
-		logging.Infof(ctx, logging.VDebug, "container status allocated resources not yet present")
 		return false
 	}
 

@@ -29,7 +29,6 @@ type podBuilder struct {
 	containerStatusResizeStatus *v1.PodResizeStatus
 	nilContainerStatusStarted   bool
 	nilContainerStatusResources bool
-	nilStatusAllocatedResources bool
 }
 
 func NewPodBuilder(config podConfig) *podBuilder {
@@ -66,11 +65,6 @@ func (b *podBuilder) NilContainerStatusResources() *podBuilder {
 	return b
 }
 
-func (b *podBuilder) NilStatusAllocatedResources() *podBuilder {
-	b.nilStatusAllocatedResources = true
-	return b
-}
-
 func (b *podBuilder) Build() *v1.Pod {
 	p := pod(b.config)
 
@@ -96,10 +90,6 @@ func (b *podBuilder) Build() *v1.Pod {
 
 	if b.nilContainerStatusResources {
 		p.Status.ContainerStatuses[0].Resources = nil
-	}
-
-	if b.nilStatusAllocatedResources {
-		p.Status.ContainerStatuses[0].AllocatedResources = nil
 	}
 
 	return p

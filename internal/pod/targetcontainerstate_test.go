@@ -66,7 +66,6 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolUnknown,
 				podcommon.StateBoolUnknown,
 				podcommon.StateResourcesUnknown,
-				podcommon.StateAllocatedResourcesUnknown,
 				podcommon.StateStatusResourcesUnknown,
 			),
 			wantErrMsg: "unable to determine container state",
@@ -87,7 +86,6 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolUnknown,
 				podcommon.StateBoolUnknown,
 				podcommon.StateResourcesUnknown,
-				podcommon.StateAllocatedResourcesUnknown,
 				podcommon.StateStatusResourcesUnknown,
 			),
 			wantErrMsg: "unable to determine started state",
@@ -110,35 +108,9 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolTrue,
 				podcommon.StateBoolUnknown,
 				podcommon.StateResourcesUnknown,
-				podcommon.StateAllocatedResourcesUnknown,
 				podcommon.StateStatusResourcesUnknown,
 			),
 			wantErrMsg: "unable to determine ready state",
-		},
-		{
-			name: "UnableToGetAllocatedResourcesState",
-			configMockFunc: func(m *podtest.MockContainerKubeHelper) {
-				m.On("AllocatedResources", mock.Anything, mock.Anything, mock.Anything).
-					Return(resource.Quantity{}, errors.New(""))
-				m.GetDefault()
-				m.HasStartupProbeDefault()
-				m.HasReadinessProbeDefault()
-				m.StateDefault()
-				m.IsStartedDefault()
-				m.IsReadyDefault()
-				applyMockRequestsLimitsStartup(m)
-			},
-			wantStates: podcommon.NewStates(
-				podcommon.StateBoolTrue,
-				podcommon.StateBoolTrue,
-				podcommon.StateContainerRunning,
-				podcommon.StateBoolTrue,
-				podcommon.StateBoolTrue,
-				podcommon.StateResourcesStartup,
-				podcommon.StateAllocatedResourcesUnknown,
-				podcommon.StateStatusResourcesUnknown,
-			),
-			wantErrMsg: "unable to determine allocated resources states",
 		},
 		{
 			name: "UnableToGetStatusResourcesState",
@@ -152,7 +124,6 @@ func TestTargetContainerStateStates(t *testing.T) {
 				m.IsStartedDefault()
 				m.IsReadyDefault()
 				applyMockRequestsLimitsStartup(m)
-				m.AllocatedResourcesDefault()
 			},
 			wantStates: podcommon.NewStates(
 				podcommon.StateBoolTrue,
@@ -161,7 +132,6 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolTrue,
 				podcommon.StateBoolTrue,
 				podcommon.StateResourcesStartup,
-				podcommon.StateAllocatedResourcesContainerRequestsMismatch,
 				podcommon.StateStatusResourcesUnknown,
 			),
 			wantErrMsg: "unable to determine status resources states",
@@ -181,7 +151,6 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolUnknown,
 				podcommon.StateBoolUnknown,
 				podcommon.StateResourcesUnknown,
-				podcommon.StateAllocatedResourcesUnknown,
 				podcommon.StateStatusResourcesUnknown,
 			),
 		},
@@ -201,7 +170,6 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolUnknown,
 				podcommon.StateBoolUnknown,
 				podcommon.StateResourcesUnknown,
-				podcommon.StateAllocatedResourcesUnknown,
 				podcommon.StateStatusResourcesUnknown,
 			),
 		},
@@ -222,31 +190,6 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolTrue,
 				podcommon.StateBoolUnknown,
 				podcommon.StateResourcesUnknown,
-				podcommon.StateAllocatedResourcesUnknown,
-				podcommon.StateStatusResourcesUnknown,
-			),
-		},
-		{
-			name: "StateAllocatedResourcesNotShouldReturnError",
-			configMockFunc: func(m *podtest.MockContainerKubeHelper) {
-				m.On("AllocatedResources", mock.Anything, mock.Anything, mock.Anything).
-					Return(resource.Quantity{}, NewContainerStatusNotPresentError())
-				m.GetDefault()
-				m.HasStartupProbeDefault()
-				m.HasReadinessProbeDefault()
-				m.StateDefault()
-				m.IsStartedDefault()
-				m.IsReadyDefault()
-				applyMockRequestsLimitsStartup(m)
-			},
-			wantStates: podcommon.NewStates(
-				podcommon.StateBoolTrue,
-				podcommon.StateBoolTrue,
-				podcommon.StateContainerRunning,
-				podcommon.StateBoolTrue,
-				podcommon.StateBoolTrue,
-				podcommon.StateResourcesStartup,
-				podcommon.StateAllocatedResourcesUnknown,
 				podcommon.StateStatusResourcesUnknown,
 			),
 		},
@@ -262,7 +205,6 @@ func TestTargetContainerStateStates(t *testing.T) {
 				m.IsStartedDefault()
 				m.IsReadyDefault()
 				applyMockRequestsLimitsStartup(m)
-				m.AllocatedResourcesDefault()
 			},
 			wantStates: podcommon.NewStates(
 				podcommon.StateBoolTrue,
@@ -271,7 +213,6 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolTrue,
 				podcommon.StateBoolTrue,
 				podcommon.StateResourcesStartup,
-				podcommon.StateAllocatedResourcesContainerRequestsMismatch,
 				podcommon.StateStatusResourcesUnknown,
 			),
 		},
@@ -285,7 +226,6 @@ func TestTargetContainerStateStates(t *testing.T) {
 				m.IsStartedDefault()
 				m.IsReadyDefault()
 				applyMockRequestsLimitsStartup(m)
-				m.AllocatedResourcesDefault()
 				m.CurrentRequestsDefault()
 				m.CurrentLimitsDefault()
 			},
@@ -301,7 +241,6 @@ func TestTargetContainerStateStates(t *testing.T) {
 				m.IsStartedDefault()
 				m.IsReadyDefault()
 				applyMockRequestsLimitsPostStartup(m)
-				m.AllocatedResourcesDefault()
 				m.CurrentRequestsDefault()
 				m.CurrentLimitsDefault()
 			},
@@ -317,7 +256,6 @@ func TestTargetContainerStateStates(t *testing.T) {
 				m.IsStartedDefault()
 				m.IsReadyDefault()
 				applyMockRequestsLimitsUnknown(m)
-				m.AllocatedResourcesDefault()
 				m.CurrentRequestsDefault()
 				m.CurrentLimitsDefault()
 			},
@@ -570,85 +508,6 @@ func TestTargetContainerStateStateReady(t *testing.T) {
 	}
 }
 
-func TestTargetContainerStateStateAllocatedResources(t *testing.T) {
-	tests := []struct {
-		name           string
-		configMockFunc func(*podtest.MockContainerKubeHelper)
-		want           podcommon.StateAllocatedResources
-		wantErrMsg     string
-	}{
-		{
-			name: "UnableToGetAllocatedCpuResources",
-			configMockFunc: func(m *podtest.MockContainerKubeHelper) {
-				m.On("AllocatedResources", mock.Anything, mock.Anything, v1.ResourceCPU).
-					Return(resource.Quantity{}, errors.New(""))
-			},
-			want:       podcommon.StateAllocatedResourcesUnknown,
-			wantErrMsg: "unable to get allocated cpu resources",
-		},
-		{
-			name: "UnableToGetAllocatedMemoryResources",
-			configMockFunc: func(m *podtest.MockContainerKubeHelper) {
-				m.On("AllocatedResources", mock.Anything, mock.Anything, v1.ResourceMemory).
-					Return(resource.Quantity{}, errors.New(""))
-				m.AllocatedResourcesDefault()
-			},
-			want:       podcommon.StateAllocatedResourcesUnknown,
-			wantErrMsg: "unable to get allocated memory resources",
-		},
-		{
-			name: string(podcommon.StateAllocatedResourcesIncomplete),
-			configMockFunc: func(m *podtest.MockContainerKubeHelper) {
-				m.On("AllocatedResources", mock.Anything, mock.Anything, v1.ResourceCPU).
-					Return(resource.Quantity{}, nil)
-				m.AllocatedResourcesDefault()
-			},
-			want: podcommon.StateAllocatedResourcesIncomplete,
-		},
-		{
-			name: string(podcommon.StateAllocatedResourcesContainerRequestsMatch),
-			configMockFunc: func(m *podtest.MockContainerKubeHelper) {
-				m.On("AllocatedResources", mock.Anything, mock.Anything, v1.ResourceCPU).
-					Return(podtest.PodAnnotationCpuStartupQuantity, nil)
-				m.On("AllocatedResources", mock.Anything, mock.Anything, v1.ResourceMemory).
-					Return(podtest.PodAnnotationMemoryStartupQuantity, nil)
-				m.On("Requests", mock.Anything, v1.ResourceCPU).
-					Return(podtest.PodAnnotationCpuStartupQuantity, nil)
-				m.On("Requests", mock.Anything, v1.ResourceMemory).
-					Return(podtest.PodAnnotationMemoryStartupQuantity, nil)
-			},
-			want: podcommon.StateAllocatedResourcesContainerRequestsMatch,
-		},
-		{
-			name: string(podcommon.StateAllocatedResourcesContainerRequestsMismatch),
-			configMockFunc: func(m *podtest.MockContainerKubeHelper) {
-				m.On("AllocatedResources", mock.Anything, mock.Anything, v1.ResourceCPU).
-					Return(podtest.PodAnnotationCpuStartupQuantity, nil)
-				m.On("AllocatedResources", mock.Anything, mock.Anything, v1.ResourceMemory).
-					Return(podtest.PodAnnotationMemoryStartupQuantity, nil)
-				m.On("Requests", mock.Anything, v1.ResourceCPU).
-					Return(podtest.PodAnnotationCpuPostStartupRequestsQuantity, nil)
-				m.On("Requests", mock.Anything, v1.ResourceMemory).
-					Return(podtest.PodAnnotationMemoryStartupQuantity, nil)
-			},
-			want: podcommon.StateAllocatedResourcesContainerRequestsMismatch,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := newTargetContainerState(podtest.NewMockContainerKubeHelper(tt.configMockFunc))
-
-			got, err := s.stateAllocatedResources(&v1.Pod{}, &v1.Container{}, NewScaleConfig(nil))
-			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
-			} else {
-				assert.Nil(t, err)
-			}
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func TestTargetContainerStateStateStatusResources(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -774,7 +633,6 @@ func TestTargetContainerStateShouldReturnError(t *testing.T) {
 		want bool
 	}{
 		{"ContainerStatusResourcesNotPresentErrorFalse", NewContainerStatusResourcesNotPresentError(), false},
-		{"ContainerStatusAllocatedResourcesNotPresentErrorFalse", NewContainerStatusAllocatedResourcesNotPresentError(), false},
 		{"NewContainerStatusResourcesNotPresentErrorFalse", NewContainerStatusResourcesNotPresentError(), false},
 		{"True", errors.New(""), true},
 	}

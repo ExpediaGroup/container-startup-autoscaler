@@ -62,9 +62,6 @@ func newTargetContainerAction(
 	}
 }
 
-// TODO(wt) might want to protect against resize flapping (startup -> post-startup -> startup ad nauseum) - disable for
-//  a period of time with startup resources.
-
 // Execute performs the appropriate action for the determined target container state.
 func (a *targetContainerAction) Execute(
 	ctx context.Context,
@@ -223,7 +220,8 @@ func (a *targetContainerAction) notStartedWithPostStartupResAction(
 		pod, config.GetTargetContainerName(),
 		config.GetCpuConfig().Startup, config.GetCpuConfig().Startup,
 		config.GetMemoryConfig().Startup, config.GetMemoryConfig().Startup,
-		a.status.UpdateMutatePodFunc(ctx, msg, states, podcommon.StatusScaleStateUpCommanded),
+		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUpCommanded),
+		true,
 	)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
@@ -248,7 +246,8 @@ func (a *targetContainerAction) startedWithStartupResAction(
 		pod, config.GetTargetContainerName(),
 		config.GetCpuConfig().PostStartupRequests, config.GetCpuConfig().PostStartupLimits,
 		config.GetMemoryConfig().PostStartupRequests, config.GetMemoryConfig().PostStartupLimits,
-		a.status.UpdateMutatePodFunc(ctx, msg, states, podcommon.StatusScaleStateDownCommanded),
+		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateDownCommanded),
+		true,
 	)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
@@ -285,7 +284,8 @@ func (a *targetContainerAction) notStartedWithUnknownResAction(
 		pod, config.GetTargetContainerName(),
 		config.GetCpuConfig().Startup, config.GetCpuConfig().Startup,
 		config.GetMemoryConfig().Startup, config.GetMemoryConfig().Startup,
-		a.status.UpdateMutatePodFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded),
+		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded),
+		true,
 	)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
@@ -311,7 +311,8 @@ func (a *targetContainerAction) startedWithUnknownResAction(
 		pod, config.GetTargetContainerName(),
 		config.GetCpuConfig().PostStartupRequests, config.GetCpuConfig().PostStartupLimits,
 		config.GetMemoryConfig().PostStartupRequests, config.GetMemoryConfig().PostStartupLimits,
-		a.status.UpdateMutatePodFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded),
+		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded),
+		true,
 	)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
@@ -399,51 +400,7 @@ func (a *targetContainerAction) processConfigEnacted(
 		return fmt.Errorf("%s '%s'", msg, a.kubeHelper.ResizeStatus(pod))
 	}
 
-	// Resize is not pending, so examine AllocatedResources.
-	switch states.AllocatedResources {
-	case podcommon.StateAllocatedResourcesIncomplete:
-		// Target container allocated CPU and/or memory resources are missing. Log and return with the expectation that
-		// the missing items become available in the future.
-		a.logInfoAndUpdateStatus(
-			ctx,
-			logging.VDebug,
-			states, podcommon.StatusScaleStateNotApplicable,
-			pod,
-			"target container allocated cpu and/or memory resources currently missing",
-		)
-		return nil
-
-	case podcommon.StateAllocatedResourcesContainerRequestsMatch: // Want this, but here so we can panic on default below.
-
-	case podcommon.StateAllocatedResourcesContainerRequestsMismatch:
-		// Target container allocated CPU and/or memory resources don't match target container's 'requests'. Log and
-		// return with the expectation that they match in the future.
-		a.logInfoAndUpdateStatus(
-			ctx,
-			logging.VDebug,
-			states, podcommon.StatusScaleStateNotApplicable,
-			pod,
-			"target container allocated cpu and/or memory resources currently don't match target container's 'requests'",
-		)
-		return nil
-
-	case podcommon.StateAllocatedResourcesUnknown:
-		// Target container allocated CPU and/or memory resources are unknown. Log and return with the expectation that
-		// they become known in the future.
-		a.logInfoAndUpdateStatus(
-			ctx,
-			logging.VDebug,
-			states, podcommon.StatusScaleStateNotApplicable,
-			pod,
-			"target container allocated cpu and/or memory resources currently unknown",
-		)
-		return nil
-
-	default:
-		panic(fmt.Errorf("unknown state '%s'", states.AllocatedResources))
-	}
-
-	// AllocatedResources is as expected - finally examine StatusResources.
+	// Resize is not pending, so examine StatusResources.
 	switch states.StatusResources {
 	case podcommon.StateStatusResourcesIncomplete:
 		// Target container current CPU and/or memory resources are missing. Log and return with the expectation that

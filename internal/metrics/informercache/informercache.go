@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package retry
+package informercache
 
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/metricscommon"
@@ -23,35 +23,49 @@ import (
 )
 
 const (
-	SubsystemKubeApi = "retrykubeapi"
+	Subsystem = "informercache"
 )
 
 const (
-	retryName = "retry"
+	syncPollName    = "sync_poll"
+	syncTimeoutName = "sync_timeout"
 )
 
 var (
-	retry = prometheus.NewCounterVec(prometheus.CounterOpts{
+	syncPoll = prometheus.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: metricscommon.Namespace,
-		Subsystem: SubsystemKubeApi,
-		Name:      retryName,
-		Help:      "Number of Kube API retries (by reason)",
-	}, []string{metricscommon.ReasonLabelName})
+		Subsystem: Subsystem,
+		Name:      syncPollName,
+		Help:      "Number of informer cache sync polls after a pod mutation was performed via the Kube API",
+		Buckets:   []float64{1, 2, 4, 8, 16, 32, 64},
+	}, []string{})
+
+	syncTimeout = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metricscommon.Namespace,
+		Subsystem: Subsystem,
+		Name:      syncTimeoutName,
+		Help:      "Number of informer cache sync timeouts after a pod mutation was performed via the Kube API (may result in inconsistent CSA status updates)",
+	}, []string{})
 )
 
 // allMetrics must include all metrics defined above.
 var allMetrics = []prometheus.Collector{
-	retry,
+	syncPoll,
+	syncTimeout,
 }
 
-func RegisterKubeApiMetrics(registry metrics.RegistererGatherer) {
+func RegisterMetrics(registry metrics.RegistererGatherer) {
 	registry.MustRegister(allMetrics...)
 }
 
-func ResetKubeApiMetrics() {
+func ResetMetrics() {
 	metricscommon.ResetMetrics(allMetrics)
 }
 
-func Retry(reason string) prometheus.Counter {
-	return retry.WithLabelValues(reason)
+func SyncPoll() prometheus.Observer {
+	return syncPoll.WithLabelValues()
+}
+
+func SyncTimeout() prometheus.Counter {
+	return syncTimeout.WithLabelValues()
 }

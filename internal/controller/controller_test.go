@@ -33,10 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/config"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -56,8 +54,8 @@ func (m *mockController) Reconcile(_ context.Context, _ reconcile.Request) (reco
 	panic(errors.New("not supported"))
 }
 
-func (m *mockController) Watch(src source.Source, eventhandler handler.EventHandler, predicates ...predicate.Predicate) error {
-	args := m.Called(src, eventhandler, predicates)
+func (m *mockController) Watch(src source.TypedSource[reconcile.Request]) error {
+	args := m.Called(src)
 	return args.Error(0)
 }
 
@@ -142,7 +140,7 @@ func (m *mockRuntimeManager) Elected() <-chan struct{} {
 	panic(errors.New("not supported"))
 }
 
-func (m *mockRuntimeManager) AddMetricsExtraHandler(_ string, _ http.Handler) error {
+func (m *mockRuntimeManager) AddMetricsServerExtraHandler(_ string, _ http.Handler) error {
 	panic(errors.New("not supported"))
 }
 
@@ -168,22 +166,16 @@ func (m *mockRuntimeManager) GetControllerOptions() config.Controller {
 // ---------------------------------------------------------------------------------------------------------------------
 
 func TestNewController(t *testing.T) {
-	t.Run("AlreadyPreviouslyCreated", func(t *testing.T) {
-		instance = &controller{}
-		cont, err := NewController(controllercommon.ControllerConfig{}, nil)
-		assert.Contains(t, err.Error(), "controller already previously created")
-		assert.Empty(t, cont)
-		instance = nil
-	})
-
 	t.Run("Ok", func(t *testing.T) {
-		conf := controllercommon.ControllerConfig{}
+		conf := controllercommon.ControllerConfig{KubeConfig: "test1"}
 		runtimeManager := newMockRuntimeManager(func(*mockRuntimeManager) {})
-		cont, err := NewController(conf, runtimeManager)
-		assert.Nil(t, err)
-		assert.False(t, cont.initialized)
+		cont := NewController(conf, runtimeManager)
 		assert.Equal(t, conf, cont.controllerConfig)
 		assert.Equal(t, runtimeManager, cont.runtimeManager)
+
+		conf = controllercommon.ControllerConfig{KubeConfig: "test2"}
+		cont = NewController(conf, runtimeManager)
+		assert.Equal(t, "test1", cont.controllerConfig.KubeConfig)
 	})
 }
 
@@ -192,18 +184,8 @@ func TestControllerInitialize(t *testing.T) {
 		name                     string
 		configManagerMockFunc    func(*mockRuntimeManager)
 		configControllerMockFunc func(*mockController)
-		started                  bool
-		wantStarted              bool
 		wantErrMsg               string
 	}{
-		{
-			name:                     "AlreadyInitialized",
-			configManagerMockFunc:    func(*mockRuntimeManager) {},
-			configControllerMockFunc: func(*mockController) {},
-			started:                  true,
-			wantStarted:              true,
-			wantErrMsg:               "controller already initialized",
-		},
 		{
 			name: "UnableToWatchPods",
 			configManagerMockFunc: func(runtimeManager *mockRuntimeManager) {
@@ -214,9 +196,7 @@ func TestControllerInitialize(t *testing.T) {
 			configControllerMockFunc: func(controller *mockController) {
 				controller.On("Watch", mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
 			},
-			started:     false,
-			wantStarted: false,
-			wantErrMsg:  "unable to watch pods",
+			wantErrMsg: "unable to watch pods",
 		},
 		{
 			name: "Ok",
@@ -229,14 +209,11 @@ func TestControllerInitialize(t *testing.T) {
 			configControllerMockFunc: func(controller *mockController) {
 				controller.On("Watch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			},
-			started:     false,
-			wantStarted: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &controller{
-				initialized:      tt.started,
 				controllerConfig: controllercommon.ControllerConfig{},
 				runtimeManager:   newMockRuntimeManager(tt.configManagerMockFunc),
 			}
@@ -247,7 +224,6 @@ func TestControllerInitialize(t *testing.T) {
 			} else {
 				assert.Nil(t, err)
 			}
-			assert.Equal(t, tt.wantStarted, c.initialized)
 		})
 	}
 }

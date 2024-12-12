@@ -17,6 +17,7 @@ limitations under the License.
 package metrics
 
 import (
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/informercache"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/reconciler"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/retry"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
@@ -24,15 +25,9 @@ import (
 )
 
 // RegisterAllMetrics registers all metrics with the supplied registry.
-func RegisterAllMetrics(registry metrics.RegistererGatherer, controllerName string) {
-	reconciler.RegisterMetrics(registry, controllerName)
-	retry.RegisterKubeApiMetrics(registry, controllerName)
-	scale.RegisterMetrics(registry, controllerName)
-}
-
-// UnregisterAllMetrics unregisters all metrics within the supplied registry.
-func UnregisterAllMetrics(registry metrics.RegistererGatherer) {
-	reconciler.UnregisterMetrics(registry)
-	retry.UnregisterKubeApiMetrics(registry)
-	scale.UnregisterMetrics(registry)
+func RegisterAllMetrics(registry metrics.RegistererGatherer) {
+	reconciler.RegisterMetrics(registry)
+	retry.RegisterKubeApiMetrics(registry)
+	scale.RegisterMetrics(registry)
+	informercache.RegisterMetrics(registry)
 }
