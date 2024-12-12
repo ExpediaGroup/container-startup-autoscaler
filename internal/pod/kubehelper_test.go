@@ -526,7 +526,7 @@ func TestKubeHelperExpectedLabelValueAs(t *testing.T) {
 				name: "test",
 				as:   "test",
 			},
-			wantPanicErrMsg: fmt.Sprintf("as 'test' not supported"),
+			wantPanicErrMsg: "as 'test' not supported",
 		},
 		{
 			name: "Ok",

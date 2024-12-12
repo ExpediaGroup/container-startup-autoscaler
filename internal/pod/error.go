@@ -39,7 +39,7 @@ func NewValidationError(message string, toWrap error) error {
 
 func (e ValidationError) Error() string {
 	if e.wrapped == nil {
-		return fmt.Sprintf("validation error: %s", e.message)
+		return "validation error: " + e.message
 	}
 
 	return fmt.Errorf("validation error: %s: %w", e.message, e.wrapped).Error()

@@ -25,6 +25,7 @@ import (
 type suppliedConfigStruct struct {
 	kubeVersion          string
 	maxParallelism       string
+	extraCaCertPath      string
 	reuseCluster         bool
 	installMetricsServer bool
 	keepCsa              bool
@@ -35,6 +36,7 @@ type suppliedConfigStruct struct {
 var suppliedConfig = suppliedConfigStruct{
 	kubeVersion:          "",
 	maxParallelism:       "4",
+	extraCaCertPath:      "",
 	reuseCluster:         false,
 	installMetricsServer: false,
 	keepCsa:              false,
@@ -43,16 +45,18 @@ var suppliedConfig = suppliedConfigStruct{
 }
 
 func suppliedConfigInit() {
-	suppliedConfigSetString("KUBE_VERSION", &suppliedConfig.kubeVersion)
-	suppliedConfigSetString("MAX_PARALLELISM", &suppliedConfig.maxParallelism)
-	suppliedConfigSetBool("REUSE_CLUSTER", &suppliedConfig.reuseCluster)
-	suppliedConfigSetBool("INSTALL_METRICS_SERVER", &suppliedConfig.installMetricsServer)
-	suppliedConfigSetBool("KEEP_CSA", &suppliedConfig.keepCsa)
-	suppliedConfigSetBool("KEEP_CLUSTER", &suppliedConfig.keepCluster)
-	suppliedConfigSetBool("DELETE_NS_AFTER_TEST", &suppliedConfig.deleteNsPostTest)
+	suppliedConfigSetString("KUBE_VERSION", &suppliedConfig.kubeVersion, true)
+	suppliedConfigSetString("MAX_PARALLELISM", &suppliedConfig.maxParallelism, true)
+	suppliedConfigSetString("EXTRA_CA_CERT_PATH", &suppliedConfig.extraCaCertPath, false)
+	suppliedConfigSetBool("REUSE_CLUSTER", &suppliedConfig.reuseCluster, true)
+	suppliedConfigSetBool("INSTALL_METRICS_SERVER", &suppliedConfig.installMetricsServer, true)
+	suppliedConfigSetBool("KEEP_CSA", &suppliedConfig.keepCsa, true)
+	suppliedConfigSetBool("KEEP_CLUSTER", &suppliedConfig.keepCluster, true)
+	suppliedConfigSetBool("DELETE_NS_AFTER_TEST", &suppliedConfig.deleteNsPostTest, true)
 
-	logMessage(nil, fmt.Sprintf("(config) KUBE_VERSION: %s", suppliedConfig.kubeVersion))
-	logMessage(nil, fmt.Sprintf("(config) MAX_PARALLELISM: %s", suppliedConfig.maxParallelism))
+	logMessage(nil, fmt.Sprintf("(config) KUBE_VERSION: "+suppliedConfig.kubeVersion))
+	logMessage(nil, fmt.Sprintf("(config) MAX_PARALLELISM: "+suppliedConfig.maxParallelism))
+	logMessage(nil, fmt.Sprintf("(config) EXTRA_CA_CERT_PATH: "+suppliedConfig.extraCaCertPath))
 	logMessage(nil, fmt.Sprintf("(config) REUSE_CLUSTER: %t", suppliedConfig.reuseCluster))
 	logMessage(nil, fmt.Sprintf("(config) INSTALL_METRICS_SERVER: %t", suppliedConfig.installMetricsServer))
 	logMessage(nil, fmt.Sprintf("(config) KEEP_CSA: %t", suppliedConfig.keepCsa))
@@ -60,11 +64,11 @@ func suppliedConfigInit() {
 	logMessage(nil, fmt.Sprintf("(config) DELETE_NS_AFTER_TEST: %t", suppliedConfig.deleteNsPostTest))
 }
 
-func suppliedConfigSetString(env string, config *string) {
+func suppliedConfigSetString(env string, config *string, required bool) {
 	envVal := os.Getenv(env)
+	haveEnvOrDefault := envVal != "" || (config != nil && *config != "")
 
-	if envVal == "" && (config == nil || *config == "") {
-		// Require env unless defaulted via supplied.
+	if !haveEnvOrDefault && required {
 		logMessage(nil, fmt.Sprintf("(config) '%s' value is required", env))
 		os.Exit(1)
 	}
@@ -74,11 +78,11 @@ func suppliedConfigSetString(env string, config *string) {
 	}
 }
 
-func suppliedConfigSetBool(env string, config *bool) {
+func suppliedConfigSetBool(env string, config *bool, required bool) {
 	envVal := os.Getenv(env)
+	haveEnvOrDefault := envVal != "" || config != nil
 
-	if envVal == "" && config == nil {
-		// Require env unless defaulted via supplied.
+	if !haveEnvOrDefault && required {
 		logMessage(nil, fmt.Sprintf("(config) '%s' value is required", env))
 		os.Exit(1)
 	}

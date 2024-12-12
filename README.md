@@ -538,12 +538,13 @@ Integration tests are implemented as Go tests and located in `test/integration`.
 The integration tests use [echo-server](https://github.com/Ealenn/Echo-Server) for containers. Note: the very first
 execution might take some time to complete.
 
-A number of environment variable-based configuration options are available:
+A number of environment variable-based configuration items are available:
 
 | Name                     | Default | Description                                                                                                                          |
 |--------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------|
 | `KUBE_VERSION`           | -       | The _major.minor_ version of Kube to run tests against e.g. `1.31`.                                                                  |
 | `MAX_PARALLELISM`        | `4`     | The maximum number of tests that can run in parallel.                                                                                |
+| `EXTRA_CA_CERT_PATH`     | -       | See below.                                                                                                                              |
 | `REUSE_CLUSTER`          | `false` | Whether to reuse an existing CSA kind cluster (if it already exists). `KUBE_VERSION` has no effect if an existing cluster is reused. |
 | `INSTALL_METRICS_SERVER` | `false` | Whether to install metrics-server.                                                                                                   |
 | `KEEP_CSA`               | `false` | Whether to keep the CSA installation after tests finish.                                                                             |
@@ -554,6 +555,10 @@ Integration tests are executed in parallel due to their long-running nature. Eac
 namespace (but using the same single CSA installation). If local resources are limited, reduce `MAX_PARALLELISM`
 accordingly and ensure `DELETE_NS_AFTER_TEST` is `true`. Each test typically spins up 2 pods, each with 2 containers;
 see source for resource allocations.
+
+`EXTRA_CA_CERT_PATH` is an optional configuration item that allows registration of an additional CA certificate
+(or chain) when building the kind node image. This will be required if a technology that intercepts encrypted network
+traffic via insertion of its own CA is being used. The path must be absolute and reference a PEM-formatted file. 
 
 ## Running Locally
 A number of Bash scripts are supplied in the `scripts/sandbox` directory that allow you to try out CSA using
@@ -575,7 +580,10 @@ Executing `csa-install.sh`:
   - [Leader election](#controller) is enabled; 2 pods are created.
   - [Log verbosity level](#log) is `2` (trace).
 
-Note: the very first execution might take some time to complete.
+Note:
+- To register an additional CA certificate (or chain) when building the kind node image as described
+  [above](#integration), pass `--extra-ca-cert-path=/path/to/ca.pem` when executing the script.
+- The very first execution might take some time to complete.
 
 ### Tailing CSA Logs
 Executing `csa-tail-logs.sh` tails logs from the current CSA leader pod.

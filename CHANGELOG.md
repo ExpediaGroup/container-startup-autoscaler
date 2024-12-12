@@ -8,6 +8,8 @@
 ### Added
 - Support for Kube 1.32.
   - Container resizes now performed through `resize` subresource.
+- Ability to register an additional CA certificate (or chain) when building the kind node image for integration tests
+  and sandbox scripts.
 
 ### Changed
 - Upgrades Go to 1.23.3.
