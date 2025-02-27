@@ -295,7 +295,7 @@ package pod
 //	}
 //	tests := []struct {
 //		name                    string
-//		configMetricAssertsFunc func(t *testing.T)
+//		configMetricAssertsFunc func(t *testing.T) // TODO(wt) check this is used where necessary in tests
 //		args                    args
 //		wantLogMsg              string
 //	}{

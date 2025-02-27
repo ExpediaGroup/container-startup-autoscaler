@@ -60,3 +60,7 @@ func (m *MockTargetContainerState) StatesDefault() {
 		nil,
 	)
 }
+
+func (m *MockTargetContainerState) AllDefaults() {
+	m.StatesDefault()
+}

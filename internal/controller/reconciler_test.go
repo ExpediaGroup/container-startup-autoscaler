@@ -31,6 +31,7 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podtest"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config/configtest"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -63,7 +64,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 	tests := []struct {
 		name                    string
 		configMapFunc           func(cmap.ConcurrentMap[string, any], string)
-		configMetricAssertsFunc func(t *testing.T)
+		configMetricAssertsFunc func(t *testing.T) // TODO(wt) this is missing for some tests below
 		fields                  fields
 		mocks                   mocks
 		podNamespace            string
@@ -135,9 +136,29 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: true,
 		},
 		{
+			name:   "UnableToGetTargetContainerName",
+			fields: fields{},
+			mocks: mocks{
+				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
+					m.On("Configure", mock.Anything).Return(
+						configtest.NewMockScaleConfigs(func(m *configtest.MockScaleConfigs) {
+							m.On("TargetContainerName", mock.Anything).Return("", errors.New(""))
+						}),
+					)
+				}),
+				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) { m.GetDefault() }),
+			},
+			podNamespace: "namespace",
+			podName:      "name",
+			want:         reconcile.Result{},
+			wantErrMsg:   "unable to get target container name (won't requeue)",
+			wantLogMsg:   "unable to get target container name (won't requeue)",
+			wantEmptyMap: true,
+		},
+		{
 			name:   "UnableToValidatePod",
 			fields: fields{},
-			mocks: mocks{ // TODO(wt) continue here - need to return mock scaleconfigs
+			mocks: mocks{
 				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) { m.ConfigureDefault() }),
 				validation: podtest.NewMockValidation(func(m *podtest.MockValidation) {
 					m.On("Validate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
@@ -225,6 +246,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			}
 
 			p := &pod.Pod{
+				Configuration:         tt.mocks.configuration,
 				Validation:            tt.mocks.validation,
 				TargetContainerState:  tt.mocks.targetContainerState,
 				TargetContainerAction: tt.mocks.targetContainerAction,

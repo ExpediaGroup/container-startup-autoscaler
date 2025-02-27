@@ -50,3 +50,7 @@ func (m *MockTargetContainerAction) Execute(
 func (m *MockTargetContainerAction) ExecuteDefault() {
 	m.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 }
+
+func (m *MockTargetContainerAction) AllDefaults() {
+	m.ExecuteDefault()
+}

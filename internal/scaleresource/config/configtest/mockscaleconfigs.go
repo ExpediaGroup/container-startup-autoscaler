@@ -114,3 +114,15 @@ func (m *MockScaleConfigs) AllEnabledScaleConfigsTypesDefault() {
 func (m *MockScaleConfigs) StringDefault() {
 	m.On("String").Return("")
 }
+
+func (m *MockScaleConfigs) AllDefaults() {
+	m.TargetContainerNameDefault()
+	m.StoreFromAnnotationsAllDefault()
+	m.ValidateAllDefault()
+	m.ValidateCollectionDefault()
+	m.ScaleConfigForDefault()
+	m.AllScaleConfigsDefault()
+	m.AllEnabledScaleConfigsDefault()
+	m.AllEnabledScaleConfigsTypesDefault()
+	m.StringDefault()
+}

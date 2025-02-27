@@ -48,3 +48,7 @@ func (m *MockValidation) Validate(
 func (m *MockValidation) ValidateDefault() {
 	m.On("Validate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&v1.Container{}, nil)
 }
+
+func (m *MockValidation) AllDefaults() {
+	m.ValidateDefault()
+}

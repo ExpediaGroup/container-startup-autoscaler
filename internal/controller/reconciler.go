@@ -111,7 +111,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 		}
 	}
 
-	configs, err := r.pod.Configuration.Configure(kubePod)
+	scaleConfigs, err := r.pod.Configuration.Configure(kubePod)
 	if err != nil {
 		msg := "unable to configure pod (won't requeue)"
 		logging.Errorf(ctx, err, msg)
@@ -119,7 +119,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 		return reconcile.Result{}, reconcile.TerminalError(common.WrapErrorf(err, msg))
 	}
 
-	targetContainerName, err := configs.TargetContainerName(kubePod)
+	targetContainerName, err := scaleConfigs.TargetContainerName(kubePod)
 	if err != nil {
 		msg := "unable to get target container name (won't requeue)"
 		logging.Errorf(ctx, err, msg)
@@ -129,11 +129,11 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 
 	ctx = ccontext.WithTargetContainerName(ctx, targetContainerName)
 
-	for _, scaleConfig := range configs.AllScaleConfigs() {
+	for _, scaleConfig := range scaleConfigs.AllScaleConfigs() {
 		logging.Infof(ctx, logging.VTrace, "scale configuration: %s", scaleConfig.String())
 	}
 
-	targetContainer, err := r.pod.Validation.Validate(ctx, kubePod, targetContainerName, configs)
+	targetContainer, err := r.pod.Validation.Validate(ctx, kubePod, targetContainerName, scaleConfigs)
 	if err != nil {
 		msg := "unable to validate pod (won't requeue)"
 		logging.Errorf(ctx, err, msg)
@@ -142,7 +142,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	}
 
 	// Determine target container states.
-	states, err := r.pod.TargetContainerState.States(ctx, kubePod, targetContainer, configs)
+	states, err := r.pod.TargetContainerState.States(ctx, kubePod, targetContainer, scaleConfigs)
 	if err != nil {
 		msg := "unable to determine target container states (won't requeue)"
 		logging.Errorf(ctx, err, msg)
@@ -152,7 +152,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	ctx = ccontext.WithTargetContainerStates(ctx, states)
 
 	// Execute action for determined target container states.
-	err = r.pod.TargetContainerAction.Execute(ctx, states, kubePod, targetContainer, configs)
+	err = r.pod.TargetContainerAction.Execute(ctx, states, kubePod, targetContainer, scaleConfigs)
 	if err != nil {
 		msg := "unable to action target container states (won't requeue)"
 		logging.Errorf(ctx, err, msg)

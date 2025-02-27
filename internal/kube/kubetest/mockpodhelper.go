@@ -144,3 +144,14 @@ func (m *MockPodHelper) IsContainerInSpecDefault() {
 func (m *MockPodHelper) ResizeStatusDefault() {
 	m.On("ResizeStatus", mock.Anything).Return(v1.PodResizeStatus(""), nil)
 }
+
+func (m *MockPodHelper) AllDefaults() {
+	m.GetDefault()
+	m.PatchDefault()
+	m.UpdateContainerResourcesDefault()
+	m.HasAnnotationDefault()
+	m.ExpectedLabelValueAsDefault()
+	m.ExpectedAnnotationValueAsDefault()
+	m.IsContainerInSpecDefault()
+	m.ResizeStatusDefault()
+}

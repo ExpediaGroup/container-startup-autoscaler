@@ -18,6 +18,7 @@ package podtest
 
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config/configtest"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
 )
@@ -39,5 +40,10 @@ func (m *MockConfiguration) Configure(pod *v1.Pod) (config.ScaleConfigs, error) 
 }
 
 func (m *MockConfiguration) ConfigureDefault() {
-	m.On("Configure", mock.Anything).Return(config.NewScaleConfigs(nil, nil), nil)
+	m.On("Configure", mock.Anything).Return(
+		configtest.NewMockScaleConfig(func(m *configtest.MockScaleConfig) { m.AllDefaults() }))
+}
+
+func (m *MockConfiguration) AllDefaults() {
+	m.ConfigureDefault()
 }

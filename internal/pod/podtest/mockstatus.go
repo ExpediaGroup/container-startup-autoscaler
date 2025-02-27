@@ -91,3 +91,8 @@ func (m *MockStatus) PodMutationFuncDefaultAndRun(run func()) {
 		},
 	).Run(func(args mock.Arguments) { run() })
 }
+
+func (m *MockStatus) AllDefaults() {
+	m.UpdateDefault()
+	m.PodMutationFuncDefault()
+}

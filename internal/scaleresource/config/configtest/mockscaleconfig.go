@@ -100,3 +100,14 @@ func (m *MockScaleConfig) ValidateDefault() {
 func (m *MockScaleConfig) StringDefault() {
 	m.On("String").Return("")
 }
+
+func (m *MockScaleConfig) AllDefaults() {
+	m.ResourceTypeDefault()
+	m.IsEnabledDefault()
+	m.IsCsaEnabledDefault()
+	m.IsUserEnabledDefault()
+	m.ResourcesDefault()
+	m.StoreFromAnnotationsDefault()
+	m.ValidateDefault()
+	m.StringDefault()
+}

@@ -946,7 +946,7 @@ package pod
 //		configStatusMockFunc     func(*podtest.MockStatus, func())
 //		configHelperMockFunc     func(*kubetest.MockPodHelper)
 //		configContHelperMockFunc func(*kubetest.MockContainerHelper)
-//		configMetricAssertsFunc  func(t *testing.T)
+//		configMetricAssertsFunc  func(t *testing.T) // TODO(wt) check this is used where necessary in tests
 //		beforeTestFunc           func()
 //		states                   podcommon.States
 //		wantPanicErrMsg          string

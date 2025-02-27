@@ -146,3 +146,17 @@ func (m *MockContainerHelper) CurrentLimitsDefault() {
 	m.On("CurrentLimits", mock.Anything, mock.Anything, v1.ResourceCPU).Return(MockDefaultCpuQuantity, nil)
 	m.On("CurrentLimits", mock.Anything, mock.Anything, v1.ResourceMemory).Return(MockDefaultMemoryQuantity, nil)
 }
+
+func (m *MockContainerHelper) AllDefaults() {
+	m.GetDefault()
+	m.HasStartupProbeDefault()
+	m.HasReadinessProbeDefault()
+	m.StateDefault()
+	m.IsStartedDefault()
+	m.IsReadyDefault()
+	m.RequestsDefault()
+	m.LimitsDefault()
+	m.ResizePolicyDefault()
+	m.CurrentRequestsDefault()
+	m.CurrentLimitsDefault()
+}
