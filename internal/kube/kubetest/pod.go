@@ -20,7 +20,7 @@ import (
 	"errors"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/scaleresourcecommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -186,13 +186,13 @@ func pod(config podConfig) *corev1.Pod {
 				podcommon.LabelEnabled: config.labelEnabledValue,
 			},
 			Annotations: map[string]string{
-				scaleresourcecommon.AnnotationTargetContainerName:       config.annotationTargetContainerName,
-				scaleresourcecommon.AnnotationCpuStartup:                config.annotationCpuStartup,
-				scaleresourcecommon.AnnotationCpuPostStartupRequests:    config.annotationCpuPostStartupRequests,
-				scaleresourcecommon.AnnotationCpuPostStartupLimits:      config.annotationCpuPostStartupLimits,
-				scaleresourcecommon.AnnotationMemoryStartup:             config.annotationMemoryStartup,
-				scaleresourcecommon.AnnotationMemoryPostStartupRequests: config.annotationMemoryPostStartupRequests,
-				scaleresourcecommon.AnnotationMemoryPostStartupLimits:   config.annotationMemoryPostStartupLimits,
+				scalecommon.AnnotationTargetContainerName:       config.annotationTargetContainerName,
+				scalecommon.AnnotationCpuStartup:                config.annotationCpuStartup,
+				scalecommon.AnnotationCpuPostStartupRequests:    config.annotationCpuPostStartupRequests,
+				scalecommon.AnnotationCpuPostStartupLimits:      config.annotationCpuPostStartupLimits,
+				scalecommon.AnnotationMemoryStartup:             config.annotationMemoryStartup,
+				scalecommon.AnnotationMemoryPostStartupRequests: config.annotationMemoryPostStartupRequests,
+				scalecommon.AnnotationMemoryPostStartupLimits:   config.annotationMemoryPostStartupLimits,
 			},
 		},
 		Spec: corev1.PodSpec{

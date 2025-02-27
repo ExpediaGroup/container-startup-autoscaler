@@ -25,10 +25,9 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
+	metricsscale "github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/update"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 )
@@ -37,7 +36,7 @@ const eventReasonScaling = "Scaling"
 
 // TargetContainerAction performs actions based on target container state.
 type TargetContainerAction interface {
-	Execute(context.Context, podcommon.States, *v1.Pod, *v1.Container, config.ScaleConfigs) error
+	Execute(context.Context, podcommon.States, *v1.Pod, *v1.Container, scale.Configs) error
 }
 
 // targetContainerAction is the default implementation of TargetContainerAction.
@@ -68,7 +67,7 @@ func (a *targetContainerAction) Execute(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
 	if states.StartupProbe != podcommon.StateBoolTrue && states.StartupProbe != podcommon.StateBoolFalse {
 		panic(fmt.Errorf("unsupported startup probe state '%s'", states.StartupProbe))
@@ -151,7 +150,7 @@ func (a *targetContainerAction) containerNotRunningAction(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
 	a.logInfoAndUpdateStatus(
 		ctx,
@@ -169,7 +168,7 @@ func (a *targetContainerAction) startedUnknownAction(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
 	a.logInfoAndUpdateStatus(
 		ctx,
@@ -187,7 +186,7 @@ func (a *targetContainerAction) readyUnknownAction(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
 	a.logInfoAndUpdateStatus(
 		ctx,
@@ -207,7 +206,7 @@ func (a *targetContainerAction) resUnknownAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
 	msg := "unknown resources applied"
 	a.updateStatus(ctx, states, podcommon.StatusScaleStateNotApplicable, pod, msg, scaleConfigs)
@@ -221,7 +220,7 @@ func (a *targetContainerAction) notStartedWithStartupResAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
 	return a.processConfigEnacted(ctx, states, pod, targetContainer, scaleConfigs)
 }
@@ -234,10 +233,10 @@ func (a *targetContainerAction) notStartedWithPostStartupResAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
-	updates := update.NewScaleUpdates(scaleConfigs)
-	updatedPod, err := updates.SetStartupResourcesAll(pod, targetContainer)
+	scaleUpdates := scale.NewUpdates(scaleConfigs)
+	updatedPod, err := scaleUpdates.SetStartupResourcesAll(pod, targetContainer)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to set startup resources")
 	}
@@ -265,10 +264,10 @@ func (a *targetContainerAction) startedWithStartupResAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
-	updates := update.NewScaleUpdates(scaleConfigs)
-	updatedPod, err := updates.SetPostStartupResourcesAll(pod, targetContainer)
+	scaleUpdates := scale.NewUpdates(scaleConfigs)
+	updatedPod, err := scaleUpdates.SetPostStartupResourcesAll(pod, targetContainer)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to set post-startup resources")
 	}
@@ -296,7 +295,7 @@ func (a *targetContainerAction) startedWithPostStartupResAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
 	return a.processConfigEnacted(ctx, states, pod, targetContainer, scaleConfigs)
 }
@@ -309,10 +308,10 @@ func (a *targetContainerAction) notStartedWithUnknownResAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
-	updates := update.NewScaleUpdates(scaleConfigs)
-	updatedPod, err := updates.SetStartupResourcesAll(pod, targetContainer)
+	scaleUpdates := scale.NewUpdates(scaleConfigs)
+	updatedPod, err := scaleUpdates.SetStartupResourcesAll(pod, targetContainer)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to set startup resources")
 	}
@@ -341,10 +340,10 @@ func (a *targetContainerAction) startedWithUnknownResAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
-	updates := update.NewScaleUpdates(scaleConfigs)
-	updatedPod, err := updates.SetPostStartupResourcesAll(pod, targetContainer)
+	scaleUpdates := scale.NewUpdates(scaleConfigs)
+	updatedPod, err := scaleUpdates.SetPostStartupResourcesAll(pod, targetContainer)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to set post-startup resources")
 	}
@@ -372,7 +371,7 @@ func (a *targetContainerAction) processConfigEnacted(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
 	// Examine resize status.
 	switch a.podHelper.ResizeStatus(pod) {
@@ -425,7 +424,7 @@ func (a *targetContainerAction) processConfigEnacted(
 
 		msg := states.Resources.HumanReadable() + " scale failed - infeasible"
 		a.updateStatus(ctx, states, scaleState, pod, msg, scaleConfigs)
-		scale.Failure(states.Resources.Direction(), "infeasible").Inc()
+		metricsscale.Failure(states.Resources.Direction(), "infeasible").Inc()
 		a.warningEvent(pod, eventReasonScaling, msg)
 		return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
 
@@ -441,7 +440,7 @@ func (a *targetContainerAction) processConfigEnacted(
 
 		msg := states.Resources.HumanReadable() + " scale: unknown status"
 		a.updateStatus(ctx, states, scaleState, pod, msg, scaleConfigs)
-		scale.Failure(states.Resources.Direction(), "unknownstatus").Inc()
+		metricsscale.Failure(states.Resources.Direction(), "unknownstatus").Inc()
 		a.warningEvent(pod, eventReasonScaling, msg)
 		return fmt.Errorf("%s '%s'", msg, a.podHelper.ResizeStatus(pod))
 	}
@@ -513,7 +512,7 @@ func (a *targetContainerAction) processConfigEnacted(
 // information purposes.
 func (a *targetContainerAction) containerResourceConfig(
 	targetContainer *v1.Container,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) string {
 	return fmt.Sprintf(
 		"target container resources: [%s], configurations: [%s]",
@@ -529,7 +528,7 @@ func (a *targetContainerAction) updateStatus(
 	scaleState podcommon.StatusScaleState,
 	pod *v1.Pod,
 	status string,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) {
 	_, err := a.status.Update(ctx, pod, status, states, scaleState, scaleConfigs)
 	if err != nil {
@@ -545,7 +544,7 @@ func (a *targetContainerAction) logInfoAndUpdateStatus(
 	scaleState podcommon.StatusScaleState,
 	pod *v1.Pod,
 	message string,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) {
 	logging.Infof(ctx, v, message)
 	a.updateStatus(ctx, states, scaleState, pod, message, scaleConfigs)

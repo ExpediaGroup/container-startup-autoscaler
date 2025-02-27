@@ -24,14 +24,13 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/state"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
 	"k8s.io/api/core/v1"
 )
 
 // TargetContainerState performs operations relating to determining target container state.
 type TargetContainerState interface {
-	States(context.Context, *v1.Pod, *v1.Container, config.ScaleConfigs) (podcommon.States, error)
+	States(context.Context, *v1.Pod, *v1.Container, scale.Configs) (podcommon.States, error)
 }
 
 // targetContainerState is the default implementation of TargetContainerState.
@@ -48,7 +47,7 @@ func (s targetContainerState) States(
 	ctx context.Context,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) (podcommon.States, error) {
 	ret := podcommon.NewStatesAllUnknown()
 	ret.StartupProbe = s.stateStartupProbe(targetContainer)
@@ -79,7 +78,7 @@ func (s targetContainerState) States(
 		return ret, common.WrapErrorf(err, "unable to determine ready state")
 	}
 
-	scaleStates := state.NewScaleStates(scaleConfigs, s.containerHelper)
+	scaleStates := scale.NewStates(scaleConfigs, s.containerHelper)
 	ret.Resources = s.stateResources(
 		scaleStates.IsStartupConfigAppliedAll(targetContainer),
 		scaleStates.IsPostStartupConfigAppliedAll(targetContainer),
@@ -182,7 +181,7 @@ func (s targetContainerState) stateResources(
 func (s targetContainerState) stateStatusResources(
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleStates state.ScaleStates,
+	scaleStates scale.States,
 ) (podcommon.StateStatusResources, error) {
 	requestsMatch, err := scaleStates.DoesRequestsCurrentMatchSpecAll(pod, targetContainer)
 	if err != nil {

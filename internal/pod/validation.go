@@ -25,7 +25,7 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 )
@@ -34,7 +34,7 @@ const eventReasonValidation = "Validation"
 
 // Validation performs operations relating to validation.
 type Validation interface {
-	Validate(context.Context, *v1.Pod, string, config.ScaleConfigs) (*v1.Container, error)
+	Validate(context.Context, *v1.Pod, string, scale.Configs) (*v1.Container, error)
 }
 
 // validation is the default implementation of Validation.
@@ -66,7 +66,7 @@ func (v *validation) Validate(
 	ctx context.Context,
 	pod *v1.Pod,
 	targetContainerName string,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) (*v1.Container, error) {
 	// Double check enabled label (originally filtered for informer cache).
 	enabled, err := v.podHelper.ExpectedLabelValueAs(pod, podcommon.LabelEnabled, kubecommon.DataTypeBool)
@@ -120,7 +120,7 @@ func (v *validation) updateStatusAndGetError(
 	pod *v1.Pod,
 	errMessage string,
 	cause error,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
 	ret := NewValidationError(errMessage, cause)
 

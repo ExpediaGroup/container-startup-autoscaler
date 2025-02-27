@@ -31,7 +31,7 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podtest"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config/configtest"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scaletest"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -141,7 +141,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			mocks: mocks{
 				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
 					m.On("Configure", mock.Anything).Return(
-						configtest.NewMockScaleConfigs(func(m *configtest.MockScaleConfigs) {
+						scaletest.NewMockConfigs(func(m *scaletest.MockConfigs) {
 							m.On("TargetContainerName", mock.Anything).Return("", errors.New(""))
 						}),
 					)

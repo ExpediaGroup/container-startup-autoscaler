@@ -129,7 +129,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 
 	ctx = ccontext.WithTargetContainerName(ctx, targetContainerName)
 
-	for _, scaleConfig := range scaleConfigs.AllScaleConfigs() {
+	for _, scaleConfig := range scaleConfigs.AllConfigs() {
 		logging.Infof(ctx, logging.VTrace, "scale configuration: %s", scaleConfig.String())
 	}
 

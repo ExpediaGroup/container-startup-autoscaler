@@ -25,9 +25,9 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/metricscommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
+	metricsscale "github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
 	"k8s.io/api/core/v1"
 )
 
@@ -38,8 +38,8 @@ const (
 
 // Status performs operations relating to controller status.
 type Status interface {
-	Update(context.Context, *v1.Pod, string, podcommon.States, podcommon.StatusScaleState, config.ScaleConfigs) (*v1.Pod, error)
-	PodMutationFunc(context.Context, string, podcommon.States, podcommon.StatusScaleState, config.ScaleConfigs) func(pod *v1.Pod) (bool, *v1.Pod, error)
+	Update(context.Context, *v1.Pod, string, podcommon.States, podcommon.StatusScaleState, scale.Configs) (*v1.Pod, error)
+	PodMutationFunc(context.Context, string, podcommon.States, podcommon.StatusScaleState, scale.Configs) func(pod *v1.Pod) (bool, *v1.Pod, error)
 }
 
 // status is the default implementation of Status.
@@ -59,7 +59,7 @@ func (s *status) Update(
 	status string,
 	states podcommon.States,
 	scaleState podcommon.StatusScaleState,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) (*v1.Pod, error) {
 	mutatePodFunc := s.PodMutationFunc(ctx, status, states, scaleState, scaleConfigs)
 
@@ -78,7 +78,7 @@ func (s *status) PodMutationFunc(
 	status string,
 	states podcommon.States,
 	scaleState podcommon.StatusScaleState,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) func(pod *v1.Pod) (bool, *v1.Pod, error) {
 	return func(pod *v1.Pod) (bool, *v1.Pod, error) {
 		var currentStat podcommon.StatusAnnotation
@@ -92,7 +92,7 @@ func (s *status) PodMutationFunc(
 		}
 
 		// TODO(wt) add to docs
-		statScale := podcommon.NewEmptyStatusAnnotationScale(scaleConfigs.AllEnabledScaleConfigsTypes())
+		statScale := podcommon.NewEmptyStatusAnnotationScale(scaleConfigs.AllEnabledConfigsResourceNames())
 
 		switch scaleState {
 		case podcommon.StatusScaleStateNotApplicable: // Preserve current status.
@@ -105,7 +105,7 @@ func (s *status) PodMutationFunc(
 			statScale.LastCommanded = s.formattedNow(timeFormatMilli) // i.e. others ""
 		case podcommon.StatusScaleStateUnknownCommanded:
 			statScale.LastCommanded = s.formattedNow(timeFormatMilli) // i.e. others ""
-			scale.CommandedUnknownRes().Inc()
+			metricsscale.CommandedUnknownRes().Inc()
 		case podcommon.StatusScaleStateDownEnacted, podcommon.StatusScaleStateUpEnacted:
 			statScale.LastCommanded = currentStat.Scale.LastCommanded
 			statScale.LastEnacted = currentStat.Scale.LastEnacted
@@ -184,5 +184,5 @@ func (s *status) updateDurationMetric(
 		return
 	}
 
-	scale.Duration(direction, outcome).Observe(diffSecs)
+	metricsscale.Duration(direction, outcome).Observe(diffSecs)
 }

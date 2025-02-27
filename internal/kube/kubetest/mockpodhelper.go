@@ -22,7 +22,7 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/scaleresourcecommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -118,7 +118,7 @@ func (m *MockPodHelper) ExpectedLabelValueAsDefault() {
 
 func (m *MockPodHelper) ExpectedAnnotationValueAsDefault() {
 	targetContainerNameMatchFunc := func(ann string) bool {
-		return strings.Contains(ann, scaleresourcecommon.AnnotationTargetContainerName)
+		return strings.Contains(ann, scalecommon.AnnotationTargetContainerName)
 	}
 
 	cpuMatchFunc := func(ann string) bool {

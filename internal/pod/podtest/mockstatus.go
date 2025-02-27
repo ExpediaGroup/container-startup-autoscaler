@@ -20,7 +20,7 @@ import (
 	"context"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"
 )
@@ -48,7 +48,7 @@ func (m *MockStatus) Update(
 	status string,
 	states podcommon.States,
 	scaleState podcommon.StatusScaleState,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) (*v1.Pod, error) {
 	args := m.Called(ctx, pod, status, states, scaleState, scaleConfigs)
 	return args.Get(0).(*v1.Pod), args.Error(1)
@@ -59,7 +59,7 @@ func (m *MockStatus) PodMutationFunc(
 	status string,
 	states podcommon.States,
 	scaleState podcommon.StatusScaleState,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) func(pod *v1.Pod) (bool, *v1.Pod, error) {
 	args := m.Called(ctx, status, states, scaleState, scaleConfigs)
 	return args.Get(0).(func(pod *v1.Pod) (bool, *v1.Pod, error))

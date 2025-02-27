@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource"
+	v1 "k8s.io/api/core/v1"
 )
 
 // StatusAnnotation holds status information that's serialized to JSON for status reporting.
@@ -71,14 +71,14 @@ func StatusAnnotationFromString(s string) (StatusAnnotation, error) {
 
 // StatusAnnotationScale holds scale-related information that's serialized to JSON for status reporting.
 type StatusAnnotationScale struct {
-	EnabledForResources []scaleresource.ResourceType `json:"enabledForResources"`
-	LastCommanded       string                       `json:"lastCommanded"`
-	LastEnacted         string                       `json:"lastEnacted"`
-	LastFailed          string                       `json:"lastFailed"`
+	EnabledForResources []v1.ResourceName `json:"enabledForResources"`
+	LastCommanded       string            `json:"lastCommanded"`
+	LastEnacted         string            `json:"lastEnacted"`
+	LastFailed          string            `json:"lastFailed"`
 }
 
 func NewStatusAnnotationScale(
-	enabledForResources []scaleresource.ResourceType,
+	enabledForResources []v1.ResourceName,
 	lastCommanded string,
 	lastEnacted string,
 	lastFailed string,
@@ -91,7 +91,7 @@ func NewStatusAnnotationScale(
 	}
 }
 
-func NewEmptyStatusAnnotationScale(enabledForResources []scaleresource.ResourceType) StatusAnnotationScale {
+func NewEmptyStatusAnnotationScale(enabledForResources []v1.ResourceName) StatusAnnotationScale {
 	return StatusAnnotationScale{
 		EnabledForResources: enabledForResources,
 	}

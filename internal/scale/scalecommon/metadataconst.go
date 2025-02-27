@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scaleresourcecommon
+package scalecommon
 
 import "github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 

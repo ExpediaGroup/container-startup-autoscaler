@@ -20,7 +20,7 @@ import (
 	"context"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
 )
@@ -41,7 +41,7 @@ func (m *MockTargetContainerAction) Execute(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) error {
 	args := m.Called(ctx, states, pod, targetContainer, scaleConfigs)
 	return args.Error(0)

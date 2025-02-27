@@ -17,8 +17,8 @@ limitations under the License.
 package podtest
 
 import (
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config/configtest"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scaletest"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
 )
@@ -34,14 +34,14 @@ func NewMockConfiguration(configFunc func(*MockConfiguration)) *MockConfiguratio
 	return mockConfiguration
 }
 
-func (m *MockConfiguration) Configure(pod *v1.Pod) (config.ScaleConfigs, error) {
+func (m *MockConfiguration) Configure(pod *v1.Pod) (scale.Configs, error) {
 	args := m.Called(pod)
-	return args.Get(0).(config.ScaleConfigs), args.Error(1)
+	return args.Get(0).(scale.Configs), args.Error(1)
 }
 
 func (m *MockConfiguration) ConfigureDefault() {
 	m.On("Configure", mock.Anything).Return(
-		configtest.NewMockScaleConfig(func(m *configtest.MockScaleConfig) { m.AllDefaults() }))
+		scaletest.NewMockConfig(func(m *scaletest.MockConfig) { m.AllDefaults() }))
 }
 
 func (m *MockConfiguration) AllDefaults() {

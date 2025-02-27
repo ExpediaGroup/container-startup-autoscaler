@@ -19,7 +19,7 @@ package podtest
 import (
 	"context"
 
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
 )
@@ -39,7 +39,7 @@ func (m *MockValidation) Validate(
 	ctx context.Context,
 	pod *v1.Pod,
 	targetContainerName string,
-	scaleConfigs config.ScaleConfigs,
+	scaleConfigs scale.Configs,
 ) (*v1.Container, error) {
 	args := m.Called(ctx, pod, targetContainerName, scaleConfigs)
 	return args.Get(0).(*v1.Container), args.Error(0)

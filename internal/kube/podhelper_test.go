@@ -30,7 +30,7 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/informercache"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/retry"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/scaleresourcecommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -554,7 +554,7 @@ func TestPodHelperExpectedAnnotationValueAs(t *testing.T) {
 			name: "Ok",
 			args: args{
 				pod:  kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
-				name: scaleresourcecommon.AnnotationCpuStartup,
+				name: scalecommon.AnnotationCpuStartup,
 				as:   kubecommon.DataTypeString,
 			},
 			want: kubetest.PodAnnotationCpuStartup,

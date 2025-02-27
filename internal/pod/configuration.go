@@ -21,12 +21,12 @@ package pod
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
 	v1 "k8s.io/api/core/v1"
 )
 
 type Configuration interface {
-	Configure(*v1.Pod) (config.ScaleConfigs, error)
+	Configure(*v1.Pod) (scale.Configs, error)
 }
 
 type configuration struct {
@@ -44,8 +44,8 @@ func newConfiguration(
 	}
 }
 
-func (c *configuration) Configure(pod *v1.Pod) (config.ScaleConfigs, error) {
-	configs := config.NewScaleConfigs(c.podHelper, c.containerHelper)
+func (c *configuration) Configure(pod *v1.Pod) (scale.Configs, error) {
+	configs := scale.NewConfigs(c.podHelper, c.containerHelper)
 
 	if err := configs.StoreFromAnnotationsAll(pod); err != nil {
 		return nil, common.WrapErrorf(err, "unable to store configuration from annotations")
