@@ -79,6 +79,15 @@ func TestFailurePodDoesntExist(t *testing.T) {
 	)
 }
 
+func TestFailureConfiguration(t *testing.T) {
+	m := FailureConfiguration()
+	assert.Contains(
+		t,
+		m.Desc().String(),
+		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, failureConfigurationName),
+	)
+}
+
 func TestFailureValidation(t *testing.T) {
 	m := FailureValidation()
 	assert.Contains(

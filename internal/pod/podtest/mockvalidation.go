@@ -19,7 +19,7 @@ package podtest
 import (
 	"context"
 
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
 )
@@ -38,13 +38,13 @@ func NewMockValidation(configFunc func(*MockValidation)) *MockValidation {
 func (m *MockValidation) Validate(
 	ctx context.Context,
 	pod *v1.Pod,
-	scaleConfigToPopulate podcommon.ScaleConfig,
-	afterScaleConfigPopulatedFunc func(podcommon.ScaleConfig),
-) error {
-	args := m.Called(ctx, pod, scaleConfigToPopulate, afterScaleConfigPopulatedFunc)
-	return args.Error(0)
+	targetContainerName string,
+	scaleConfigs config.ScaleConfigs,
+) (*v1.Container, error) {
+	args := m.Called(ctx, pod, targetContainerName, scaleConfigs)
+	return args.Get(0).(*v1.Container), args.Error(0)
 }
 
 func (m *MockValidation) ValidateDefault() {
-	m.On("Validate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	m.On("Validate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&v1.Container{}, nil)
 }

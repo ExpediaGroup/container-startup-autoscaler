@@ -42,21 +42,3 @@ func TestValidationErrorError(t *testing.T) {
 		assert.Equal(t, "validation error: test", e.Error())
 	})
 }
-
-func TestNewContainerStatusNotPresentError(t *testing.T) {
-	assert.True(t, errors.As(NewContainerStatusNotPresentError(), &ContainerStatusNotPresentError{}))
-}
-
-func TestContainerStatusNotPresentErrorError(t *testing.T) {
-	e := NewContainerStatusNotPresentError()
-	assert.Equal(t, "container status not present", e.Error())
-}
-
-func TestNewContainerStatusResourcesNotPresentError(t *testing.T) {
-	assert.True(t, errors.As(NewContainerStatusResourcesNotPresentError(), &ContainerStatusResourcesNotPresentError{}))
-}
-
-func TestContainerStatusResourcesNotPresentErrorError(t *testing.T) {
-	e := NewContainerStatusResourcesNotPresentError()
-	assert.Equal(t, "container status resources not present", e.Error())
-}

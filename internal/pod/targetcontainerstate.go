@@ -21,38 +21,41 @@ import (
 	"errors"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/state"
 	"k8s.io/api/core/v1"
 )
 
 // TargetContainerState performs operations relating to determining target container state.
 type TargetContainerState interface {
-	States(context.Context, *v1.Pod, podcommon.ScaleConfig) (podcommon.States, error)
+	States(context.Context, *v1.Pod, *v1.Container, config.ScaleConfigs) (podcommon.States, error)
 }
 
 // targetContainerState is the default implementation of TargetContainerState.
 type targetContainerState struct {
-	containerKubeHelper ContainerKubeHelper
+	containerHelper kube.ContainerHelper
 }
 
-func newTargetContainerState(containerKubeHelper ContainerKubeHelper) targetContainerState {
-	return targetContainerState{containerKubeHelper: containerKubeHelper}
+func newTargetContainerState(containerHelper kube.ContainerHelper) targetContainerState {
+	return targetContainerState{containerHelper: containerHelper}
 }
 
 // States calculates and returns states from the supplied pod and config.
-func (s targetContainerState) States(ctx context.Context, pod *v1.Pod, config podcommon.ScaleConfig) (podcommon.States, error) {
-	container, err := s.containerKubeHelper.Get(pod, config.GetTargetContainerName())
-	if err != nil {
-		return podcommon.NewStatesAllUnknown(),
-			common.WrapErrorf(err, "unable to get container")
-	}
-
+func (s targetContainerState) States(
+	ctx context.Context,
+	pod *v1.Pod,
+	targetContainer *v1.Container,
+	scaleConfigs config.ScaleConfigs,
+) (podcommon.States, error) {
 	ret := podcommon.NewStatesAllUnknown()
-	ret.StartupProbe = s.stateStartupProbe(container)
-	ret.ReadinessProbe = s.stateReadinessProbe(container)
+	ret.StartupProbe = s.stateStartupProbe(targetContainer)
+	ret.ReadinessProbe = s.stateReadinessProbe(targetContainer)
 
-	ret.Container, err = s.stateContainer(pod, config)
+	var err error
+	ret.Container, err = s.stateContainer(pod, targetContainer)
 	if err != nil {
 		if !s.shouldReturnError(ctx, err) {
 			return ret, nil
@@ -60,7 +63,7 @@ func (s targetContainerState) States(ctx context.Context, pod *v1.Pod, config po
 		return ret, common.WrapErrorf(err, "unable to determine container state")
 	}
 
-	ret.Started, err = s.stateStarted(pod, config)
+	ret.Started, err = s.stateStarted(pod, targetContainer)
 	if err != nil {
 		if !s.shouldReturnError(ctx, err) {
 			return ret, nil
@@ -68,7 +71,7 @@ func (s targetContainerState) States(ctx context.Context, pod *v1.Pod, config po
 		return ret, common.WrapErrorf(err, "unable to determine started state")
 	}
 
-	ret.Ready, err = s.stateReady(pod, config)
+	ret.Ready, err = s.stateReady(pod, targetContainer)
 	if err != nil {
 		if !s.shouldReturnError(ctx, err) {
 			return ret, nil
@@ -76,12 +79,13 @@ func (s targetContainerState) States(ctx context.Context, pod *v1.Pod, config po
 		return ret, common.WrapErrorf(err, "unable to determine ready state")
 	}
 
+	scaleStates := state.NewScaleStates(scaleConfigs, s.containerHelper)
 	ret.Resources = s.stateResources(
-		s.isStartupConfigApplied(container, config),
-		s.isPostStartupConfigApplied(container, config),
+		scaleStates.IsStartupConfigAppliedAll(targetContainer),
+		scaleStates.IsPostStartupConfigAppliedAll(targetContainer),
 	)
 
-	ret.StatusResources, err = s.stateStatusResources(pod, container, config)
+	ret.StatusResources, err = s.stateStatusResources(pod, targetContainer, scaleStates)
 	if err != nil {
 		if !s.shouldReturnError(ctx, err) {
 			return ret, nil
@@ -94,7 +98,7 @@ func (s targetContainerState) States(ctx context.Context, pod *v1.Pod, config po
 
 // stateStartupProbe returns the startup probe state for the target container.
 func (s targetContainerState) stateStartupProbe(container *v1.Container) podcommon.StateBool {
-	if s.containerKubeHelper.HasStartupProbe(container) {
+	if s.containerHelper.HasStartupProbe(container) {
 		return podcommon.StateBoolTrue
 	}
 
@@ -103,7 +107,7 @@ func (s targetContainerState) stateStartupProbe(container *v1.Container) podcomm
 
 // stateReadinessProbe returns the readiness probe state for the target container.
 func (s targetContainerState) stateReadinessProbe(container *v1.Container) podcommon.StateBool {
-	if s.containerKubeHelper.HasReadinessProbe(container) {
+	if s.containerHelper.HasReadinessProbe(container) {
 		return podcommon.StateBoolTrue
 	}
 
@@ -111,21 +115,21 @@ func (s targetContainerState) stateReadinessProbe(container *v1.Container) podco
 }
 
 // stateContainer returns the container state for the target container, using the supplied config.
-func (s targetContainerState) stateContainer(pod *v1.Pod, config podcommon.ScaleConfig) (podcommon.StateContainer, error) {
-	state, err := s.containerKubeHelper.State(pod, config.GetTargetContainerName())
+func (s targetContainerState) stateContainer(pod *v1.Pod, targetContainer *v1.Container) (podcommon.StateContainer, error) {
+	containerState, err := s.containerHelper.State(pod, targetContainer)
 	if err != nil {
 		return podcommon.StateContainerUnknown, common.WrapErrorf(err, "unable to get container state")
 	}
 
-	if state.Running != nil {
+	if containerState.Running != nil {
 		return podcommon.StateContainerRunning, nil
 	}
 
-	if state.Waiting != nil {
+	if containerState.Waiting != nil {
 		return podcommon.StateContainerWaiting, nil
 	}
 
-	if state.Terminated != nil {
+	if containerState.Terminated != nil {
 		return podcommon.StateContainerTerminated, nil
 	}
 
@@ -133,8 +137,8 @@ func (s targetContainerState) stateContainer(pod *v1.Pod, config podcommon.Scale
 }
 
 // stateStarted returns the ready state for the target container, using the supplied config.
-func (s targetContainerState) stateStarted(pod *v1.Pod, config podcommon.ScaleConfig) (podcommon.StateBool, error) {
-	started, err := s.containerKubeHelper.IsStarted(pod, config.GetTargetContainerName())
+func (s targetContainerState) stateStarted(pod *v1.Pod, targetContainer *v1.Container) (podcommon.StateBool, error) {
+	started, err := s.containerHelper.IsStarted(pod, targetContainer)
 	if err != nil {
 		return podcommon.StateBoolUnknown, common.WrapErrorf(err, "unable to get container ready status")
 	}
@@ -147,8 +151,8 @@ func (s targetContainerState) stateStarted(pod *v1.Pod, config podcommon.ScaleCo
 }
 
 // stateReady returns the ready state for the target container, using the supplied config.
-func (s targetContainerState) stateReady(pod *v1.Pod, config podcommon.ScaleConfig) (podcommon.StateBool, error) {
-	ready, err := s.containerKubeHelper.IsReady(pod, config.GetTargetContainerName())
+func (s targetContainerState) stateReady(pod *v1.Pod, targetContainer *v1.Container) (podcommon.StateBool, error) {
+	ready, err := s.containerHelper.IsReady(pod, targetContainer)
 	if err != nil {
 		return podcommon.StateBoolUnknown, common.WrapErrorf(err, "unable to get container ready status")
 	}
@@ -177,85 +181,35 @@ func (s targetContainerState) stateResources(
 // stateStatusResources returns the status resources state for the target container, using the supplied config.
 func (s targetContainerState) stateStatusResources(
 	pod *v1.Pod,
-	container *v1.Container,
-	config podcommon.ScaleConfig,
+	targetContainer *v1.Container,
+	scaleStates state.ScaleStates,
 ) (podcommon.StateStatusResources, error) {
-	currentRequestsCpu, err := s.containerKubeHelper.CurrentRequests(pod, config.GetTargetContainerName(), v1.ResourceCPU)
+	requestsMatch, err := scaleStates.DoesRequestsCurrentMatchSpecAll(pod, targetContainer)
 	if err != nil {
-		return podcommon.StateStatusResourcesUnknown, common.WrapErrorf(err, "unable to get status resources cpu requests")
+		return podcommon.StateStatusResourcesUnknown, common.WrapErrorf(err, "unable to determine if current requests matches spec")
 	}
 
-	currentLimitsCpu, err := s.containerKubeHelper.CurrentLimits(pod, config.GetTargetContainerName(), v1.ResourceCPU)
+	limitsMatch, err := scaleStates.DoesLimitsCurrentMatchSpecAll(pod, targetContainer)
 	if err != nil {
-		return podcommon.StateStatusResourcesUnknown, common.WrapErrorf(err, "unable to get status resources cpu limits")
+		return podcommon.StateStatusResourcesUnknown, common.WrapErrorf(err, "unable to determine if current limits matches spec")
 	}
 
-	currentRequestsMemory, err := s.containerKubeHelper.CurrentRequests(pod, config.GetTargetContainerName(), v1.ResourceMemory)
-	if err != nil {
-		return podcommon.StateStatusResourcesUnknown, common.WrapErrorf(err, "unable to get status resources memory requests")
-	}
-
-	currentLimitsMemory, err := s.containerKubeHelper.CurrentLimits(pod, config.GetTargetContainerName(), v1.ResourceMemory)
-	if err != nil {
-		return podcommon.StateStatusResourcesUnknown, common.WrapErrorf(err, "unable to get status resources memory limits")
-	}
-
-	if currentRequestsCpu.IsZero() || currentLimitsCpu.IsZero() || currentRequestsMemory.IsZero() || currentLimitsMemory.IsZero() {
-		return podcommon.StateStatusResourcesIncomplete, nil
-	}
-
-	requestsCpu := s.containerKubeHelper.Requests(container, v1.ResourceCPU)
-	limitsCpu := s.containerKubeHelper.Limits(container, v1.ResourceCPU)
-	requestsMemory := s.containerKubeHelper.Requests(container, v1.ResourceMemory)
-	limitsMemory := s.containerKubeHelper.Limits(container, v1.ResourceMemory)
-
-	if currentRequestsCpu.Equal(requestsCpu) &&
-		currentLimitsCpu.Equal(limitsCpu) &&
-		currentRequestsMemory.Equal(requestsMemory) &&
-		currentLimitsMemory.Equal(limitsMemory) {
+	if requestsMatch && limitsMatch {
 		return podcommon.StateStatusResourcesContainerResourcesMatch, nil
 	}
 
 	return podcommon.StateStatusResourcesContainerResourcesMismatch, nil
 }
 
-// isStartupConfigApplied reports whether the supplied container has its startup configuration applied, using the
-// supplied config.
-func (s targetContainerState) isStartupConfigApplied(container *v1.Container, config podcommon.ScaleConfig) bool {
-	cpuStartupRequestsApplied := s.containerKubeHelper.Requests(container, v1.ResourceCPU).Equal(config.GetCpuConfig().Startup)
-	cpuStartupLimitsApplied := s.containerKubeHelper.Limits(container, v1.ResourceCPU).Equal(config.GetCpuConfig().Startup)
-	cpuStartupApplied := cpuStartupRequestsApplied && cpuStartupLimitsApplied
-
-	memoryRequestsStartupApplied := s.containerKubeHelper.Requests(container, v1.ResourceMemory).Equal(config.GetMemoryConfig().Startup)
-	memoryLimitsStartupApplied := s.containerKubeHelper.Limits(container, v1.ResourceMemory).Equal(config.GetMemoryConfig().Startup)
-	memoryStartupApplied := memoryRequestsStartupApplied && memoryLimitsStartupApplied
-
-	return cpuStartupApplied && memoryStartupApplied
-}
-
-// isPostStartupConfigApplied reports whether the supplied container has its post-startup configuration applied, using
-// the supplied config.
-func (s targetContainerState) isPostStartupConfigApplied(container *v1.Container, config podcommon.ScaleConfig) bool {
-	cpuPostStartupRequestsApplied := s.containerKubeHelper.Requests(container, v1.ResourceCPU).Equal(config.GetCpuConfig().PostStartupRequests)
-	cpuPostStartupLimitsApplied := s.containerKubeHelper.Limits(container, v1.ResourceCPU).Equal(config.GetCpuConfig().PostStartupLimits)
-	cpuPostStartupApplied := cpuPostStartupRequestsApplied && cpuPostStartupLimitsApplied
-
-	memoryPostStartupRequestsApplied := s.containerKubeHelper.Requests(container, v1.ResourceMemory).Equal(config.GetMemoryConfig().PostStartupRequests)
-	memoryPostStartupLimitsApplied := s.containerKubeHelper.Limits(container, v1.ResourceMemory).Equal(config.GetMemoryConfig().PostStartupLimits)
-	memoryPostStartupApplied := memoryPostStartupRequestsApplied && memoryPostStartupLimitsApplied
-
-	return cpuPostStartupApplied && memoryPostStartupApplied
-}
-
 // shouldReturnError reports whether to return an error after examining the type of the supplied err. Certain errors
 // should not propagate since they are likely transient in nature i.e. 'resolved' in future reconciles.
 func (s targetContainerState) shouldReturnError(ctx context.Context, err error) bool {
-	if errors.As(err, &ContainerStatusNotPresentError{}) {
+	if errors.As(err, &kube.ContainerStatusNotPresentError{}) {
 		logging.Infof(ctx, logging.VDebug, "container status not yet present")
 		return false
 	}
 
-	if errors.As(err, &ContainerStatusResourcesNotPresentError{}) {
+	if errors.As(err, &kube.ContainerStatusResourcesNotPresentError{}) {
 		logging.Infof(ctx, logging.VDebug, "container status resources not yet present")
 		return false
 	}

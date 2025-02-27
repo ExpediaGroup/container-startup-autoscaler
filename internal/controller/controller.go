@@ -68,7 +68,7 @@ func (c *controller) Initialize(runtimeController ...runtimecontroller.Controlle
 	var retErr error
 
 	c.onceInit.Do(func() {
-		reconciler := NewContainerStartupAutoscalerReconciler(
+		reconciler := newContainerStartupAutoscalerReconciler(
 			pod.NewPod(c.controllerConfig, c.runtimeManager.GetClient(), c.runtimeManager.GetEventRecorderFor(Name)),
 			c.controllerConfig,
 		)

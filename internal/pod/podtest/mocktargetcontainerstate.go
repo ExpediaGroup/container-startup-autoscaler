@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
 )
@@ -38,14 +39,15 @@ func NewMockTargetContainerState(configFunc func(*MockTargetContainerState)) *Mo
 func (m *MockTargetContainerState) States(
 	ctx context.Context,
 	pod *v1.Pod,
-	config podcommon.ScaleConfig,
+	targetContainer *v1.Container,
+	scaleConfigs config.ScaleConfigs,
 ) (podcommon.States, error) {
-	args := m.Called(ctx, pod, config)
+	args := m.Called(ctx, pod, targetContainer, scaleConfigs)
 	return args.Get(0).(podcommon.States), args.Error(1)
 }
 
 func (m *MockTargetContainerState) StatesDefault() {
-	m.On("States", mock.Anything, mock.Anything, mock.Anything).Return(
+	m.On("States", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 		podcommon.NewStates(
 			podcommon.StateBoolTrue,
 			podcommon.StateBoolTrue,

@@ -31,6 +31,7 @@ const (
 	existingInProgressName         = "existing_in_progress"
 	failureUnableToGetPodName      = "failure_unable_to_get_pod"
 	failurePodDoesntExistName      = "failure_pod_doesnt_exist"
+	failureConfigurationName       = "failure_configuration"
 	failureValidationName          = "failure_validation"
 	failureStatesDeterminationName = "failure_states_determination"
 	failureStatesActionName        = "failure_states_action"
@@ -65,6 +66,13 @@ var (
 		Help:      "Number of reconciles where the pod was found not to exist (results in failure)",
 	}, []string{})
 
+	failureConfiguration = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Namespace: metricscommon.Namespace,
+		Subsystem: Subsystem,
+		Name:      failureConfigurationName,
+		Help:      "Number of reconciles where there was a failure to configure (results in failure)",
+	}, []string{})
+
 	failureValidation = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
@@ -89,8 +97,8 @@ var (
 
 // allMetrics must include all metrics defined above.
 var allMetrics = []prometheus.Collector{
-	skippedOnlyStatusChange, existingInProgress, failureUnableToGetPod, failurePodDoesntExist, failureValidation,
-	failureStatesDetermination, failureStatesAction,
+	skippedOnlyStatusChange, existingInProgress, failureUnableToGetPod, failurePodDoesntExist, failureConfiguration,
+	failureValidation, failureStatesDetermination, failureStatesAction,
 }
 
 func RegisterMetrics(registry metrics.RegistererGatherer) {
@@ -115,6 +123,10 @@ func FailureUnableToGetPod() prometheus.Counter {
 
 func FailurePodDoesntExist() prometheus.Counter {
 	return failurePodDoesntExist.WithLabelValues()
+}
+
+func FailureConfiguration() prometheus.Counter {
+	return failureConfiguration.WithLabelValues()
 }
 
 func FailureValidation() prometheus.Counter {

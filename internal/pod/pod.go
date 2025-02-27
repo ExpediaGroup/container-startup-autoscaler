@@ -18,6 +18,7 @@ package pod
 
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -25,12 +26,13 @@ import (
 // Pod is a facade (and the only package-external entry point) for pod interaction and contains a number of services.
 // It only exposes exported services methods via their corresponding interfaces.
 type Pod struct {
+	Configuration         Configuration
 	Validation            Validation
 	TargetContainerState  TargetContainerState
 	TargetContainerAction TargetContainerAction
 	Status                Status
-	KubeHelper            KubeHelper
-	ContainerKubeHelper   ContainerKubeHelper
+	PodHelper             kube.PodHelper
+	ContainerHelper       kube.ContainerHelper
 }
 
 func NewPod(
@@ -38,16 +40,17 @@ func NewPod(
 	client client.Client,
 	recorder record.EventRecorder,
 ) *Pod {
-	helper := newKubeHelper(client)
-	cHelper := newContainerKubeHelper()
-	stat := newStatus(helper)
+	podHelper := kube.NewPodHelper(client)
+	containerHelper := kube.NewContainerHelper()
+	stat := newStatus(podHelper)
 
 	return &Pod{
-		Validation:            newValidation(recorder, stat, helper, cHelper),
-		TargetContainerState:  newTargetContainerState(cHelper),
-		TargetContainerAction: newTargetContainerAction(controllerConfig, recorder, stat, helper, cHelper),
+		Configuration:         newConfiguration(podHelper, containerHelper),
+		Validation:            newValidation(recorder, stat, podHelper, containerHelper),
+		TargetContainerState:  newTargetContainerState(containerHelper),
+		TargetContainerAction: newTargetContainerAction(controllerConfig, recorder, stat, podHelper),
 		Status:                stat,
-		KubeHelper:            helper,
-		ContainerKubeHelper:   cHelper,
+		PodHelper:             podHelper,
+		ContainerHelper:       containerHelper,
 	}
 }

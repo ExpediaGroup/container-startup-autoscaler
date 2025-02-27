@@ -408,10 +408,10 @@ The informer cache metrics described [above](#informer-cache) provide insight in
 updated (synced) after status is updated, and whether any timeouts occur:
 
 - `patch_sync_poll`: the number of cache polls that were required to confirm the cache was populated with the updated
-  pod. The cache is polled periodically per the `waitForCacheUpdatePollMillis` configuration [here](internal/pod/kubehelper.go).
+  pod. The cache is polled periodically per the `waitForCacheUpdatePollMillis` configuration [here](internal/kube/podhelper.go).
   Higher values indicate longer cache sync times.
 - `patch_sync_timeout`: the number of times the cache sync timed out per the`waitForCacheUpdateTimeoutMillis`
-  configuration [here](internal/pod/kubehelper.go). Timeouts do not result in an error or termination of the reconcile,
+  configuration [here](internal/kube/podhelper.go). Timeouts do not result in an error or termination of the reconcile,
   but may result in inconsistent CSA status updates.  
 
 ## Encountering Unknown Resources

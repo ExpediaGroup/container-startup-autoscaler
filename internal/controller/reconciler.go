@@ -28,7 +28,6 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/reconciler"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -42,7 +41,7 @@ type containerStartupAutoscalerReconciler struct {
 	mutex            sync.Mutex
 }
 
-func NewContainerStartupAutoscalerReconciler(
+func newContainerStartupAutoscalerReconciler(
 	pod *pod.Pod,
 	controllerConfig controllercommon.ControllerConfig,
 ) *containerStartupAutoscalerReconciler {
@@ -87,7 +86,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	// Get the pod. Note: the latest version of the pod is always retrieved, which may have changed since initial
 	// filtering in predicatefunc.go or if a requeue is being processed. There is no affinity with pod version.
 	// Reconcilation will still operate correctly in this case as current conditions are always examined.
-	podExists, kubePod, err := r.pod.KubeHelper.Get(ctx, request.NamespacedName)
+	podExists, kubePod, err := r.pod.PodHelper.Get(ctx, request.NamespacedName)
 	if err != nil {
 		logging.Errorf(ctx, err, "unable to get pod (will requeue)")
 		reconciler.FailureUnableToGetPod().Inc()
@@ -112,14 +111,29 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 		}
 	}
 
-	// Validate and get scale config - assign container name to context via callback.
-	config := pod.NewScaleConfig(r.pod.KubeHelper)
-
-	afterScaleConfigPopulatedFunc := func(config podcommon.ScaleConfig) {
-		ctx = ccontext.WithTargetContainerName(ctx, config.GetTargetContainerName())
-		logging.Infof(ctx, logging.VTrace, "configuration: %s", config.String())
+	configs, err := r.pod.Configuration.Configure(kubePod)
+	if err != nil {
+		msg := "unable to configure pod (won't requeue)"
+		logging.Errorf(ctx, err, msg)
+		reconciler.FailureConfiguration().Inc() // TODO(wt) add to docs
+		return reconcile.Result{}, reconcile.TerminalError(common.WrapErrorf(err, msg))
 	}
-	err = r.pod.Validation.Validate(ctx, kubePod, config, afterScaleConfigPopulatedFunc)
+
+	targetContainerName, err := configs.TargetContainerName(kubePod)
+	if err != nil {
+		msg := "unable to get target container name (won't requeue)"
+		logging.Errorf(ctx, err, msg)
+		reconciler.FailureConfiguration().Inc()
+		return reconcile.Result{}, reconcile.TerminalError(common.WrapErrorf(err, msg))
+	}
+
+	ctx = ccontext.WithTargetContainerName(ctx, targetContainerName)
+
+	for _, scaleConfig := range configs.AllScaleConfigs() {
+		logging.Infof(ctx, logging.VTrace, "scale configuration: %s", scaleConfig.String())
+	}
+
+	targetContainer, err := r.pod.Validation.Validate(ctx, kubePod, targetContainerName, configs)
 	if err != nil {
 		msg := "unable to validate pod (won't requeue)"
 		logging.Errorf(ctx, err, msg)
@@ -128,7 +142,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	}
 
 	// Determine target container states.
-	states, err := r.pod.TargetContainerState.States(ctx, kubePod, config)
+	states, err := r.pod.TargetContainerState.States(ctx, kubePod, targetContainer, configs)
 	if err != nil {
 		msg := "unable to determine target container states (won't requeue)"
 		logging.Errorf(ctx, err, msg)
@@ -138,7 +152,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	ctx = ccontext.WithTargetContainerStates(ctx, states)
 
 	// Execute action for determined target container states.
-	err = r.pod.TargetContainerAction.Execute(ctx, states, kubePod, config)
+	err = r.pod.TargetContainerAction.Execute(ctx, states, kubePod, targetContainer, configs)
 	if err != nil {
 		msg := "unable to action target container states (won't requeue)"
 		logging.Errorf(ctx, err, msg)

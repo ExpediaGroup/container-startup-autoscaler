@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"
 )
@@ -47,8 +48,9 @@ func (m *MockStatus) Update(
 	status string,
 	states podcommon.States,
 	scaleState podcommon.StatusScaleState,
+	scaleConfigs config.ScaleConfigs,
 ) (*v1.Pod, error) {
-	args := m.Called(ctx, pod, status, states, scaleState)
+	args := m.Called(ctx, pod, status, states, scaleState, scaleConfigs)
 	return args.Get(0).(*v1.Pod), args.Error(1)
 }
 
@@ -57,24 +59,25 @@ func (m *MockStatus) PodMutationFunc(
 	status string,
 	states podcommon.States,
 	scaleState podcommon.StatusScaleState,
+	scaleConfigs config.ScaleConfigs,
 ) func(pod *v1.Pod) (bool, *v1.Pod, error) {
-	args := m.Called(ctx, status, states, scaleState)
+	args := m.Called(ctx, status, states, scaleState, scaleConfigs)
 	return args.Get(0).(func(pod *v1.Pod) (bool, *v1.Pod, error))
 }
 
 func (m *MockStatus) UpdateDefault() {
-	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(&v1.Pod{}, nil)
 }
 
 func (m *MockStatus) UpdateDefaultAndRun(run func()) {
-	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(&v1.Pod{}, nil).
 		Run(func(args mock.Arguments) { run() })
 }
 
 func (m *MockStatus) PodMutationFuncDefault() {
-	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 		func(pod *v1.Pod) (bool, *v1.Pod, error) {
 			return true, &v1.Pod{}, nil
 		},
@@ -82,7 +85,7 @@ func (m *MockStatus) PodMutationFuncDefault() {
 }
 
 func (m *MockStatus) PodMutationFuncDefaultAndRun(run func()) {
-	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 		func(pod *v1.Pod) (bool, *v1.Pod, error) {
 			return true, &v1.Pod{}, nil
 		},

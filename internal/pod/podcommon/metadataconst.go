@@ -16,24 +16,12 @@ limitations under the License.
 
 package podcommon
 
-const namespace = "csa.expediagroup.com"
+const Namespace = "csa.expediagroup.com"
 
 const (
-	LabelEnabled = namespace + "/enabled"
+	LabelEnabled = Namespace + "/enabled"
 )
 
 const (
-	AnnotationTargetContainerName = namespace + "/target-container-name"
-
-	AnnotationCpuStartup             = namespace + "/cpu-startup"
-	AnnotationCpuPostStartupRequests = namespace + "/cpu-post-startup-requests"
-	AnnotationCpuPostStartupLimits   = namespace + "/cpu-post-startup-limits"
-
-	AnnotationMemoryStartup             = namespace + "/memory-startup"
-	AnnotationMemoryPostStartupRequests = namespace + "/memory-post-startup-requests"
-	AnnotationMemoryPostStartupLimits   = namespace + "/memory-post-startup-limits"
-)
-
-const (
-	AnnotationStatus = namespace + "/status"
+	AnnotationStatus = Namespace + "/status"
 )

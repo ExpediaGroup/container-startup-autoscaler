@@ -16,6 +16,7 @@ limitations under the License.
 
 package controller
 
+// TODO(wt) tests fixed here
 import (
 	"bytes"
 	"errors"
@@ -24,6 +25,8 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/reconciler"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
@@ -40,7 +43,7 @@ import (
 func TestNewContainerStartupAutoscalerReconciler(t *testing.T) {
 	p := &pod.Pod{}
 	c := controllercommon.NewControllerConfig()
-	r := NewContainerStartupAutoscalerReconciler(p, c)
+	r := newContainerStartupAutoscalerReconciler(p, c)
 	assert.Equal(t, p, r.pod)
 	assert.Equal(t, c, r.controllerConfig)
 	assert.NotNil(t, r.reconcilingPods)
@@ -51,10 +54,11 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 		controllerConfig controllercommon.ControllerConfig
 	}
 	type mocks struct {
+		configuration         pod.Configuration
 		validation            pod.Validation
 		targetContainerState  pod.TargetContainerState
 		targetContainerAction pod.TargetContainerAction
-		kubeHelper            pod.KubeHelper
+		podHelper             kube.PodHelper
 	}
 	tests := []struct {
 		name                    string
@@ -89,7 +93,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			name:   "UnableToGetPod",
 			fields: fields{controllercommon.ControllerConfig{RequeueDurationSecs: 10}},
 			mocks: mocks{
-				kubeHelper: podtest.NewMockKubeHelper(func(m *podtest.MockKubeHelper) {
+				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
 					m.On("Get", mock.Anything, mock.Anything).Return(false, &v1.Pod{}, errors.New(""))
 				}),
 			},
@@ -103,7 +107,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			name:   "PodDoesntExist",
 			fields: fields{},
 			mocks: mocks{
-				kubeHelper: podtest.NewMockKubeHelper(func(m *podtest.MockKubeHelper) {
+				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
 					m.On("Get", mock.Anything, mock.Anything).Return(false, &v1.Pod{}, nil)
 				}),
 			},
@@ -115,14 +119,31 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: true,
 		},
 		{
-			name:   "UnableToValidatePod",
+			name:   "UnableToConfigurePod",
 			fields: fields{},
 			mocks: mocks{
+				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
+					m.On("Configure", mock.Anything).Return(errors.New(""))
+				}),
+				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) { m.GetDefault() }),
+			},
+			podNamespace: "namespace",
+			podName:      "name",
+			want:         reconcile.Result{},
+			wantErrMsg:   "unable to configure pod (won't requeue)",
+			wantLogMsg:   "unable to configure pod (won't requeue)",
+			wantEmptyMap: true,
+		},
+		{
+			name:   "UnableToValidatePod",
+			fields: fields{},
+			mocks: mocks{ // TODO(wt) continue here - need to return mock scaleconfigs
+				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) { m.ConfigureDefault() }),
 				validation: podtest.NewMockValidation(func(m *podtest.MockValidation) {
 					m.On("Validate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 						Return(errors.New(""))
 				}),
-				kubeHelper: podtest.NewMockKubeHelper(func(m *podtest.MockKubeHelper) { m.GetDefault() }),
+				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) { m.GetDefault() }),
 			},
 			podNamespace: "namespace",
 			podName:      "name",
@@ -135,12 +156,13 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			name:   "UnableToDetermineTargetContainerStates",
 			fields: fields{},
 			mocks: mocks{
-				validation: podtest.NewMockValidation(func(m *podtest.MockValidation) { m.ValidateDefault() }),
+				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) { m.ConfigureDefault() }),
+				validation:    podtest.NewMockValidation(func(m *podtest.MockValidation) { m.ValidateDefault() }),
 				targetContainerState: podtest.NewMockTargetContainerState(func(m *podtest.MockTargetContainerState) {
 					m.On("States", mock.Anything, mock.Anything, mock.Anything).
 						Return(podcommon.States{}, errors.New(""))
 				}),
-				kubeHelper: podtest.NewMockKubeHelper(func(m *podtest.MockKubeHelper) { m.GetDefault() }),
+				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) { m.GetDefault() }),
 			},
 			podNamespace: "namespace",
 			podName:      "name",
@@ -153,7 +175,8 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			name:   "UnableToActionTargetContainerStates",
 			fields: fields{},
 			mocks: mocks{
-				validation: podtest.NewMockValidation(func(m *podtest.MockValidation) { m.ValidateDefault() }),
+				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) { m.ConfigureDefault() }),
+				validation:    podtest.NewMockValidation(func(m *podtest.MockValidation) { m.ValidateDefault() }),
 				targetContainerState: podtest.NewMockTargetContainerState(func(m *podtest.MockTargetContainerState) {
 					m.StatesDefault()
 				}),
@@ -161,7 +184,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 					m.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 						Return(errors.New(""))
 				}),
-				kubeHelper: podtest.NewMockKubeHelper(func(m *podtest.MockKubeHelper) { m.GetDefault() }),
+				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) { m.GetDefault() }),
 			},
 			podNamespace: "namespace",
 			podName:      "name",
@@ -174,14 +197,15 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			name:   "Ok",
 			fields: fields{},
 			mocks: mocks{
-				validation: podtest.NewMockValidation(func(m *podtest.MockValidation) { m.ValidateDefault() }),
+				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) { m.ConfigureDefault() }),
+				validation:    podtest.NewMockValidation(func(m *podtest.MockValidation) { m.ValidateDefault() }),
 				targetContainerState: podtest.NewMockTargetContainerState(func(m *podtest.MockTargetContainerState) {
 					m.StatesDefault()
 				}),
 				targetContainerAction: podtest.NewMockTargetContainerAction(func(m *podtest.MockTargetContainerAction) {
 					m.ExecuteDefault()
 				}),
-				kubeHelper: podtest.NewMockKubeHelper(func(m *podtest.MockKubeHelper) { m.GetDefault() }),
+				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) { m.GetDefault() }),
 			},
 			podNamespace: "namespace",
 			podName:      "name",
@@ -204,7 +228,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 				Validation:            tt.mocks.validation,
 				TargetContainerState:  tt.mocks.targetContainerState,
 				TargetContainerAction: tt.mocks.targetContainerAction,
-				KubeHelper:            tt.mocks.kubeHelper,
+				PodHelper:             tt.mocks.podHelper,
 			}
 			r := &containerStartupAutoscalerReconciler{
 				pod:              p,

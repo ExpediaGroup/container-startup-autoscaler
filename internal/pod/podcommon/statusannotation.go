@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource"
 )
 
 // StatusAnnotation holds status information that's serialized to JSON for status reporting.
@@ -70,23 +71,28 @@ func StatusAnnotationFromString(s string) (StatusAnnotation, error) {
 
 // StatusAnnotationScale holds scale-related information that's serialized to JSON for status reporting.
 type StatusAnnotationScale struct {
-	LastCommanded string `json:"lastCommanded"`
-	LastEnacted   string `json:"lastEnacted"`
-	LastFailed    string `json:"lastFailed"`
+	EnabledForResources []scaleresource.ResourceType `json:"enabledForResources"`
+	LastCommanded       string                       `json:"lastCommanded"`
+	LastEnacted         string                       `json:"lastEnacted"`
+	LastFailed          string                       `json:"lastFailed"`
 }
 
 func NewStatusAnnotationScale(
+	enabledForResources []scaleresource.ResourceType,
 	lastCommanded string,
 	lastEnacted string,
 	lastFailed string,
 ) StatusAnnotationScale {
 	return StatusAnnotationScale{
+		enabledForResources,
 		lastCommanded,
 		lastEnacted,
 		lastFailed,
 	}
 }
 
-func NewEmptyStatusAnnotationScale() StatusAnnotationScale {
-	return StatusAnnotationScale{}
+func NewEmptyStatusAnnotationScale(enabledForResources []scaleresource.ResourceType) StatusAnnotationScale {
+	return StatusAnnotationScale{
+		EnabledForResources: enabledForResources,
+	}
 }

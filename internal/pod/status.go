@@ -22,10 +22,12 @@ import (
 	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/metricscommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scaleresource/config"
 	"k8s.io/api/core/v1"
 )
 
@@ -36,17 +38,17 @@ const (
 
 // Status performs operations relating to controller status.
 type Status interface {
-	Update(context.Context, *v1.Pod, string, podcommon.States, podcommon.StatusScaleState) (*v1.Pod, error)
-	PodMutationFunc(context.Context, string, podcommon.States, podcommon.StatusScaleState) func(pod *v1.Pod) (bool, *v1.Pod, error)
+	Update(context.Context, *v1.Pod, string, podcommon.States, podcommon.StatusScaleState, config.ScaleConfigs) (*v1.Pod, error)
+	PodMutationFunc(context.Context, string, podcommon.States, podcommon.StatusScaleState, config.ScaleConfigs) func(pod *v1.Pod) (bool, *v1.Pod, error)
 }
 
 // status is the default implementation of Status.
 type status struct {
-	kubeHelper KubeHelper
+	podHelper kube.PodHelper
 }
 
-func newStatus(kubeHelper KubeHelper) *status {
-	return &status{kubeHelper: kubeHelper}
+func newStatus(podHelper kube.PodHelper) *status {
+	return &status{podHelper: podHelper}
 }
 
 // Update updates controller status by applying mutations to the supplied pod using the supplied status, states and
@@ -57,10 +59,11 @@ func (s *status) Update(
 	status string,
 	states podcommon.States,
 	scaleState podcommon.StatusScaleState,
+	scaleConfigs config.ScaleConfigs,
 ) (*v1.Pod, error) {
-	mutatePodFunc := s.PodMutationFunc(ctx, status, states, scaleState)
+	mutatePodFunc := s.PodMutationFunc(ctx, status, states, scaleState, scaleConfigs)
 
-	newPod, err := s.kubeHelper.Patch(ctx, pod, mutatePodFunc, false, true)
+	newPod, err := s.podHelper.Patch(ctx, pod, mutatePodFunc, false, true)
 	if err != nil {
 		return nil, common.WrapErrorf(err, "unable to patch pod")
 	}
@@ -75,6 +78,7 @@ func (s *status) PodMutationFunc(
 	status string,
 	states podcommon.States,
 	scaleState podcommon.StatusScaleState,
+	scaleConfigs config.ScaleConfigs,
 ) func(pod *v1.Pod) (bool, *v1.Pod, error) {
 	return func(pod *v1.Pod) (bool, *v1.Pod, error) {
 		var currentStat podcommon.StatusAnnotation
@@ -87,7 +91,8 @@ func (s *status) PodMutationFunc(
 			}
 		}
 
-		statScale := podcommon.NewEmptyStatusAnnotationScale()
+		// TODO(wt) add to docs
+		statScale := podcommon.NewEmptyStatusAnnotationScale(scaleConfigs.AllEnabledScaleConfigsTypes())
 
 		switch scaleState {
 		case podcommon.StatusScaleStateNotApplicable: // Preserve current status.
