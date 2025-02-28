@@ -16,7 +16,6 @@ limitations under the License.
 
 package kube
 
-// TODO(wt) tests fixed in this file
 import (
 	"errors"
 	"testing"

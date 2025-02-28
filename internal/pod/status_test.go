@@ -16,7 +16,6 @@ limitations under the License.
 
 package pod
 
-// TODO(wt) tests fixed here
 import (
 	"bytes"
 	"encoding/json"

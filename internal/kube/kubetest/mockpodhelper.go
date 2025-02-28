@@ -35,7 +35,7 @@ type MockPodHelper struct {
 
 func NewMockPodHelper(configFunc func(*MockPodHelper)) *MockPodHelper {
 	m := &MockPodHelper{}
-	if configFunc == nil {
+	if configFunc != nil {
 		configFunc(m)
 	} else {
 		m.AllDefaults()
@@ -51,22 +51,12 @@ func (m *MockPodHelper) Get(ctx context.Context, name types.NamespacedName) (boo
 
 func (m *MockPodHelper) Patch(
 	ctx context.Context,
-	originalPod *v1.Pod,
-	mutatePodFunc func(*v1.Pod) (bool, *v1.Pod, error),
+	pod *v1.Pod,
+	podMutationFuncs []func(*v1.Pod) error,
 	patchResize bool,
 	mustSyncCache bool,
 ) (*v1.Pod, error) {
-	args := m.Called(ctx, originalPod, mutatePodFunc, patchResize, mustSyncCache)
-	return args.Get(0).(*v1.Pod), args.Error(1)
-}
-
-func (m *MockPodHelper) UpdateContainerResources(
-	ctx context.Context,
-	pod *v1.Pod,
-	addPodMutationFunc func(pod *v1.Pod) (bool, *v1.Pod, error),
-	addPodMutationMustSyncCache bool,
-) (*v1.Pod, error) {
-	args := m.Called(ctx, pod, addPodMutationFunc, addPodMutationMustSyncCache)
+	args := m.Called(ctx, pod, podMutationFuncs, patchResize, mustSyncCache)
 	return args.Get(0).(*v1.Pod), args.Error(1)
 }
 
@@ -101,13 +91,6 @@ func (m *MockPodHelper) GetDefault() {
 
 func (m *MockPodHelper) PatchDefault() {
 	m.On("Patch", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
-		&v1.Pod{},
-		nil,
-	)
-}
-
-func (m *MockPodHelper) UpdateContainerResourcesDefault() {
-	m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 		&v1.Pod{},
 		nil,
 	)
@@ -158,7 +141,6 @@ func (m *MockPodHelper) ResizeStatusDefault() {
 func (m *MockPodHelper) AllDefaults() {
 	m.GetDefault()
 	m.PatchDefault()
-	m.UpdateContainerResourcesDefault()
 	m.HasAnnotationDefault()
 	m.ExpectedLabelValueAsDefault()
 	m.ExpectedAnnotationValueAsDefault()

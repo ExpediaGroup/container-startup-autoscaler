@@ -32,7 +32,7 @@ type MockStatus struct {
 
 func NewMockStatus(configFunc func(*MockStatus)) *MockStatus {
 	m := &MockStatus{}
-	if configFunc == nil {
+	if configFunc != nil {
 		configFunc(m)
 	} else {
 		m.AllDefaults()
@@ -65,9 +65,9 @@ func (m *MockStatus) PodMutationFunc(
 	states podcommon.States,
 	scaleState podcommon.StatusScaleState,
 	scaleConfigs scale.Configs,
-) func(pod *v1.Pod) (bool, *v1.Pod, error) {
+) func(pod *v1.Pod) error {
 	args := m.Called(ctx, status, states, scaleState, scaleConfigs)
-	return args.Get(0).(func(pod *v1.Pod) (bool, *v1.Pod, error))
+	return args.Get(0).(func(pod *v1.Pod) error)
 }
 
 func (m *MockStatus) UpdateDefault() {
@@ -83,13 +83,13 @@ func (m *MockStatus) UpdateDefaultAndRun(run func()) {
 
 func (m *MockStatus) PodMutationFuncDefault() {
 	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
-		func(pod *v1.Pod) (bool, *v1.Pod, error) { return true, &v1.Pod{}, nil },
+		func(pod *v1.Pod) error { return nil },
 	)
 }
 
 func (m *MockStatus) PodMutationFuncDefaultAndRun(run func()) {
 	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
-		func(pod *v1.Pod) (bool, *v1.Pod, error) { return true, &v1.Pod{}, nil },
+		func(pod *v1.Pod) error { return nil },
 	).Run(func(args mock.Arguments) { run() })
 }
 

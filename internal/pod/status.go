@@ -39,7 +39,7 @@ const (
 // Status performs operations relating to controller status.
 type Status interface {
 	Update(context.Context, *v1.Pod, string, podcommon.States, podcommon.StatusScaleState, scale.Configs) (*v1.Pod, error)
-	PodMutationFunc(context.Context, string, podcommon.States, podcommon.StatusScaleState, scale.Configs) func(pod *v1.Pod) (bool, *v1.Pod, error)
+	PodMutationFunc(context.Context, string, podcommon.States, podcommon.StatusScaleState, scale.Configs) func(pod *v1.Pod) error
 }
 
 // status is the default implementation of Status.
@@ -63,7 +63,7 @@ func (s *status) Update(
 ) (*v1.Pod, error) {
 	mutatePodFunc := s.PodMutationFunc(ctx, status, states, scaleState, scaleConfigs)
 
-	newPod, err := s.podHelper.Patch(ctx, pod, mutatePodFunc, false, true)
+	newPod, err := s.podHelper.Patch(ctx, pod, []func(*v1.Pod) error{mutatePodFunc}, false, true)
 	if err != nil {
 		return nil, common.WrapErrorf(err, "unable to patch pod")
 	}
@@ -79,15 +79,15 @@ func (s *status) PodMutationFunc(
 	states podcommon.States,
 	scaleState podcommon.StatusScaleState,
 	scaleConfigs scale.Configs,
-) func(pod *v1.Pod) (bool, *v1.Pod, error) {
-	return func(pod *v1.Pod) (bool, *v1.Pod, error) {
+) func(pod *v1.Pod) error {
+	return func(pod *v1.Pod) error {
 		var currentStat podcommon.StatusAnnotation
 		currentStatAnn, gotStatAnn := pod.Annotations[podcommon.AnnotationStatus]
 		if gotStatAnn {
 			var err error
 			currentStat, err = podcommon.StatusAnnotationFromString(currentStatAnn)
 			if err != nil {
-				return false, pod, common.WrapErrorf(err, "unable to get status annotation from string")
+				return common.WrapErrorf(err, "unable to get status annotation from string")
 			}
 		}
 
@@ -140,12 +140,11 @@ func (s *status) PodMutationFunc(
 
 		newStat := podcommon.NewStatusAnnotation(common.CapitalizeFirstChar(status), states, statScale, s.formattedNow(timeFormatSecs))
 		if gotStatAnn && newStat.Equal(currentStat) {
-			// Statuses same, indicate no patch.
-			return false, pod, nil
+			return nil
 		}
 
 		pod.Annotations[podcommon.AnnotationStatus] = newStat.Json()
-		return true, pod, nil
+		return nil
 	}
 }
 

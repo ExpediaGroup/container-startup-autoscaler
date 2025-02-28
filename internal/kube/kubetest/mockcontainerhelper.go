@@ -29,7 +29,7 @@ type MockContainerHelper struct {
 
 func NewMockContainerHelper(configFunc func(*MockContainerHelper)) *MockContainerHelper {
 	m := &MockContainerHelper{}
-	if configFunc == nil {
+	if configFunc != nil {
 		configFunc(m)
 	} else {
 		m.AllDefaults()

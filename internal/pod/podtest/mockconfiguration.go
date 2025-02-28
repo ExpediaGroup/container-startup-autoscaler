@@ -30,7 +30,7 @@ type MockConfiguration struct {
 
 func NewMockConfiguration(configFunc func(*MockConfiguration)) *MockConfiguration {
 	m := &MockConfiguration{}
-	if configFunc == nil {
+	if configFunc != nil {
 		configFunc(m)
 	} else {
 		m.AllDefaults()
@@ -45,7 +45,7 @@ func (m *MockConfiguration) Configure(pod *v1.Pod) (scale.Configs, error) {
 }
 
 func (m *MockConfiguration) ConfigureDefault() {
-	m.On("Configure", mock.Anything).Return(scaletest.NewMockConfig(nil))
+	m.On("Configure", mock.Anything).Return(scaletest.NewMockConfigs(nil), nil)
 }
 
 func (m *MockConfiguration) AllDefaults() {

@@ -16,7 +16,6 @@ limitations under the License.
 
 package controller
 
-// TODO(wt) tests fixed here
 import (
 	"bytes"
 	"errors"
@@ -124,7 +123,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			fields: fields{},
 			mocks: mocks{
 				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
-					m.On("Configure", mock.Anything).Return(errors.New(""))
+					m.On("Configure", mock.Anything).Return(scaletest.NewMockConfigs(nil), errors.New(""))
 				}),
 				podHelper: kubetest.NewMockPodHelper(nil),
 			},
@@ -144,6 +143,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 						scaletest.NewMockConfigs(func(m *scaletest.MockConfigs) {
 							m.On("TargetContainerName", mock.Anything).Return("", errors.New(""))
 						}),
+						nil,
 					)
 				}),
 				podHelper: kubetest.NewMockPodHelper(nil),
@@ -162,7 +162,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 				configuration: podtest.NewMockConfiguration(nil),
 				validation: podtest.NewMockValidation(func(m *podtest.MockValidation) {
 					m.On("Validate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
-						Return(errors.New(""))
+						Return(&v1.Container{}, errors.New(""))
 				}),
 				podHelper: kubetest.NewMockPodHelper(nil),
 			},
@@ -180,7 +180,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 				configuration: podtest.NewMockConfiguration(nil),
 				validation:    podtest.NewMockValidation(nil),
 				targetContainerState: podtest.NewMockTargetContainerState(func(m *podtest.MockTargetContainerState) {
-					m.On("States", mock.Anything, mock.Anything, mock.Anything).
+					m.On("States", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 						Return(podcommon.States{}, errors.New(""))
 				}),
 				podHelper: kubetest.NewMockPodHelper(nil),
@@ -200,7 +200,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 				validation:           podtest.NewMockValidation(nil),
 				targetContainerState: podtest.NewMockTargetContainerState(nil),
 				targetContainerAction: podtest.NewMockTargetContainerAction(func(m *podtest.MockTargetContainerAction) {
-					m.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+					m.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 						Return(errors.New(""))
 				}),
 				podHelper: kubetest.NewMockPodHelper(nil),

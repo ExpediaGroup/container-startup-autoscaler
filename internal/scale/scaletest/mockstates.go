@@ -29,7 +29,7 @@ type MockStates struct {
 
 func NewMockStates(configFunc func(*MockStates)) *MockStates {
 	m := &MockStates{}
-	if configFunc == nil {
+	if configFunc != nil {
 		configFunc(m)
 	} else {
 		m.AllDefaults()

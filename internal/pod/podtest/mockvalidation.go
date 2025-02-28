@@ -31,7 +31,7 @@ type MockValidation struct {
 
 func NewMockValidation(configFunc func(*MockValidation)) *MockValidation {
 	m := &MockValidation{}
-	if configFunc == nil {
+	if configFunc != nil {
 		configFunc(m)
 	} else {
 		m.AllDefaults()
@@ -47,7 +47,7 @@ func (m *MockValidation) Validate(
 	scaleConfigs scale.Configs,
 ) (*v1.Container, error) {
 	args := m.Called(ctx, pod, targetContainerName, scaleConfigs)
-	return args.Get(0).(*v1.Container), args.Error(0)
+	return args.Get(0).(*v1.Container), args.Error(1)
 }
 
 func (m *MockValidation) ValidateDefault() {

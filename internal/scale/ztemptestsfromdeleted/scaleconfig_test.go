@@ -284,7 +284,7 @@ package ztemptestsfromdeleted
 //			},
 //			wantErrMsg: "memory post-startup requests (2M) is greater than startup value (1M)",
 //		},
-//		// TODO(wt) reinstate once change in qos class is permitted by Kube
+//		// TODO(wt) reinstate once change in qos class is permitted by Kube (get rid of this)
 //		//{
 //		//	name: "CpuPostStartupLimitsLessThanRequests",
 //		//	ScaleConfig: &scaleConfig{

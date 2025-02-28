@@ -235,21 +235,20 @@ func (a *targetContainerAction) notStartedWithPostStartupResAction(
 	targetContainer *v1.Container,
 	scaleConfigs scale.Configs,
 ) error {
-	scaleUpdates := scale.NewUpdates(scaleConfigs)
-	updatedPod, err := scaleUpdates.SetStartupResourcesAll(pod, targetContainer)
+	resizeFuncs := scale.NewUpdates(scaleConfigs).StartupPodMutationFuncAll(targetContainer)
+	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
 	if err != nil {
-		return common.WrapErrorf(err, "unable to set startup resources")
+		return common.WrapErrorf(err, "unable to patch container resources")
 	}
 
 	msg := "startup resources commanded"
-	_, err = a.podHelper.UpdateContainerResources(
-		ctx,
-		updatedPod,
+
+	statusFuncs := []func(pod *v1.Pod) error{
 		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUpCommanded, scaleConfigs),
-		true,
-	)
+	}
+	_, err = a.podHelper.Patch(ctx, pod, statusFuncs, false, true)
 	if err != nil {
-		return common.WrapErrorf(err, "unable to patch container resources")
+		return common.WrapErrorf(err, "unable to patch status")
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
@@ -266,21 +265,20 @@ func (a *targetContainerAction) startedWithStartupResAction(
 	targetContainer *v1.Container,
 	scaleConfigs scale.Configs,
 ) error {
-	scaleUpdates := scale.NewUpdates(scaleConfigs)
-	updatedPod, err := scaleUpdates.SetPostStartupResourcesAll(pod, targetContainer)
+	resizeFuncs := scale.NewUpdates(scaleConfigs).PostStartupPodMutationFuncAll(targetContainer)
+	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
 	if err != nil {
-		return common.WrapErrorf(err, "unable to set post-startup resources")
+		return common.WrapErrorf(err, "unable to patch container resources")
 	}
 
 	msg := "post-startup resources commanded"
-	_, err = a.podHelper.UpdateContainerResources(
-		ctx,
-		updatedPod,
+
+	statusFuncs := []func(pod *v1.Pod) error{
 		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateDownCommanded, scaleConfigs),
-		true,
-	)
+	}
+	_, err = a.podHelper.Patch(ctx, pod, statusFuncs, false, true)
 	if err != nil {
-		return common.WrapErrorf(err, "unable to patch container resources")
+		return common.WrapErrorf(err, "unable to patch status")
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
@@ -310,21 +308,20 @@ func (a *targetContainerAction) notStartedWithUnknownResAction(
 	targetContainer *v1.Container,
 	scaleConfigs scale.Configs,
 ) error {
-	scaleUpdates := scale.NewUpdates(scaleConfigs)
-	updatedPod, err := scaleUpdates.SetStartupResourcesAll(pod, targetContainer)
+	resizeFuncs := scale.NewUpdates(scaleConfigs).StartupPodMutationFuncAll(targetContainer)
+	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
 	if err != nil {
-		return common.WrapErrorf(err, "unable to set startup resources")
+		return common.WrapErrorf(err, "unable to patch container resources")
 	}
 
 	msg := "startup resources commanded (unknown resources applied)"
-	_, err = a.podHelper.UpdateContainerResources(
-		ctx,
-		updatedPod,
+
+	statusFuncs := []func(pod *v1.Pod) error{
 		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded, scaleConfigs),
-		true,
-	)
+	}
+	_, err = a.podHelper.Patch(ctx, pod, statusFuncs, false, true)
 	if err != nil {
-		return common.WrapErrorf(err, "unable to patch container resources")
+		return common.WrapErrorf(err, "unable to patch status")
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
@@ -342,21 +339,20 @@ func (a *targetContainerAction) startedWithUnknownResAction(
 	targetContainer *v1.Container,
 	scaleConfigs scale.Configs,
 ) error {
-	scaleUpdates := scale.NewUpdates(scaleConfigs)
-	updatedPod, err := scaleUpdates.SetPostStartupResourcesAll(pod, targetContainer)
+	resizeFuncs := scale.NewUpdates(scaleConfigs).PostStartupPodMutationFuncAll(targetContainer)
+	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
 	if err != nil {
-		return common.WrapErrorf(err, "unable to set post-startup resources")
+		return common.WrapErrorf(err, "unable to patch container resources")
 	}
 
 	msg := "post-startup resources commanded (unknown resources applied)"
-	_, err = a.podHelper.UpdateContainerResources(
-		ctx,
-		updatedPod,
+
+	statusFuncs := []func(pod *v1.Pod) error{
 		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded, scaleConfigs),
-		true,
-	)
+	}
+	_, err = a.podHelper.Patch(ctx, pod, statusFuncs, false, true)
 	if err != nil {
-		return common.WrapErrorf(err, "unable to patch container resources")
+		return common.WrapErrorf(err, "unable to patch status")
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)

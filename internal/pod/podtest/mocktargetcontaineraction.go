@@ -32,7 +32,7 @@ type MockTargetContainerAction struct {
 
 func NewMockTargetContainerAction(configFunc func(*MockTargetContainerAction)) *MockTargetContainerAction {
 	m := &MockTargetContainerAction{}
-	if configFunc == nil {
+	if configFunc != nil {
 		configFunc(m)
 	} else {
 		m.AllDefaults()

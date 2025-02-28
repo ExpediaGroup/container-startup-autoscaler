@@ -26,8 +26,8 @@ import (
 
 type Update interface {
 	ResourceName() v1.ResourceName
-	SetStartupResources(*v1.Pod, *v1.Container, bool) (*v1.Pod, error)
-	SetPostStartupResources(*v1.Pod, *v1.Container, bool) (*v1.Pod, error)
+	StartupPodMutationFunc(*v1.Container) func(pod *v1.Pod) error
+	PostStartupPodMutationFunc(*v1.Container) func(pod *v1.Pod) error
 }
 
 type update struct {
@@ -46,50 +46,48 @@ func (u *update) ResourceName() v1.ResourceName {
 	return u.resourceName
 }
 
-func (u *update) SetStartupResources(
-	pod *v1.Pod,
-	container *v1.Container,
-	clonePod bool,
-) (*v1.Pod, error) {
+func (u *update) StartupPodMutationFunc(container *v1.Container) func(pod *v1.Pod) error {
 	if !u.config.IsEnabled() {
-		return pod, nil
+		return func(pod *v1.Pod) error {
+			return nil
+		}
 	}
 
-	newPod, err := u.setResources(
-		pod,
-		container,
-		u.config.Resources().Startup,
-		u.config.Resources().Startup,
-		clonePod,
-	)
-	if err != nil {
-		return nil, common.WrapErrorf(err, "unable to set %s startup resources", u.resourceName)
-	}
+	return func(pod *v1.Pod) error {
+		err := u.setResources(
+			pod,
+			container,
+			u.config.Resources().Startup,
+			u.config.Resources().Startup,
+		)
+		if err != nil {
+			return common.WrapErrorf(err, "unable to set %s startup resources", u.resourceName)
+		}
 
-	return newPod, nil
+		return nil
+	}
 }
 
-func (u *update) SetPostStartupResources(
-	pod *v1.Pod,
-	container *v1.Container,
-	clonePod bool,
-) (*v1.Pod, error) {
+func (u *update) PostStartupPodMutationFunc(container *v1.Container) func(pod *v1.Pod) error {
 	if !u.config.IsEnabled() {
-		return pod, nil
+		return func(pod *v1.Pod) error {
+			return nil
+		}
 	}
 
-	newPod, err := u.setResources(
-		pod,
-		container,
-		u.config.Resources().PostStartupRequests,
-		u.config.Resources().PostStartupLimits,
-		clonePod,
-	)
-	if err != nil {
-		return nil, common.WrapErrorf(err, "unable to set %s post-startup resources", u.resourceName)
-	}
+	return func(pod *v1.Pod) error {
+		err := u.setResources(
+			pod,
+			container,
+			u.config.Resources().PostStartupRequests,
+			u.config.Resources().PostStartupLimits,
+		)
+		if err != nil {
+			return common.WrapErrorf(err, "unable to set %s post-startup resources", u.resourceName)
+		}
 
-	return newPod, nil
+		return nil
+	}
 }
 
 func (u *update) setResources(
@@ -97,28 +95,20 @@ func (u *update) setResources(
 	container *v1.Container,
 	requests resource.Quantity,
 	limits resource.Quantity,
-	clonePod bool,
-) (*v1.Pod, error) {
-	var podToMutate *v1.Pod
-	if clonePod {
-		podToMutate = pod.DeepCopy()
-	} else {
-		podToMutate = pod
-	}
-
+) error {
 	var containerToMutate *v1.Container
-	for _, ctr := range podToMutate.Spec.Containers {
+	for _, ctr := range pod.Spec.Containers {
 		if ctr.Name == container.Name {
 			containerToMutate = &ctr
 			break
 		}
 	}
 	if containerToMutate == nil {
-		return nil, errors.New("container not present")
+		return errors.New("container not present")
 	}
 
 	containerToMutate.Resources.Requests[u.resourceName] = requests
 	containerToMutate.Resources.Limits[u.resourceName] = limits
 
-	return podToMutate, nil
+	return nil
 }

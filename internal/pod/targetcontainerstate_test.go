@@ -261,23 +261,28 @@ func TestTargetContainerStateStates(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := newTargetContainerState(kubetest.NewMockContainerHelper(tt.configMockFunc))
 
-			cpuConfig := scaletest.NewMockConfig(nil)
-			cpuConfig.On("Resources").Return(scale.Resources{
-				Startup:             kubetest.PodAnnotationCpuStartupQuantity,
-				PostStartupRequests: kubetest.PodAnnotationCpuPostStartupRequestsQuantity,
-				PostStartupLimits:   kubetest.PodAnnotationCpuPostStartupLimitsQuantity,
+			cpuConfig := scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
+				m.On("Resources").Return(scale.Resources{
+					Startup:             kubetest.PodAnnotationCpuStartupQuantity,
+					PostStartupRequests: kubetest.PodAnnotationCpuPostStartupRequestsQuantity,
+					PostStartupLimits:   kubetest.PodAnnotationCpuPostStartupLimitsQuantity,
+				})
+				m.IsEnabledDefault()
 			})
 
-			memoryConfig := scaletest.NewMockConfig(nil)
-			cpuConfig.On("Resources").Return(scale.Resources{
-				Startup:             kubetest.PodAnnotationMemoryStartupQuantity,
-				PostStartupRequests: kubetest.PodAnnotationMemoryPostStartupRequestsQuantity,
-				PostStartupLimits:   kubetest.PodAnnotationMemoryPostStartupLimitsQuantity,
+			memoryConfig := scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
+				m.On("Resources").Return(scale.Resources{
+					Startup:             kubetest.PodAnnotationMemoryStartupQuantity,
+					PostStartupRequests: kubetest.PodAnnotationMemoryPostStartupRequestsQuantity,
+					PostStartupLimits:   kubetest.PodAnnotationMemoryPostStartupLimitsQuantity,
+				})
+				m.IsEnabledDefault()
 			})
 
-			configs := scaletest.NewMockConfigs(nil)
-			configs.On("ConfigFor", v1.ResourceCPU).Return(cpuConfig)
-			configs.On("ConfigFor", v1.ResourceMemory).Return(memoryConfig)
+			configs := scaletest.NewMockConfigs(func(m *scaletest.MockConfigs) {
+				m.On("ConfigFor", v1.ResourceCPU).Return(cpuConfig)
+				m.On("ConfigFor", v1.ResourceMemory).Return(memoryConfig)
+			})
 
 			got, err := s.States(
 				contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),

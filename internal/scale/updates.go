@@ -17,13 +17,12 @@ limitations under the License.
 package scale
 
 import (
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"k8s.io/api/core/v1"
 )
 
 type Updates interface {
-	SetStartupResourcesAll(*v1.Pod, *v1.Container) (*v1.Pod, error)
-	SetPostStartupResourcesAll(*v1.Pod, *v1.Container) (*v1.Pod, error)
+	StartupPodMutationFuncAll(*v1.Container) []func(pod *v1.Pod) error
+	PostStartupPodMutationFuncAll(*v1.Container) []func(pod *v1.Pod) error
 
 	UpdateFor(v1.ResourceName) Update
 	AllUpdates() []Update
@@ -41,30 +40,24 @@ type updates struct {
 	memoryUpdate Update
 }
 
-func (u *updates) SetStartupResourcesAll(pod *v1.Pod, container *v1.Container) (*v1.Pod, error) {
-	clonedPod := pod.DeepCopy()
+func (u *updates) StartupPodMutationFuncAll(container *v1.Container) []func(pod *v1.Pod) error {
+	var funcs []func(pod *v1.Pod) error
 
 	for _, update := range u.AllUpdates() {
-		_, err := update.SetStartupResources(clonedPod, container, false)
-		if err != nil {
-			return nil, common.WrapErrorf(err, "unable to set %s startup resources", update.ResourceName())
-		}
+		funcs = append(funcs, update.StartupPodMutationFunc(container))
 	}
 
-	return clonedPod, nil
+	return funcs
 }
 
-func (u *updates) SetPostStartupResourcesAll(pod *v1.Pod, container *v1.Container) (*v1.Pod, error) {
-	clonedPod := pod.DeepCopy()
+func (u *updates) PostStartupPodMutationFuncAll(container *v1.Container) []func(pod *v1.Pod) error {
+	var funcs []func(pod *v1.Pod) error
 
 	for _, update := range u.AllUpdates() {
-		_, err := update.SetPostStartupResources(clonedPod, container, false)
-		if err != nil {
-			return nil, common.WrapErrorf(err, "unable to set %s post-startup resources", update.ResourceName())
-		}
+		funcs = append(funcs, update.PostStartupPodMutationFunc(container))
 	}
 
-	return clonedPod, nil
+	return funcs
 }
 
 func (u *updates) UpdateFor(resourceName v1.ResourceName) Update {

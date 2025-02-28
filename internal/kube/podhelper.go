@@ -43,13 +43,7 @@ const (
 // PodHelper performs operations relating to Kube pods.
 type PodHelper interface {
 	Get(context.Context, types.NamespacedName) (bool, *v1.Pod, error)
-	Patch(context.Context, *v1.Pod, func(*v1.Pod) (bool, *v1.Pod, error), bool, bool) (*v1.Pod, error)
-	UpdateContainerResources(
-		context.Context,
-		*v1.Pod,
-		func(pod *v1.Pod) (bool, *v1.Pod, error),
-		bool,
-	) (*v1.Pod, error)
+	Patch(context.Context, *v1.Pod, []func(*v1.Pod) error, bool, bool) (*v1.Pod, error)
 	HasAnnotation(pod *v1.Pod, name string) (bool, string)
 	ExpectedLabelValueAs(*v1.Pod, string, kubecommon.DataType) (any, error)
 	ExpectedAnnotationValueAs(*v1.Pod, string, kubecommon.DataType) (any, error)
@@ -92,25 +86,28 @@ func (h *podHelper) Get(ctx context.Context, name types.NamespacedName) (bool, *
 	return true, pod, nil
 }
 
-// Patch applies the mutations dictated by mutatePodFunc to either the 'resize' subresource of the supplied pod, or the
+// Patch applies the mutations dictated by mutatePodFuncs to either the 'resize' subresource of the supplied pod, or the
 // pod itself. If mustSyncCache is true, it waits for the patched pod to be updated in the informer cache. It returns
 // the new server representation of the pod. Patches are retried and specially handled if there's a conflict: the
 // latest version is retrieved and the patch is reapplied before attempting again. The supplied pod is never mutated.
 func (h *podHelper) Patch(
 	ctx context.Context,
 	pod *v1.Pod,
-	podMutationFunc func(*v1.Pod) (bool, *v1.Pod, error),
+	podMutationFuncs []func(*v1.Pod) error,
 	patchResize bool,
 	mustSyncCache bool,
 ) (*v1.Pod, error) {
-	shouldPatch, mutatedPod, err := podMutationFunc(pod.DeepCopy())
-	if err != nil {
-		return nil, common.WrapErrorf(err, "unable to mutate pod")
-	}
-	if !shouldPatch {
-		return pod, nil
+	// Copy and apply mutations.
+	mutatedPod := pod.DeepCopy()
+
+	for _, podMutationFunc := range podMutationFuncs {
+		err := podMutationFunc(mutatedPod)
+		if err != nil {
+			return nil, common.WrapErrorf(err, "unable to mutate pod")
+		}
 	}
 
+	var err error
 	retryableFunc := func() error {
 		if patchResize {
 			err = h.client.SubResource("resize").Patch(ctx, mutatedPod, client.MergeFrom(pod))
@@ -133,7 +130,11 @@ func (h *podHelper) Patch(
 					return retrygo.Unrecoverable(errors.New("pod doesn't exist when resolving conflict"))
 				}
 
-				_, mutatedPod, _ = podMutationFunc(latestPod)
+				// Reapply mutations to latest pod.
+				mutatedPod = latestPod
+				for _, podMutationFunc := range podMutationFuncs {
+					_ = podMutationFunc(mutatedPod)
+				}
 			}
 
 			return err
@@ -156,36 +157,6 @@ func (h *podHelper) Patch(
 	}
 
 	return mutatedPod, nil
-}
-
-// UpdateContainerResources updates the resources (requests and limits) using the configuration in the supplied pod.
-// Optional additional mutations may be supplied via addPodMutationFunc, with the option to wait for these mutations to
-// reflect in the pod informer cache via addPodMutationMustSyncCache. The update is serviced via a patch, which behaves
-// per Patch. Returns the new server representation of the pod.
-func (h *podHelper) UpdateContainerResources(
-	ctx context.Context,
-	pod *v1.Pod,
-	addPodMutationFunc func(pod *v1.Pod) (bool, *v1.Pod, error),
-	addPodMutationMustSyncCache bool,
-) (*v1.Pod, error) {
-	mutateResizeFunc := func(pod *v1.Pod) (bool, *v1.Pod, error) {
-		// Mutated by caller.
-		return true, pod, nil
-	}
-
-	newPod, err := h.Patch(ctx, pod, mutateResizeFunc, true, false)
-	if err != nil {
-		return nil, common.WrapErrorf(err, "unable to patch pod resize subresource")
-	}
-
-	if addPodMutationFunc != nil {
-		newPod, err = h.Patch(ctx, newPod, addPodMutationFunc, false, addPodMutationMustSyncCache)
-		if err != nil {
-			return nil, common.WrapErrorf(err, "unable to patch pod additional mutations")
-		}
-	}
-
-	return newPod, nil
 }
 
 // HasAnnotation reports whether the supplied pod has the supplied name annotation.

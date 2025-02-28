@@ -30,7 +30,7 @@ type MockConfigs struct {
 
 func NewMockConfigs(configFunc func(*MockConfigs)) *MockConfigs {
 	m := &MockConfigs{}
-	if configFunc == nil {
+	if configFunc != nil {
 		configFunc(m)
 	} else {
 		m.AllDefaults()
@@ -41,7 +41,7 @@ func NewMockConfigs(configFunc func(*MockConfigs)) *MockConfigs {
 
 func (m *MockConfigs) TargetContainerName(pod *v1.Pod) (string, error) {
 	args := m.Called(pod)
-	return args.String(0), args.Error(0)
+	return args.String(0), args.Error(1)
 }
 
 func (m *MockConfigs) StoreFromAnnotationsAll(pod *v1.Pod) error {

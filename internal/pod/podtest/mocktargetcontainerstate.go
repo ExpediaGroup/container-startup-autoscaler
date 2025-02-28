@@ -32,7 +32,7 @@ type MockTargetContainerState struct {
 
 func NewMockTargetContainerState(configFunc func(*MockTargetContainerState)) *MockTargetContainerState {
 	m := &MockTargetContainerState{}
-	if configFunc == nil {
+	if configFunc != nil {
 		configFunc(m)
 	} else {
 		m.AllDefaults()

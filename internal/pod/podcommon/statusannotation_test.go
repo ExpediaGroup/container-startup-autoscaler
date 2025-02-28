@@ -16,7 +16,6 @@ limitations under the License.
 
 package podcommon
 
-// TODO(wt) tests fixed in this file
 import (
 	"testing"
 
