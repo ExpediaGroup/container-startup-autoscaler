@@ -28,26 +28,42 @@ import (
 )
 
 const (
-	PodAnnotationCpuStartup             = "2m"
-	PodAnnotationCpuPostStartupRequests = "1m"
-	PodAnnotationCpuPostStartupLimits   = "1m"
+	PodAnnotationCpuStartupEnabled             = "3m"
+	PodAnnotationCpuPostStartupRequestsEnabled = "1m"
+	PodAnnotationCpuPostStartupLimitsEnabled   = "2m"
 
-	PodAnnotationMemoryStartup             = "2M"
-	PodAnnotationMemoryPostStartupRequests = "1M"
-	PodAnnotationMemoryPostStartupLimits   = "1M"
+	PodAnnotationCpuStartupDisabled             = PodAnnotationCpuStartupEnabled
+	PodAnnotationCpuPostStartupRequestsDisabled = PodAnnotationCpuStartupEnabled
+	PodAnnotationCpuPostStartupLimitsDisabled   = PodAnnotationCpuStartupEnabled
+
+	PodAnnotationMemoryStartupEnabled             = "3M"
+	PodAnnotationMemoryPostStartupRequestsEnabled = "1M"
+	PodAnnotationMemoryPostStartupLimitsEnabled   = "2M"
+
+	PodAnnotationMemoryStartupDisabled             = PodAnnotationMemoryStartupEnabled
+	PodAnnotationMemoryPostStartupRequestsDisabled = PodAnnotationMemoryStartupEnabled
+	PodAnnotationMemoryPostStartupLimitsDisabled   = PodAnnotationMemoryStartupEnabled
 
 	PodAnnotationCpuUnknown    = "999m"
 	PodAnnotationMemoryUnknown = "999M"
 )
 
 var (
-	PodAnnotationCpuStartupQuantity             = resource.MustParse(PodAnnotationCpuStartup)
-	PodAnnotationCpuPostStartupRequestsQuantity = resource.MustParse(PodAnnotationCpuPostStartupRequests)
-	PodAnnotationCpuPostStartupLimitsQuantity   = resource.MustParse(PodAnnotationCpuPostStartupLimits)
+	PodAnnotationCpuStartupEnabledQuantity             = resource.MustParse(PodAnnotationCpuStartupEnabled)
+	PodAnnotationCpuPostStartupRequestsEnabledQuantity = resource.MustParse(PodAnnotationCpuPostStartupRequestsEnabled)
+	PodAnnotationCpuPostStartupLimitsEnabledQuantity   = resource.MustParse(PodAnnotationCpuPostStartupLimitsEnabled)
 
-	PodAnnotationMemoryStartupQuantity             = resource.MustParse(PodAnnotationMemoryStartup)
-	PodAnnotationMemoryPostStartupRequestsQuantity = resource.MustParse(PodAnnotationMemoryPostStartupRequests)
-	PodAnnotationMemoryPostStartupLimitsQuantity   = resource.MustParse(PodAnnotationMemoryPostStartupLimits)
+	PodAnnotationCpuStartupDisabledQuantity             = PodAnnotationCpuStartupEnabledQuantity
+	PodAnnotationCpuPostStartupRequestsDisabledQuantity = PodAnnotationCpuStartupEnabledQuantity
+	PodAnnotationCpuPostStartupLimitsDisabledQuantity   = PodAnnotationCpuStartupEnabledQuantity
+
+	PodAnnotationMemoryStartupEnabledQuantity             = resource.MustParse(PodAnnotationMemoryStartupEnabled)
+	PodAnnotationMemoryPostStartupRequestsEnabledQuantity = resource.MustParse(PodAnnotationMemoryPostStartupRequestsEnabled)
+	PodAnnotationMemoryPostStartupLimitsEnabledQuantity   = resource.MustParse(PodAnnotationMemoryPostStartupLimitsEnabled)
+
+	PodAnnotationMemoryStartupDisabledQuantity             = PodAnnotationMemoryStartupEnabledQuantity
+	PodAnnotationMemoryPostStartupRequestsDisabledQuantity = PodAnnotationMemoryStartupEnabledQuantity
+	PodAnnotationMemoryPostStartupLimitsDisabledQuantity   = PodAnnotationMemoryStartupEnabledQuantity
 
 	PodAnnotationCpuUnknownQuantity    = resource.MustParse(PodAnnotationCpuUnknown)
 	PodAnnotationMemoryUnknownQuantity = resource.MustParse(PodAnnotationMemoryUnknown)
@@ -94,11 +110,21 @@ type podConfig struct {
 	containerConfig                        containerConfig
 }
 
-func NewStartupPodConfig(stateStarted podcommon.StateBool, stateReady podcommon.StateBool) podConfig {
+func NewStartupPodConfig(
+	stateStarted podcommon.StateBool,
+	stateReady podcommon.StateBool,
+	cpuEnabled bool,
+	memoryEnabled bool,
+) podConfig {
 	return newPodConfigForState(stateStarted, stateReady, podcommon.StateResourcesStartup)
 }
 
-func NewPostStartupPodConfig(stateStarted podcommon.StateBool, stateReady podcommon.StateBool) podConfig {
+func NewPostStartupPodConfig(
+	stateStarted podcommon.StateBool,
+	stateReady podcommon.StateBool,
+	cpuEnabled bool,
+	memoryEnabled bool,
+) podConfig {
 	return newPodConfigForState(stateStarted, stateReady, podcommon.StateResourcesPostStartup)
 }
 
@@ -106,6 +132,7 @@ func NewUnknownPodConfig(stateStarted podcommon.StateBool, stateReady podcommon.
 	return newPodConfigForState(stateStarted, stateReady, podcommon.StateResourcesUnknown)
 }
 
+// TODO(wt) construct based on cpuEnabled and memoryEnabled
 func newPodConfigForState(
 	stateStarted podcommon.StateBool,
 	stateReady podcommon.StateBool,
@@ -116,12 +143,12 @@ func newPodConfigForState(
 		name:                                DefaultPodName,
 		labelEnabledValue:                   DefaultLabelEnabledValue,
 		annotationTargetContainerName:       DefaultAnnotationTargetContainerName,
-		annotationCpuStartup:                PodAnnotationCpuStartup,
-		annotationCpuPostStartupRequests:    PodAnnotationCpuPostStartupRequests,
-		annotationCpuPostStartupLimits:      PodAnnotationCpuPostStartupLimits,
-		annotationMemoryStartup:             PodAnnotationMemoryStartup,
-		annotationMemoryPostStartupRequests: PodAnnotationMemoryPostStartupRequests,
-		annotationMemoryPostStartupLimits:   PodAnnotationMemoryPostStartupLimits,
+		annotationCpuStartup:                PodAnnotationCpuStartupEnabled,
+		annotationCpuPostStartupRequests:    PodAnnotationCpuPostStartupRequestsEnabled,
+		annotationCpuPostStartupLimits:      PodAnnotationCpuPostStartupLimitsEnabled,
+		annotationMemoryStartup:             PodAnnotationMemoryStartupEnabled,
+		annotationMemoryPostStartupRequests: PodAnnotationMemoryPostStartupRequestsEnabled,
+		annotationMemoryPostStartupLimits:   PodAnnotationMemoryPostStartupLimitsEnabled,
 		statusContainerName:                 DefaultStatusContainerName,
 		statusContainerState:                DefaultPodStatusContainerState,
 		statusResize:                        DefaultPodStatusResize,
@@ -148,16 +175,16 @@ func newPodConfigForState(
 
 	switch stateResources {
 	case podcommon.StateResourcesStartup:
-		config.statusContainerResourcesCpuRequests = PodAnnotationCpuStartup
-		config.statusContainerResourcesCpuLimits = PodAnnotationCpuStartup
-		config.statusContainerResourcesMemoryRequests = PodAnnotationMemoryStartup
-		config.statusContainerResourcesMemoryLimits = PodAnnotationMemoryStartup
+		config.statusContainerResourcesCpuRequests = PodAnnotationCpuStartupEnabled
+		config.statusContainerResourcesCpuLimits = PodAnnotationCpuStartupEnabled
+		config.statusContainerResourcesMemoryRequests = PodAnnotationMemoryStartupEnabled
+		config.statusContainerResourcesMemoryLimits = PodAnnotationMemoryStartupEnabled
 
 	case podcommon.StateResourcesPostStartup:
-		config.statusContainerResourcesCpuRequests = PodAnnotationCpuPostStartupRequests
-		config.statusContainerResourcesCpuLimits = PodAnnotationCpuPostStartupLimits
-		config.statusContainerResourcesMemoryRequests = PodAnnotationMemoryPostStartupRequests
-		config.statusContainerResourcesMemoryLimits = PodAnnotationMemoryPostStartupLimits
+		config.statusContainerResourcesCpuRequests = PodAnnotationCpuPostStartupRequestsEnabled
+		config.statusContainerResourcesCpuLimits = PodAnnotationCpuPostStartupLimitsEnabled
+		config.statusContainerResourcesMemoryRequests = PodAnnotationMemoryPostStartupRequestsEnabled
+		config.statusContainerResourcesMemoryLimits = PodAnnotationMemoryPostStartupLimitsEnabled
 
 	case podcommon.StateResourcesUnknown:
 		config.statusContainerResourcesCpuRequests = PodAnnotationCpuUnknown

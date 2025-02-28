@@ -44,11 +44,11 @@ type containerConfig struct {
 	memoryResizePolicy v1.ResourceResizeRestartPolicy
 }
 
-func NewStartupContainerConfig() containerConfig {
+func NewStartupContainerConfig(cpuEnabled bool, memoryEnabled bool) containerConfig {
 	return newContainerConfigForState(podcommon.StateResourcesStartup)
 }
 
-func NewPostStartupContainerConfig() containerConfig {
+func NewPostStartupContainerConfig(cpuEnabled bool, memoryEnabled bool) containerConfig {
 	return newContainerConfigForState(podcommon.StateResourcesPostStartup)
 }
 
@@ -56,6 +56,7 @@ func NewUnknownContainerConfig() containerConfig {
 	return newContainerConfigForState(podcommon.StateResourcesUnknown)
 }
 
+// TODO(wt) construct based on cpuEnabled and memoryEnabled
 func newContainerConfigForState(stateResources podcommon.StateResources) containerConfig {
 	config := containerConfig{
 		name:               DefaultContainerName,
@@ -65,16 +66,16 @@ func newContainerConfigForState(stateResources podcommon.StateResources) contain
 
 	switch stateResources {
 	case podcommon.StateResourcesStartup:
-		config.cpuRequests = PodAnnotationCpuStartup
-		config.cpuLimits = PodAnnotationCpuStartup
-		config.memoryRequests = PodAnnotationMemoryStartup
-		config.memoryLimits = PodAnnotationMemoryStartup
+		config.cpuRequests = PodAnnotationCpuStartupEnabled
+		config.cpuLimits = PodAnnotationCpuStartupEnabled
+		config.memoryRequests = PodAnnotationMemoryStartupEnabled
+		config.memoryLimits = PodAnnotationMemoryStartupEnabled
 
 	case podcommon.StateResourcesPostStartup:
-		config.cpuRequests = PodAnnotationCpuPostStartupRequests
-		config.cpuLimits = PodAnnotationCpuPostStartupLimits
-		config.memoryRequests = PodAnnotationMemoryPostStartupRequests
-		config.memoryLimits = PodAnnotationMemoryPostStartupLimits
+		config.cpuRequests = PodAnnotationCpuPostStartupRequestsEnabled
+		config.cpuLimits = PodAnnotationCpuPostStartupLimitsEnabled
+		config.memoryRequests = PodAnnotationMemoryPostStartupRequestsEnabled
+		config.memoryLimits = PodAnnotationMemoryPostStartupLimitsEnabled
 
 	case podcommon.StateResourcesUnknown:
 		config.cpuRequests = PodAnnotationCpuUnknown

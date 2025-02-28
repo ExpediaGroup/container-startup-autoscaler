@@ -106,7 +106,7 @@ func (m *MockContainerHelper) CurrentLimits(
 
 func (m *MockContainerHelper) GetDefault() {
 	m.On("Get", mock.Anything, mock.Anything).Return(
-		NewContainerBuilder(NewStartupContainerConfig()).Build(),
+		NewContainerBuilder(NewStartupContainerConfig(true, true)).Build(),
 		nil,
 	)
 }

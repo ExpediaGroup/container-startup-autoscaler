@@ -109,7 +109,7 @@ func TestTargetContainerStateStates(t *testing.T) {
 		},
 		{
 			name:            "UnableToDetermineStatusResourcesStates",
-			targetContainer: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig()).Build(),
+			targetContainer: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
 			configMockFunc: func(m *kubetest.MockContainerHelper) {
 				m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
 					Return(resource.Quantity{}, errors.New(""))
@@ -190,7 +190,7 @@ func TestTargetContainerStateStates(t *testing.T) {
 		},
 		{
 			name:            "StateStatusResourcesNotShouldReturnError",
-			targetContainer: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig()).Build(),
+			targetContainer: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
 			configMockFunc: func(m *kubetest.MockContainerHelper) {
 				m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
 					Return(resource.Quantity{}, kube.NewContainerStatusNotPresentError())
@@ -213,7 +213,7 @@ func TestTargetContainerStateStates(t *testing.T) {
 		},
 		{
 			name:            string(podcommon.StateResourcesStartup),
-			targetContainer: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig()).Build(),
+			targetContainer: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
 			configMockFunc: func(m *kubetest.MockContainerHelper) {
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
@@ -228,7 +228,7 @@ func TestTargetContainerStateStates(t *testing.T) {
 		},
 		{
 			name:            string(podcommon.StateResourcesPostStartup),
-			targetContainer: kubetest.NewContainerBuilder(kubetest.NewPostStartupContainerConfig()).Build(),
+			targetContainer: kubetest.NewContainerBuilder(kubetest.NewPostStartupContainerConfig(true, true)).Build(),
 			configMockFunc: func(m *kubetest.MockContainerHelper) {
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
@@ -263,18 +263,18 @@ func TestTargetContainerStateStates(t *testing.T) {
 
 			cpuConfig := scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
 				m.On("Resources").Return(scale.Resources{
-					Startup:             kubetest.PodAnnotationCpuStartupQuantity,
-					PostStartupRequests: kubetest.PodAnnotationCpuPostStartupRequestsQuantity,
-					PostStartupLimits:   kubetest.PodAnnotationCpuPostStartupLimitsQuantity,
+					Startup:             kubetest.PodAnnotationCpuStartupEnabledQuantity,
+					PostStartupRequests: kubetest.PodAnnotationCpuPostStartupRequestsEnabledQuantity,
+					PostStartupLimits:   kubetest.PodAnnotationCpuPostStartupLimitsEnabledQuantity,
 				})
 				m.IsEnabledDefault()
 			})
 
 			memoryConfig := scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
 				m.On("Resources").Return(scale.Resources{
-					Startup:             kubetest.PodAnnotationMemoryStartupQuantity,
-					PostStartupRequests: kubetest.PodAnnotationMemoryPostStartupRequestsQuantity,
-					PostStartupLimits:   kubetest.PodAnnotationMemoryPostStartupLimitsQuantity,
+					Startup:             kubetest.PodAnnotationMemoryStartupEnabledQuantity,
+					PostStartupRequests: kubetest.PodAnnotationMemoryPostStartupRequestsEnabledQuantity,
+					PostStartupLimits:   kubetest.PodAnnotationMemoryPostStartupLimitsEnabledQuantity,
 				})
 				m.IsEnabledDefault()
 			})
@@ -617,17 +617,17 @@ func TestTargetContainerStateShouldReturnError(t *testing.T) {
 }
 
 func applyMockRequestsLimitsStartup(m *kubetest.MockContainerHelper) {
-	m.On("Requests", mock.Anything, v1.ResourceCPU).Return(kubetest.PodAnnotationCpuStartupQuantity)
-	m.On("Requests", mock.Anything, v1.ResourceMemory).Return(kubetest.PodAnnotationMemoryStartupQuantity)
-	m.On("Limits", mock.Anything, v1.ResourceCPU).Return(kubetest.PodAnnotationCpuStartupQuantity)
-	m.On("Limits", mock.Anything, v1.ResourceMemory).Return(kubetest.PodAnnotationMemoryStartupQuantity)
+	m.On("Requests", mock.Anything, v1.ResourceCPU).Return(kubetest.PodAnnotationCpuStartupEnabledQuantity)
+	m.On("Requests", mock.Anything, v1.ResourceMemory).Return(kubetest.PodAnnotationMemoryStartupEnabledQuantity)
+	m.On("Limits", mock.Anything, v1.ResourceCPU).Return(kubetest.PodAnnotationCpuStartupEnabledQuantity)
+	m.On("Limits", mock.Anything, v1.ResourceMemory).Return(kubetest.PodAnnotationMemoryStartupEnabledQuantity)
 }
 
 func applyMockRequestsLimitsPostStartup(m *kubetest.MockContainerHelper) {
-	m.On("Requests", mock.Anything, v1.ResourceCPU).Return(kubetest.PodAnnotationCpuPostStartupRequestsQuantity)
-	m.On("Requests", mock.Anything, v1.ResourceMemory).Return(kubetest.PodAnnotationMemoryPostStartupRequestsQuantity)
-	m.On("Limits", mock.Anything, v1.ResourceCPU).Return(kubetest.PodAnnotationCpuPostStartupLimitsQuantity)
-	m.On("Limits", mock.Anything, v1.ResourceMemory).Return(kubetest.PodAnnotationMemoryPostStartupLimitsQuantity)
+	m.On("Requests", mock.Anything, v1.ResourceCPU).Return(kubetest.PodAnnotationCpuPostStartupRequestsEnabledQuantity)
+	m.On("Requests", mock.Anything, v1.ResourceMemory).Return(kubetest.PodAnnotationMemoryPostStartupRequestsEnabledQuantity)
+	m.On("Limits", mock.Anything, v1.ResourceCPU).Return(kubetest.PodAnnotationCpuPostStartupLimitsEnabledQuantity)
+	m.On("Limits", mock.Anything, v1.ResourceMemory).Return(kubetest.PodAnnotationMemoryPostStartupLimitsEnabledQuantity)
 }
 
 func applyMockRequestsLimitsUnknown(m *kubetest.MockContainerHelper) {

@@ -44,7 +44,12 @@ func TestStatusUpdateCore(t *testing.T) {
 
 		got, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
-			kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
+			kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+				podcommon.StateBoolFalse,
+				podcommon.StateBoolFalse,
+				true,
+				true,
+			)).Build(),
 			"test",
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
@@ -58,7 +63,12 @@ func TestStatusUpdateCore(t *testing.T) {
 		s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
 			func() *kubefake.Clientset {
 				return kubefake.NewClientset(
-					kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
+					kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+						podcommon.StateBoolFalse,
+						podcommon.StateBoolFalse,
+						true,
+						true,
+					)).Build(),
 				)
 			},
 			func() interceptor.Funcs { return interceptor.Funcs{} },
@@ -66,9 +76,12 @@ func TestStatusUpdateCore(t *testing.T) {
 
 		_, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
-			kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).
-				AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: "test"}).
-				Build(),
+			kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+				podcommon.StateBoolFalse,
+				podcommon.StateBoolFalse,
+				true,
+				true,
+			)).AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: "test"}).Build(),
 			"test",
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
@@ -78,7 +91,12 @@ func TestStatusUpdateCore(t *testing.T) {
 	})
 
 	t.Run("OkNoPreviousStatus", func(t *testing.T) {
-		pod := kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build()
+		pod := kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+			podcommon.StateBoolFalse,
+			podcommon.StateBoolFalse,
+			true,
+			true,
+		)).Build()
 		s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
 			func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
 			func() interceptor.Funcs { return interceptor.Funcs{} },
@@ -86,7 +104,12 @@ func TestStatusUpdateCore(t *testing.T) {
 
 		got, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
-			kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
+			kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+				podcommon.StateBoolFalse,
+				podcommon.StateBoolFalse,
+				true,
+				true,
+			)).Build(),
 			"test",
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
@@ -109,7 +132,12 @@ func TestStatusUpdateCore(t *testing.T) {
 		s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
 			func() *kubefake.Clientset {
 				return kubefake.NewClientset(
-					kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
+					kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+						podcommon.StateBoolFalse,
+						podcommon.StateBoolFalse,
+						true,
+						true,
+					)).Build(),
 				)
 			},
 			func() interceptor.Funcs { return interceptor.Funcs{} },
@@ -123,9 +151,12 @@ func TestStatusUpdateCore(t *testing.T) {
 		).Json()
 		got, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
-			kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).
-				AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: previousStat}).
-				Build(),
+			kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+				podcommon.StateBoolFalse,
+				podcommon.StateBoolFalse,
+				true,
+				true,
+			)).AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: previousStat}).Build(),
 			"test",
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
@@ -155,9 +186,12 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 		{
 			name: "StatusScaleStateNotApplicablePrevious",
 			args: args{
-				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).
-					AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: fullStatusAnnotationString()}).
-					Build(),
+				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+					podcommon.StateBoolFalse,
+					podcommon.StateBoolFalse,
+					true,
+					true,
+				)).AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: fullStatusAnnotationString()}).Build(),
 				podcommon.StatusScaleStateNotApplicable,
 			},
 			wantLastScaleCommanded: true,
@@ -167,7 +201,12 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 		{
 			name: "StatusScaleStateCommanded",
 			args: args{
-				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
+				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+					podcommon.StateBoolFalse,
+					podcommon.StateBoolFalse,
+					true,
+					true,
+				)).Build(),
 				podcommon.StatusScaleStateUpCommanded,
 			},
 			wantLastScaleCommanded: true,
@@ -177,7 +216,12 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 		{
 			name: "StatusScaleStateUnknownCommanded",
 			args: args{
-				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
+				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+					podcommon.StateBoolFalse,
+					podcommon.StateBoolFalse,
+					true,
+					true,
+				)).Build(),
 				podcommon.StatusScaleStateUnknownCommanded,
 			},
 			wantLastScaleCommanded: true,
@@ -187,7 +231,12 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 		{
 			name: "StatusScaleStateEnactedNoPrevious",
 			args: args{
-				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
+				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+					podcommon.StateBoolFalse,
+					podcommon.StateBoolFalse,
+					true,
+					true,
+				)).Build(),
 				podcommon.StatusScaleStateUpEnacted,
 			},
 			wantLastScaleCommanded: false,
@@ -197,9 +246,12 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 		{
 			name: "StatusScaleStateEnactedPrevious",
 			args: args{
-				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).
-					AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: fullStatusAnnotationString()}).
-					Build(),
+				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+					podcommon.StateBoolFalse,
+					podcommon.StateBoolFalse,
+					true,
+					true,
+				)).AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: fullStatusAnnotationString()}).Build(),
 				podcommon.StatusScaleStateUpEnacted,
 			},
 			wantLastScaleCommanded: true,
@@ -209,7 +261,12 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 		{
 			name: "StatusScaleStateFailedNoPrevious",
 			args: args{
-				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
+				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+					podcommon.StateBoolFalse,
+					podcommon.StateBoolFalse,
+					true,
+					true,
+				)).Build(),
 				podcommon.StatusScaleStateUpFailed,
 			},
 			wantLastScaleCommanded: false,
@@ -219,9 +276,12 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 		{
 			name: "StatusScaleStateFailedPrevious",
 			args: args{
-				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).
-					AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: fullStatusAnnotationString()}).
-					Build(),
+				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+					podcommon.StateBoolFalse,
+					podcommon.StateBoolFalse,
+					true,
+					true,
+				)).AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: fullStatusAnnotationString()}).Build(),
 				podcommon.StatusScaleStateUpFailed,
 			},
 			wantLastScaleCommanded: true,
@@ -242,7 +302,12 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
 				func() *kubefake.Clientset {
 					return kubefake.NewClientset(
-						kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(podcommon.StateBoolFalse, podcommon.StateBoolFalse)).Build(),
+						kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
+							podcommon.StateBoolFalse,
+							podcommon.StateBoolFalse,
+							true,
+							true,
+						)).Build(),
 					)
 				},
 				func() interceptor.Funcs { return interceptor.Funcs{} },
