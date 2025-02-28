@@ -91,7 +91,6 @@ func (s *status) PodMutationFunc(
 			}
 		}
 
-		// TODO(wt) add to docs
 		statScale := podcommon.NewEmptyStatusAnnotationScale(scaleConfigs.AllEnabledConfigsResourceNames())
 
 		switch scaleState {

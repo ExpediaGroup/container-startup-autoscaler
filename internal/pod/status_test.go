@@ -301,7 +301,7 @@ func TestStatusUpdateDurationMetric(t *testing.T) {
 	}
 	tests := []struct {
 		name                    string
-		configMetricAssertsFunc func(t *testing.T) // TODO(wt) check this is used where necessary in tests
+		configMetricAssertsFunc func(t *testing.T)
 		args                    args
 		wantLogMsg              string
 	}{

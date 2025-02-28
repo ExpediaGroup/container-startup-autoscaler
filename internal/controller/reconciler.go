@@ -115,7 +115,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	if err != nil {
 		msg := "unable to configure pod (won't requeue)"
 		logging.Errorf(ctx, err, msg)
-		reconciler.FailureConfiguration().Inc() // TODO(wt) add to docs
+		reconciler.FailureConfiguration().Inc()
 		return reconcile.Result{}, reconcile.TerminalError(common.WrapErrorf(err, msg))
 	}
 

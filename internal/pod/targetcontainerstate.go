@@ -168,8 +168,6 @@ func (s targetContainerState) stateResources(
 	startupConfigApplied bool,
 	postStartupConfigApplied bool,
 ) podcommon.StateResources {
-	// TODO(wt) error if both applied
-
 	if startupConfigApplied {
 		return podcommon.StateResourcesStartup
 	} else if postStartupConfigApplied {

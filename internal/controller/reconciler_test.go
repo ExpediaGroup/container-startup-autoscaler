@@ -63,7 +63,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 	tests := []struct {
 		name                    string
 		configMapFunc           func(cmap.ConcurrentMap[string, any], string)
-		configMetricAssertsFunc func(t *testing.T) // TODO(wt) this is missing for some tests below
+		configMetricAssertsFunc func(t *testing.T)
 		fields                  fields
 		mocks                   mocks
 		podNamespace            string
@@ -90,7 +90,11 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: false,
 		},
 		{
-			name:   "UnableToGetPod",
+			name: "UnableToGetPod",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailureUnableToGetPod())
+				assert.Equal(t, float64(1), metricVal)
+			},
 			fields: fields{controllercommon.ControllerConfig{RequeueDurationSecs: 10}},
 			mocks: mocks{
 				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
@@ -104,7 +108,11 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: true,
 		},
 		{
-			name:   "PodDoesntExist",
+			name: "PodDoesntExist",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailurePodDoesntExist())
+				assert.Equal(t, float64(1), metricVal)
+			},
 			fields: fields{},
 			mocks: mocks{
 				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
@@ -119,7 +127,11 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: true,
 		},
 		{
-			name:   "UnableToConfigurePod",
+			name: "UnableToConfigurePod",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailureConfiguration())
+				assert.Equal(t, float64(1), metricVal)
+			},
 			fields: fields{},
 			mocks: mocks{
 				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
@@ -135,7 +147,11 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: true,
 		},
 		{
-			name:   "UnableToGetTargetContainerName",
+			name: "UnableToGetTargetContainerName",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailureConfiguration())
+				assert.Equal(t, float64(2), metricVal)
+			},
 			fields: fields{},
 			mocks: mocks{
 				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
@@ -156,7 +172,11 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: true,
 		},
 		{
-			name:   "UnableToValidatePod",
+			name: "UnableToValidatePod",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailureValidation())
+				assert.Equal(t, float64(1), metricVal)
+			},
 			fields: fields{},
 			mocks: mocks{
 				configuration: podtest.NewMockConfiguration(nil),
@@ -174,7 +194,11 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: true,
 		},
 		{
-			name:   "UnableToDetermineTargetContainerStates",
+			name: "UnableToDetermineTargetContainerStates",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailureStatesDetermination())
+				assert.Equal(t, float64(1), metricVal)
+			},
 			fields: fields{},
 			mocks: mocks{
 				configuration: podtest.NewMockConfiguration(nil),
@@ -193,7 +217,11 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: true,
 		},
 		{
-			name:   "UnableToActionTargetContainerStates",
+			name: "UnableToActionTargetContainerStates",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailureStatesAction())
+				assert.Equal(t, float64(1), metricVal)
+			},
 			fields: fields{},
 			mocks: mocks{
 				configuration:        podtest.NewMockConfiguration(nil),

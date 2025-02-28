@@ -248,6 +248,10 @@ Example output:
     "statusResources": "containerresourcesmatch"
   },
   "scale": {
+    "enabledForResources": [
+      "cpu",
+      "memory"
+    ],
     "lastCommanded": "2023-09-14T08:18:44.174+0000",
     "lastEnacted": "2023-09-14T08:18:45.382+0000",
     "lastFailed": ""
@@ -258,22 +262,23 @@ Example output:
 
 Explanation of status items:
 
-| Item          | Sub Item             | Description                                                                                            |
-|---------------|----------------------|--------------------------------------------------------------------------------------------------------|
-| `status`      | -                    | Human-readable status. Any validation errors are indicated here.                                       |
-| `states`      | -                    | The states of the target container.                                                                    |
-| `states`      | `startupProbe`       | Whether a startup probe exists.                                                                        |
-| `states`      | `readinessProbe`     | Whether a readiness probe exists.                                                                      |
-| `states`      | `container`          | The container status e.g. `waiting`, `running`.                                                        |
-| `states`      | `started`            | Whether the container is signalled as started by Kube.                                                 |
-| `states`      | `ready`              | Whether the container is signalled as ready by Kube.                                                   |
-| `states`      | `resources`          | The type of resources (startup/post-startup) that are currently applied (but not necessarily enacted). |
-| `states`      | `statusResources`    | How the reported current enacted resources relate to container resources.                              |
-| `scale`       | -                    | Information around scaling activity.                                                                   |
-| `scale`       | `lastCommanded`      | The last time a scale was commanded (UTC).                                                             |
-| `scale`       | `lastEnacted`        | The last time a scale was enacted (UTC; empty if failed).                                              |
-| `scale`       | `lastFailed`         | The last time a scale failed (UTC; empty if enacted).                                                  |
-| `lastUpdated` | -                    | The last time this status was updated.                                                                 |
+| Item          | Sub Item              | Description                                                                                                |
+|---------------|-----------------------|------------------------------------------------------------------------------------------------------------|
+| `status`      | -                     | Human-readable status. Any validation errors are indicated here.                                           |
+| `states`      | -                     | The states of the target container.                                                                        |
+| `states`      | `startupProbe`        | Whether a startup probe exists.                                                                            |
+| `states`      | `readinessProbe`      | Whether a readiness probe exists.                                                                          |
+| `states`      | `container`           | The container status e.g. `waiting`, `running`.                                                            |
+| `states`      | `started`             | Whether the container is signalled as started by Kube.                                                     |
+| `states`      | `ready`               | Whether the container is signalled as ready by Kube.                                                       |
+| `states`      | `resources`           | The type of resources (startup/post-startup) that are currently applied (but not necessarily enacted).     |
+| `states`      | `statusResources`     | How the reported current enacted resources relate to container resources.                                  |
+| `scale`       | -                     | Information around scaling activity.                                                                       |
+| `scale`       | `enabledForResources` | A list of resources that are enabled for scaling (determined by supplied pod [annotations](#annotations)). |
+| `scale`       | `lastCommanded`       | The last time a scale was commanded (UTC).                                                                 |
+| `scale`       | `lastEnacted`         | The last time a scale was enacted (UTC; empty if failed).                                                  |
+| `scale`       | `lastFailed`          | The last time a scale failed (UTC; empty if enacted).                                                      |
+| `lastUpdated` | -                     | The last time this status was updated.                                                                     |
 
 ## Events
 The following Kube events for the pod that houses the target container are generated:
@@ -346,6 +351,7 @@ Prefixed with `csa_reconciler_`:
 | `existing_in_progress`         | Counter | None   | Number of attempted reconciles where one was already in progress for the same namespace/name (results in a requeue). |
 | `failure_unable_to_get_pod`    | Counter | None   | Number of reconciles where there was a failure to get the pod (results in a requeue).                                |
 | `failure_pod_doesnt_exist`     | Counter | None   | Number of reconciles where the pod was found not to exist (results in failure).                                      |
+| `failure_configuration`        | Counter | None   | Number of reconciles where there was a failure to configure (results in failure).                                    |
 | `failure_validation`           | Counter | None   | Number of reconciles where there was a failure to validate (results in failure).                                     |
 | `failure_states_determination` | Counter | None   | Number of reconciles where there was a failure to determine states (results in failure).                             |
 | `failure_states_action`        | Counter | None   | Number of reconciles where there was a failure to action the determined states (results in failure).                 |
