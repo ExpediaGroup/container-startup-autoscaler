@@ -31,9 +31,14 @@ type MockTargetContainerAction struct {
 }
 
 func NewMockTargetContainerAction(configFunc func(*MockTargetContainerAction)) *MockTargetContainerAction {
-	mockTargetContainerAction := &MockTargetContainerAction{}
-	configFunc(mockTargetContainerAction)
-	return mockTargetContainerAction
+	m := &MockTargetContainerAction{}
+	if configFunc == nil {
+		configFunc(m)
+	} else {
+		m.AllDefaults()
+	}
+
+	return m
 }
 
 func (m *MockTargetContainerAction) Execute(

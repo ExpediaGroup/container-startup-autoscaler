@@ -126,7 +126,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
 					m.On("Configure", mock.Anything).Return(errors.New(""))
 				}),
-				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) { m.GetDefault() }),
+				podHelper: kubetest.NewMockPodHelper(nil),
 			},
 			podNamespace: "namespace",
 			podName:      "name",
@@ -146,7 +146,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 						}),
 					)
 				}),
-				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) { m.GetDefault() }),
+				podHelper: kubetest.NewMockPodHelper(nil),
 			},
 			podNamespace: "namespace",
 			podName:      "name",
@@ -159,12 +159,12 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			name:   "UnableToValidatePod",
 			fields: fields{},
 			mocks: mocks{
-				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) { m.ConfigureDefault() }),
+				configuration: podtest.NewMockConfiguration(nil),
 				validation: podtest.NewMockValidation(func(m *podtest.MockValidation) {
 					m.On("Validate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 						Return(errors.New(""))
 				}),
-				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) { m.GetDefault() }),
+				podHelper: kubetest.NewMockPodHelper(nil),
 			},
 			podNamespace: "namespace",
 			podName:      "name",
@@ -177,13 +177,13 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			name:   "UnableToDetermineTargetContainerStates",
 			fields: fields{},
 			mocks: mocks{
-				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) { m.ConfigureDefault() }),
-				validation:    podtest.NewMockValidation(func(m *podtest.MockValidation) { m.ValidateDefault() }),
+				configuration: podtest.NewMockConfiguration(nil),
+				validation:    podtest.NewMockValidation(nil),
 				targetContainerState: podtest.NewMockTargetContainerState(func(m *podtest.MockTargetContainerState) {
 					m.On("States", mock.Anything, mock.Anything, mock.Anything).
 						Return(podcommon.States{}, errors.New(""))
 				}),
-				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) { m.GetDefault() }),
+				podHelper: kubetest.NewMockPodHelper(nil),
 			},
 			podNamespace: "namespace",
 			podName:      "name",
@@ -196,16 +196,14 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			name:   "UnableToActionTargetContainerStates",
 			fields: fields{},
 			mocks: mocks{
-				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) { m.ConfigureDefault() }),
-				validation:    podtest.NewMockValidation(func(m *podtest.MockValidation) { m.ValidateDefault() }),
-				targetContainerState: podtest.NewMockTargetContainerState(func(m *podtest.MockTargetContainerState) {
-					m.StatesDefault()
-				}),
+				configuration:        podtest.NewMockConfiguration(nil),
+				validation:           podtest.NewMockValidation(nil),
+				targetContainerState: podtest.NewMockTargetContainerState(nil),
 				targetContainerAction: podtest.NewMockTargetContainerAction(func(m *podtest.MockTargetContainerAction) {
 					m.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 						Return(errors.New(""))
 				}),
-				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) { m.GetDefault() }),
+				podHelper: kubetest.NewMockPodHelper(nil),
 			},
 			podNamespace: "namespace",
 			podName:      "name",
@@ -218,15 +216,11 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			name:   "Ok",
 			fields: fields{},
 			mocks: mocks{
-				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) { m.ConfigureDefault() }),
-				validation:    podtest.NewMockValidation(func(m *podtest.MockValidation) { m.ValidateDefault() }),
-				targetContainerState: podtest.NewMockTargetContainerState(func(m *podtest.MockTargetContainerState) {
-					m.StatesDefault()
-				}),
-				targetContainerAction: podtest.NewMockTargetContainerAction(func(m *podtest.MockTargetContainerAction) {
-					m.ExecuteDefault()
-				}),
-				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) { m.GetDefault() }),
+				configuration:         podtest.NewMockConfiguration(nil),
+				validation:            podtest.NewMockValidation(nil),
+				targetContainerState:  podtest.NewMockTargetContainerState(nil),
+				targetContainerAction: podtest.NewMockTargetContainerAction(nil),
+				podHelper:             kubetest.NewMockPodHelper(nil),
 			},
 			podNamespace: "namespace",
 			podName:      "name",

@@ -25,6 +25,7 @@ import (
 type States interface {
 	IsStartupConfigAppliedAll(*v1.Container) bool
 	IsPostStartupConfigAppliedAll(*v1.Container) bool
+	IsAnyCurrentZeroAll(*v1.Pod, *v1.Container) (bool, error)
 	DoesRequestsCurrentMatchSpecAll(*v1.Pod, *v1.Container) (bool, error)
 	DoesLimitsCurrentMatchSpecAll(*v1.Pod, *v1.Container) (bool, error)
 
@@ -48,7 +49,10 @@ func (s *states) IsStartupConfigAppliedAll(container *v1.Container) bool {
 	appliedAll := true
 
 	for _, state := range s.AllStates() {
-		appliedAll = appliedAll && state.IsStartupConfigApplied(container)
+		applied := state.IsStartupConfigApplied(container)
+		if applied != nil {
+			appliedAll = appliedAll && *applied
+		}
 	}
 
 	return appliedAll
@@ -58,10 +62,31 @@ func (s *states) IsPostStartupConfigAppliedAll(container *v1.Container) bool {
 	appliedAll := true
 
 	for _, state := range s.AllStates() {
-		appliedAll = appliedAll && state.IsPostStartupConfigApplied(container)
+		applied := state.IsPostStartupConfigApplied(container)
+		if applied != nil {
+			appliedAll = appliedAll && *applied
+		}
 	}
 
 	return appliedAll
+}
+
+func (s *states) IsAnyCurrentZeroAll(pod *v1.Pod, container *v1.Container) (bool, error) {
+	zeroAny := false
+
+	for _, state := range s.AllStates() {
+		zero, err := state.IsAnyCurrentZero(pod, container)
+		if err != nil {
+			return false, common.WrapErrorf(err, "unable to determine if any current %s is zero", state.ResourceName())
+		}
+
+		if zero != nil {
+			zeroAny = true
+			break
+		}
+	}
+
+	return zeroAny, nil
 }
 
 func (s *states) DoesRequestsCurrentMatchSpecAll(pod *v1.Pod, container *v1.Container) (bool, error) {
@@ -73,7 +98,9 @@ func (s *states) DoesRequestsCurrentMatchSpecAll(pod *v1.Pod, container *v1.Cont
 			return false, common.WrapErrorf(err, "unable to determine if current %s requests matches spec", state.ResourceName())
 		}
 
-		matchAll = matchAll && match
+		if match != nil {
+			matchAll = matchAll && *match
+		}
 	}
 
 	return matchAll, nil
@@ -88,7 +115,9 @@ func (s *states) DoesLimitsCurrentMatchSpecAll(pod *v1.Pod, container *v1.Contai
 			return false, common.WrapErrorf(err, "unable to determine if current %s limits matches spec", state.ResourceName())
 		}
 
-		matchAll = matchAll && match
+		if match != nil {
+			matchAll = matchAll && *match
+		}
 	}
 
 	return matchAll, nil

@@ -24,10 +24,11 @@ import (
 
 type State interface {
 	ResourceName() v1.ResourceName
-	IsStartupConfigApplied(*v1.Container) bool
-	IsPostStartupConfigApplied(*v1.Container) bool
-	DoesRequestsCurrentMatchSpec(*v1.Pod, *v1.Container) (bool, error)
-	DoesLimitsCurrentMatchSpec(*v1.Pod, *v1.Container) (bool, error)
+	IsStartupConfigApplied(*v1.Container) *bool
+	IsPostStartupConfigApplied(*v1.Container) *bool
+	IsAnyCurrentZero(*v1.Pod, *v1.Container) (*bool, error)
+	DoesRequestsCurrentMatchSpec(*v1.Pod, *v1.Container) (*bool, error)
+	DoesLimitsCurrentMatchSpec(*v1.Pod, *v1.Container) (*bool, error)
 }
 
 type state struct {
@@ -52,50 +53,77 @@ func (s *state) ResourceName() v1.ResourceName {
 	return s.resourceName
 }
 
-func (s *state) IsStartupConfigApplied(container *v1.Container) bool {
+func (s *state) IsStartupConfigApplied(container *v1.Container) *bool {
 	if !s.config.IsEnabled() {
-		return true
+		return nil
 	}
 
 	startupRequestsApplied := s.containerHelper.Requests(container, s.resourceName).Equal(s.config.Resources().Startup)
 	startupLimitsApplied := s.containerHelper.Limits(container, s.resourceName).Equal(s.config.Resources().Startup)
-	return startupRequestsApplied && startupLimitsApplied
+	result := startupRequestsApplied && startupLimitsApplied
+	return &result
 }
 
-func (s *state) IsPostStartupConfigApplied(container *v1.Container) bool {
+func (s *state) IsPostStartupConfigApplied(container *v1.Container) *bool {
 	if !s.config.IsEnabled() {
-		return true
+		return nil
 	}
 
 	postStartupRequestsApplied := s.containerHelper.Requests(container, s.resourceName).Equal(s.config.Resources().PostStartupRequests)
 	postStartupLimitsApplied := s.containerHelper.Limits(container, s.resourceName).Equal(s.config.Resources().PostStartupLimits)
-	return postStartupRequestsApplied && postStartupLimitsApplied
+	result := postStartupRequestsApplied && postStartupLimitsApplied
+	return &result
 }
 
-func (s *state) DoesRequestsCurrentMatchSpec(pod *v1.Pod, container *v1.Container) (bool, error) {
+func (s *state) IsAnyCurrentZero(pod *v1.Pod, container *v1.Container) (*bool, error) {
 	if !s.config.IsEnabled() {
-		return true, nil
+		return nil, nil
 	}
 
 	currentRequests, err := s.containerHelper.CurrentRequests(pod, container, s.resourceName)
 	if err != nil {
-		return false, common.WrapErrorf(err, "unable to get status resources %s requests", s.resourceName)
-	}
-
-	requests := s.containerHelper.Requests(container, s.resourceName)
-	return currentRequests.Equal(requests), nil
-}
-
-func (s *state) DoesLimitsCurrentMatchSpec(pod *v1.Pod, container *v1.Container) (bool, error) {
-	if !s.config.IsEnabled() {
-		return true, nil
+		result := false
+		return &result, common.WrapErrorf(err, "unable to get status resources %s requests", s.resourceName)
 	}
 
 	currentLimits, err := s.containerHelper.CurrentLimits(pod, container, s.resourceName)
 	if err != nil {
-		return false, common.WrapErrorf(err, "unable to get status resources %s limits", s.resourceName)
+		result := false
+		return &result, common.WrapErrorf(err, "unable to get status resources %s limits", s.resourceName)
+	}
+
+	result := currentRequests.IsZero() || currentLimits.IsZero()
+	return &result, nil
+}
+
+func (s *state) DoesRequestsCurrentMatchSpec(pod *v1.Pod, container *v1.Container) (*bool, error) {
+	if !s.config.IsEnabled() {
+		return nil, nil
+	}
+
+	currentRequests, err := s.containerHelper.CurrentRequests(pod, container, s.resourceName)
+	if err != nil {
+		result := false
+		return &result, common.WrapErrorf(err, "unable to get status resources %s requests", s.resourceName)
+	}
+
+	requests := s.containerHelper.Requests(container, s.resourceName)
+	result := currentRequests.Equal(requests)
+	return &result, nil
+}
+
+func (s *state) DoesLimitsCurrentMatchSpec(pod *v1.Pod, container *v1.Container) (*bool, error) {
+	if !s.config.IsEnabled() {
+		return nil, nil
+	}
+
+	currentLimits, err := s.containerHelper.CurrentLimits(pod, container, s.resourceName)
+	if err != nil {
+		result := false
+		return &result, common.WrapErrorf(err, "unable to get status resources %s limits", s.resourceName)
 	}
 
 	limits := s.containerHelper.Limits(container, s.resourceName)
-	return currentLimits.Equal(limits), nil
+	result := currentLimits.Equal(limits)
+	return &result, nil
 }

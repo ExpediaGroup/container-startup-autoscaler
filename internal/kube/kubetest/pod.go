@@ -30,11 +30,11 @@ import (
 const (
 	PodAnnotationCpuStartup             = "3m"
 	PodAnnotationCpuPostStartupRequests = "1m"
-	PodAnnotationCpuPostStartupLimits   = "2m"
+	PodAnnotationCpuPostStartupLimits   = "2m" // TODO(wt) should be guaranteed really
 
 	PodAnnotationMemoryStartup             = "3M"
 	PodAnnotationMemoryPostStartupRequests = "1M"
-	PodAnnotationMemoryPostStartupLimits   = "2M"
+	PodAnnotationMemoryPostStartupLimits   = "2M" // TODO(wt) should be guaranteed really
 
 	PodAnnotationCpuUnknown    = "999m"
 	PodAnnotationMemoryUnknown = "999M"

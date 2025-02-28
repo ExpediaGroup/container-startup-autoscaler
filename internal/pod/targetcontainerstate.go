@@ -168,6 +168,8 @@ func (s targetContainerState) stateResources(
 	startupConfigApplied bool,
 	postStartupConfigApplied bool,
 ) podcommon.StateResources {
+	// TODO(wt) error if both applied
+
 	if startupConfigApplied {
 		return podcommon.StateResourcesStartup
 	} else if postStartupConfigApplied {
@@ -183,6 +185,14 @@ func (s targetContainerState) stateStatusResources(
 	targetContainer *v1.Container,
 	scaleStates scale.States,
 ) (podcommon.StateStatusResources, error) {
+	zero, err := scaleStates.IsAnyCurrentZeroAll(pod, targetContainer)
+	if err != nil {
+		return podcommon.StateStatusResourcesUnknown, common.WrapErrorf(err, "unable to determine if any current resources are zero")
+	}
+	if zero {
+		return podcommon.StateStatusResourcesIncomplete, nil
+	}
+
 	requestsMatch, err := scaleStates.DoesRequestsCurrentMatchSpecAll(pod, targetContainer)
 	if err != nil {
 		return podcommon.StateStatusResourcesUnknown, common.WrapErrorf(err, "unable to determine if current requests matches spec")

@@ -28,9 +28,14 @@ type MockContainerHelper struct {
 }
 
 func NewMockContainerHelper(configFunc func(*MockContainerHelper)) *MockContainerHelper {
-	mockHelper := &MockContainerHelper{}
-	configFunc(mockHelper)
-	return mockHelper
+	m := &MockContainerHelper{}
+	if configFunc == nil {
+		configFunc(m)
+	} else {
+		m.AllDefaults()
+	}
+
+	return m
 }
 
 func (m *MockContainerHelper) Get(pod *v1.Pod, containerName string) (*v1.Container, error) {
@@ -100,7 +105,10 @@ func (m *MockContainerHelper) CurrentLimits(
 }
 
 func (m *MockContainerHelper) GetDefault() {
-	m.On("Get", mock.Anything, mock.Anything).Return(&v1.Container{}, nil)
+	m.On("Get", mock.Anything, mock.Anything).Return(
+		NewContainerBuilder(NewStartupContainerConfig()).Build(),
+		nil,
+	)
 }
 
 func (m *MockContainerHelper) HasStartupProbeDefault() {

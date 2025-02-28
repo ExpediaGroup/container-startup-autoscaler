@@ -28,9 +28,14 @@ type MockConfig struct {
 }
 
 func NewMockConfig(configFunc func(*MockConfig)) *MockConfig {
-	mockConfig := &MockConfig{}
-	configFunc(mockConfig)
-	return mockConfig
+	m := &MockConfig{}
+	if configFunc == nil {
+		configFunc(m)
+	} else {
+		m.AllDefaults()
+	}
+
+	return m
 }
 
 func (m *MockConfig) ResourceName() v1.ResourceName {
@@ -63,8 +68,8 @@ func (m *MockConfig) String() string {
 	return args.String(0)
 }
 
-func (m *MockConfig) ResourceTypeDefault() {
-	m.On("ResourceType").Return(v1.ResourceCPU)
+func (m *MockConfig) ResourceNameDefault() {
+	m.On("ResourceName").Return(v1.ResourceCPU)
 }
 
 func (m *MockConfig) IsEnabledDefault() {
@@ -88,7 +93,7 @@ func (m *MockConfig) StringDefault() {
 }
 
 func (m *MockConfig) AllDefaults() {
-	m.ResourceTypeDefault()
+	m.ResourceNameDefault()
 	m.IsEnabledDefault()
 	m.ResourcesDefault()
 	m.StoreFromAnnotationsDefault()

@@ -17,6 +17,7 @@ limitations under the License.
 package scaletest
 
 import (
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"
@@ -28,9 +29,14 @@ type MockConfigs struct {
 }
 
 func NewMockConfigs(configFunc func(*MockConfigs)) *MockConfigs {
-	mockConfigs := &MockConfigs{}
-	configFunc(mockConfigs)
-	return mockConfigs
+	m := &MockConfigs{}
+	if configFunc == nil {
+		configFunc(m)
+	} else {
+		m.AllDefaults()
+	}
+
+	return m
 }
 
 func (m *MockConfigs) TargetContainerName(pod *v1.Pod) (string, error) {
@@ -79,7 +85,7 @@ func (m *MockConfigs) String() string {
 }
 
 func (m *MockConfigs) TargetContainerNameDefault() {
-	m.On("TargetContainerName", mock.Anything).Return("", nil)
+	m.On("TargetContainerName", mock.Anything).Return(kubetest.DefaultContainerName, nil)
 }
 
 func (m *MockConfigs) StoreFromAnnotationsAllDefault() {
@@ -95,20 +101,19 @@ func (m *MockConfigs) ValidateCollectionDefault() {
 }
 
 func (m *MockConfigs) ConfigForDefault() {
-	m.On("ConfigFor", mock.Anything).
-		Return(scale.NewConfig(v1.ResourceCPU, "", "", "", true, nil, nil))
+	m.On("ConfigFor", mock.Anything).Return(NewMockConfig(nil))
 }
 
 func (m *MockConfigs) AllConfigsDefault() {
-	m.On("AllConfigs").Return([]scale.Config{})
+	m.On("AllConfigs").Return([]scale.Config{NewMockConfig(nil)})
 }
 
 func (m *MockConfigs) AllEnabledConfigsDefault() {
-	m.On("AllEnabledConfigs").Return([]scale.Config{})
+	m.On("AllEnabledConfigs").Return([]scale.Config{NewMockConfig(nil)})
 }
 
 func (m *MockConfigs) AllEnabledConfigsResourceNamesDefault() {
-	m.On("AllEnabledConfigsResourceNames").Return([]v1.ResourceName{})
+	m.On("AllEnabledConfigsResourceNames").Return([]v1.ResourceName{v1.ResourceCPU})
 }
 
 func (m *MockConfigs) StringDefault() {

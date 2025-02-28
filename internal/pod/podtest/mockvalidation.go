@@ -30,9 +30,14 @@ type MockValidation struct {
 }
 
 func NewMockValidation(configFunc func(*MockValidation)) *MockValidation {
-	mockValidation := &MockValidation{}
-	configFunc(mockValidation)
-	return mockValidation
+	m := &MockValidation{}
+	if configFunc == nil {
+		configFunc(m)
+	} else {
+		m.AllDefaults()
+	}
+
+	return m
 }
 
 func (m *MockValidation) Validate(

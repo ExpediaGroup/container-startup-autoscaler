@@ -34,9 +34,14 @@ type MockPodHelper struct {
 }
 
 func NewMockPodHelper(configFunc func(*MockPodHelper)) *MockPodHelper {
-	mockHelper := &MockPodHelper{}
-	configFunc(mockHelper)
-	return mockHelper
+	m := &MockPodHelper{}
+	if configFunc == nil {
+		configFunc(m)
+	} else {
+		m.AllDefaults()
+	}
+
+	return m
 }
 
 func (m *MockPodHelper) Get(ctx context.Context, name types.NamespacedName) (bool, *v1.Pod, error) {
@@ -95,12 +100,17 @@ func (m *MockPodHelper) GetDefault() {
 }
 
 func (m *MockPodHelper) PatchDefault() {
-	m.On("Patch", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&v1.Pod{}, nil)
+	m.On("Patch", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		&v1.Pod{},
+		nil,
+	)
 }
 
 func (m *MockPodHelper) UpdateContainerResourcesDefault() {
-	m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
-		Return(&v1.Pod{}, nil)
+	m.On("UpdateContainerResources", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		&v1.Pod{},
+		nil,
+	)
 }
 
 func (m *MockPodHelper) HasAnnotationDefault() {
@@ -142,7 +152,7 @@ func (m *MockPodHelper) IsContainerInSpecDefault() {
 }
 
 func (m *MockPodHelper) ResizeStatusDefault() {
-	m.On("ResizeStatus", mock.Anything).Return(v1.PodResizeStatus(""), nil)
+	m.On("ResizeStatus", mock.Anything).Return(v1.PodResizeStatusProposed, nil)
 }
 
 func (m *MockPodHelper) AllDefaults() {
