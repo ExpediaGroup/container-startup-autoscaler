@@ -17,22 +17,95 @@ limitations under the License.
 package kubetest
 
 import (
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"k8s.io/api/core/v1"
 )
 
 // podBuilder builds a test pod.
 type podBuilder struct {
-	config                      podConfig
+	// TODO(wt) new, rearrange
+	enabledResources            []v1.ResourceName
+	resourcesState              podcommon.StateResources
+	stateStarted                podcommon.StateBool
+	stateReady                  podcommon.StateBool
+	containerStatusState        v1.ContainerState
+	containerStatusResizeStatus v1.PodResizeStatus
+
 	additionalLabels            map[string]string
 	additionalAnnotations       map[string]string
-	containerStatusState        *v1.ContainerState
-	containerStatusResizeStatus *v1.PodResizeStatus
 	nilContainerStatusStarted   bool
 	nilContainerStatusResources bool
 }
 
-func NewPodBuilder(config podConfig) *podBuilder {
-	return &podBuilder{config: config}
+func NewPodBuilder() *podBuilder {
+	b := &podBuilder{}
+	b.enabledResources = []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory}
+	b.resourcesState = podcommon.StateResourcesStartup
+	b.stateStarted = podcommon.StateBoolFalse
+	b.stateReady = podcommon.StateBoolFalse
+	b.containerStatusState = v1.ContainerState{Running: &v1.ContainerStateRunning{}}
+	b.containerStatusResizeStatus = ""
+	return b
+}
+
+func (b *podBuilder) EnabledResources(enabledResources []v1.ResourceName) *podBuilder {
+	b.enabledResources = enabledResources
+	return b
+}
+
+func (b *podBuilder) ResourcesStatePostStartup() *podBuilder {
+	b.resourcesState = podcommon.StateResourcesPostStartup
+	return b
+}
+
+func (b *podBuilder) StateStartedTrue() *podBuilder {
+	b.stateStarted = podcommon.StateBoolTrue
+	return b
+}
+
+func (b *podBuilder) StateStartedUnknown() *podBuilder {
+	b.stateStarted = podcommon.StateBoolUnknown
+	return b
+}
+
+func (b *podBuilder) StateReadyTrue() *podBuilder {
+	b.stateReady = podcommon.StateBoolTrue
+	return b
+}
+
+func (b *podBuilder) StateReadyUnknown() *podBuilder {
+	b.stateReady = podcommon.StateBoolUnknown
+	return b
+}
+
+func (b *podBuilder) ContainerStatusStateWaiting() *podBuilder {
+	b.containerStatusState = v1.ContainerState{Waiting: &v1.ContainerStateWaiting{}}
+	return b
+}
+
+func (b *podBuilder) ContainerStatusStateTerminated() *podBuilder {
+	b.containerStatusState = v1.ContainerState{Terminated: &v1.ContainerStateTerminated{}}
+	return b
+}
+
+func (b *podBuilder) ContainerStatusResizeStatusProposed() *podBuilder {
+	b.containerStatusResizeStatus = v1.PodResizeStatusProposed
+	return b
+}
+
+func (b *podBuilder) ContainerStatusResizeStatusInProgress() *podBuilder {
+	b.containerStatusResizeStatus = v1.PodResizeStatusInProgress
+	return b
+}
+
+func (b *podBuilder) ContainerStatusResizeStatusDeferred() *podBuilder {
+	b.containerStatusResizeStatus = v1.PodResizeStatusDeferred
+	return b
+}
+
+func (b *podBuilder) ContainerStatusResizeStatusInfeasible() *podBuilder {
+	b.containerStatusResizeStatus = v1.PodResizeStatusInfeasible
+	return b
 }
 
 func (b *podBuilder) AdditionalLabels(labels map[string]string) *podBuilder {
@@ -42,16 +115,6 @@ func (b *podBuilder) AdditionalLabels(labels map[string]string) *podBuilder {
 
 func (b *podBuilder) AdditionalAnnotations(annotations map[string]string) *podBuilder {
 	b.additionalAnnotations = annotations
-	return b
-}
-
-func (b *podBuilder) ContainerStatusState(state v1.ContainerState) *podBuilder {
-	b.containerStatusState = &state
-	return b
-}
-
-func (b *podBuilder) ContainerStatusResizeStatus(resizeStatus v1.PodResizeStatus) *podBuilder {
-	b.containerStatusResizeStatus = &resizeStatus
 	return b
 }
 
@@ -66,7 +129,12 @@ func (b *podBuilder) NilContainerStatusResources() *podBuilder {
 }
 
 func (b *podBuilder) Build() *v1.Pod {
-	p := pod(b.config)
+	// TODO(wt) move everything from pod.go and remove pod.go
+
+	p := pod(newPodConfig(b.enabledResources, b.resourcesState, b.stateStarted, b.stateReady))
+
+	p.Status.ContainerStatuses[0].State = b.containerStatusState
+	p.Status.Resize = b.containerStatusResizeStatus
 
 	for name, value := range b.additionalLabels {
 		p.Labels[name] = value
@@ -74,14 +142,6 @@ func (b *podBuilder) Build() *v1.Pod {
 
 	for name, value := range b.additionalAnnotations {
 		p.Annotations[name] = value
-	}
-
-	if b.containerStatusState != nil {
-		p.Status.ContainerStatuses[0].State = *b.containerStatusState
-	}
-
-	if b.containerStatusResizeStatus != nil {
-		p.Status.Resize = *b.containerStatusResizeStatus
 	}
 
 	if b.nilContainerStatusStarted {

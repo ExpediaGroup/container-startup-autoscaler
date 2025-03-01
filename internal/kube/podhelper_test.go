@@ -92,14 +92,7 @@ func TestPodHelperGet(t *testing.T) {
 			name: "Found",
 			client: kubetest.ControllerRuntimeFakeClientWithKubeFake(
 				func() *kubefake.Clientset {
-					return kubefake.NewClientset(
-						kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-							podcommon.StateBoolFalse,
-							podcommon.StateBoolFalse,
-							true,
-							true,
-						)).Build(),
-					)
+					return kubefake.NewClientset(kubetest.NewPodBuilder().Build())
 				},
 				func() interceptor.Funcs { return interceptor.Funcs{} },
 			),
@@ -108,12 +101,7 @@ func TestPodHelperGet(t *testing.T) {
 				name: kubetest.DefaultPodNamespacedName,
 			},
 			wantFound: true,
-			wantPod: kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-				podcommon.StateBoolFalse,
-				podcommon.StateBoolFalse,
-				true,
-				true,
-			)).Build(),
+			wantPod:   kubetest.NewPodBuilder().Build(),
 		},
 	}
 	for _, tt := range tests {
@@ -215,12 +203,7 @@ func TestPodHelperPatch(t *testing.T) {
 	})
 
 	t.Run("OkNoPatchResizeTrue", func(t *testing.T) {
-		pod := kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-			podcommon.StateBoolFalse,
-			podcommon.StateBoolFalse,
-			true,
-			true,
-		)).Build()
+		pod := kubetest.NewPodBuilder().Build()
 		podMutationFunc1 := func(pod *v1.Pod) error {
 			pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU] = kubetest.PodAnnotationCpuPostStartupRequestsEnabledQuantity
 			pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU] = kubetest.PodAnnotationCpuPostStartupLimitsEnabledQuantity
@@ -257,12 +240,7 @@ func TestPodHelperPatch(t *testing.T) {
 	})
 
 	t.Run("OkWithResolvedConflictResizeTrue", func(t *testing.T) {
-		pod := kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-			podcommon.StateBoolFalse,
-			podcommon.StateBoolFalse,
-			true,
-			true,
-		)).Build()
+		pod := kubetest.NewPodBuilder().Build()
 		podMutationFunc1 := func(pod *v1.Pod) error {
 			pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU] = kubetest.PodAnnotationCpuPostStartupRequestsEnabledQuantity
 			pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU] = kubetest.PodAnnotationCpuPostStartupLimitsEnabledQuantity
@@ -299,12 +277,7 @@ func TestPodHelperPatch(t *testing.T) {
 	})
 
 	t.Run("OkWithoutConflictResizeTrue", func(t *testing.T) {
-		pod := kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-			podcommon.StateBoolFalse,
-			podcommon.StateBoolFalse,
-			true,
-			true,
-		)).Build()
+		pod := kubetest.NewPodBuilder().Build()
 		podMutationFunc1 := func(pod *v1.Pod) error {
 			pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU] = kubetest.PodAnnotationCpuPostStartupRequestsEnabledQuantity
 			pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU] = kubetest.PodAnnotationCpuPostStartupLimitsEnabledQuantity
@@ -341,12 +314,7 @@ func TestPodHelperPatch(t *testing.T) {
 	})
 
 	t.Run("OkWithoutConflictResizeFalse", func(t *testing.T) {
-		pod := kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-			podcommon.StateBoolFalse,
-			podcommon.StateBoolFalse,
-			true,
-			true,
-		)).Build()
+		pod := kubetest.NewPodBuilder().Build()
 		podMutationFunc := func(pod *v1.Pod) error {
 			pod.Annotations["test"] = "test"
 			return nil
@@ -386,12 +354,7 @@ func TestPodHelperHasAnnotation(t *testing.T) {
 		{
 			"Has",
 			args{
-				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-					podcommon.StateBoolFalse,
-					podcommon.StateBoolFalse,
-					true,
-					true,
-				)).AdditionalAnnotations(map[string]string{"testkey": "testvalue"}).Build(),
+				kubetest.NewPodBuilder().AdditionalAnnotations(map[string]string{"testkey": "testvalue"}).Build(),
 				"testkey",
 			},
 			true,
@@ -400,12 +363,7 @@ func TestPodHelperHasAnnotation(t *testing.T) {
 		{
 			"NotHas",
 			args{
-				kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-					podcommon.StateBoolFalse,
-					podcommon.StateBoolFalse,
-					true,
-					true,
-				)).AdditionalAnnotations(map[string]string{"testkey": "testvalue"}).Build(),
+				kubetest.NewPodBuilder().AdditionalAnnotations(map[string]string{"testkey": "testvalue"}).Build(),
 				"notpresent",
 			},
 			false,
@@ -439,12 +397,7 @@ func TestPodHelperExpectedLabelValueAs(t *testing.T) {
 		{
 			name: "NotPresent",
 			args: args{
-				pod: kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-					podcommon.StateBoolFalse,
-					podcommon.StateBoolFalse,
-					true,
-					true,
-				)).Build(),
+				pod:  kubetest.NewPodBuilder().Build(),
 				name: "test",
 				as:   kubecommon.DataTypeString,
 			},
@@ -454,12 +407,7 @@ func TestPodHelperExpectedLabelValueAs(t *testing.T) {
 		{
 			name: "UnableToParseValueAsBool",
 			args: args{
-				pod: kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-					podcommon.StateBoolFalse,
-					podcommon.StateBoolFalse,
-					true,
-					true,
-				)).AdditionalLabels(map[string]string{"test": "test"}).Build(),
+				pod:  kubetest.NewPodBuilder().AdditionalLabels(map[string]string{"test": "test"}).Build(),
 				name: "test",
 				as:   kubecommon.DataTypeBool,
 			},
@@ -469,12 +417,7 @@ func TestPodHelperExpectedLabelValueAs(t *testing.T) {
 		{
 			name: "AsNotSupported",
 			args: args{
-				pod: kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-					podcommon.StateBoolFalse,
-					podcommon.StateBoolFalse,
-					true,
-					true,
-				)).AdditionalLabels(map[string]string{"test": "test"}).Build(),
+				pod:  kubetest.NewPodBuilder().AdditionalLabels(map[string]string{"test": "test"}).Build(),
 				name: "test",
 				as:   "test",
 			},
@@ -483,12 +426,7 @@ func TestPodHelperExpectedLabelValueAs(t *testing.T) {
 		{
 			name: "Ok",
 			args: args{
-				pod: kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-					podcommon.StateBoolFalse,
-					podcommon.StateBoolFalse,
-					true,
-					true,
-				)).Build(),
+				pod:  kubetest.NewPodBuilder().Build(),
 				name: podcommon.LabelEnabled,
 				as:   kubecommon.DataTypeBool,
 			},
@@ -531,12 +469,7 @@ func TestPodHelperExpectedAnnotationValueAs(t *testing.T) {
 		{
 			name: "Ok",
 			args: args{
-				pod: kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-					podcommon.StateBoolFalse,
-					podcommon.StateBoolFalse,
-					true,
-					true,
-				)).Build(),
+				pod:  kubetest.NewPodBuilder().Build(),
 				name: scalecommon.AnnotationCpuStartup,
 				as:   kubecommon.DataTypeString,
 			},
@@ -576,12 +509,7 @@ func TestPodHelperIsContainerInSpec(t *testing.T) {
 		{
 			name: "False",
 			args: args{
-				pod: kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-					podcommon.StateBoolFalse,
-					podcommon.StateBoolFalse,
-					true,
-					true,
-				)).Build(),
+				pod:           kubetest.NewPodBuilder().Build(),
 				containerName: "",
 			},
 			want: false,
@@ -589,12 +517,7 @@ func TestPodHelperIsContainerInSpec(t *testing.T) {
 		{
 			name: "True",
 			args: args{
-				pod: kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-					podcommon.StateBoolFalse,
-					podcommon.StateBoolFalse,
-					true,
-					true,
-				)).Build(),
+				pod:           kubetest.NewPodBuilder().Build(),
 				containerName: kubetest.DefaultContainerName,
 			},
 			want: true,
@@ -612,12 +535,7 @@ func TestPodHelperIsContainerInSpec(t *testing.T) {
 
 func TestPodHelperResizeStatus(t *testing.T) {
 	h := NewPodHelper(nil)
-	pod := kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-		podcommon.StateBoolFalse,
-		podcommon.StateBoolFalse,
-		true,
-		true,
-	)).ContainerStatusResizeStatus(v1.PodResizeStatusInProgress).Build()
+	pod := kubetest.NewPodBuilder().ContainerStatusResizeStatusInProgress().Build()
 
 	got := h.ResizeStatus(pod)
 	assert.Equal(t, v1.PodResizeStatusInProgress, got)
@@ -625,12 +543,7 @@ func TestPodHelperResizeStatus(t *testing.T) {
 
 func TestPodHelperWaitForCacheUpdate(t *testing.T) {
 	t.Run("Ok", func(t *testing.T) {
-		pod := kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-			podcommon.StateBoolFalse,
-			podcommon.StateBoolFalse,
-			true,
-			true,
-		)).Build()
+		pod := kubetest.NewPodBuilder().Build()
 		pod.ResourceVersion = "123"
 		h := podHelper{
 			client: kubetest.ControllerRuntimeFakeClientWithKubeFake(
@@ -650,12 +563,7 @@ func TestPodHelperWaitForCacheUpdate(t *testing.T) {
 	})
 
 	t.Run("Timeout", func(t *testing.T) {
-		pod := kubetest.NewPodBuilder(kubetest.NewStartupPodConfig(
-			podcommon.StateBoolFalse,
-			podcommon.StateBoolFalse,
-			true,
-			true,
-		)).Build()
+		pod := kubetest.NewPodBuilder().Build()
 		pod.ResourceVersion = "123"
 		h := podHelper{
 			client: kubetest.ControllerRuntimeFakeClientWithKubeFake(

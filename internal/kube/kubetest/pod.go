@@ -110,33 +110,12 @@ type podConfig struct {
 	containerConfig                        containerConfig
 }
 
-func NewStartupPodConfig(
-	stateStarted podcommon.StateBool,
-	stateReady podcommon.StateBool,
-	cpuEnabled bool,
-	memoryEnabled bool,
-) podConfig {
-	return newPodConfigForState(stateStarted, stateReady, podcommon.StateResourcesStartup)
-}
-
-func NewPostStartupPodConfig(
-	stateStarted podcommon.StateBool,
-	stateReady podcommon.StateBool,
-	cpuEnabled bool,
-	memoryEnabled bool,
-) podConfig {
-	return newPodConfigForState(stateStarted, stateReady, podcommon.StateResourcesPostStartup)
-}
-
-func NewUnknownPodConfig(stateStarted podcommon.StateBool, stateReady podcommon.StateBool) podConfig {
-	return newPodConfigForState(stateStarted, stateReady, podcommon.StateResourcesUnknown)
-}
-
-// TODO(wt) construct based on cpuEnabled and memoryEnabled
-func newPodConfigForState(
-	stateStarted podcommon.StateBool,
-	stateReady podcommon.StateBool,
+// TODO(wt) construct based on cpuEnabled and memoryEnabled (use []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory})
+func newPodConfig(
+	enabledResources []corev1.ResourceName,
 	stateResources podcommon.StateResources,
+	stateStarted podcommon.StateBool,
+	stateReady podcommon.StateBool,
 ) podConfig {
 	config := podConfig{
 		namespace:                           DefaultPodNamespace,
