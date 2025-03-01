@@ -19,6 +19,12 @@ package contexttest
 import (
 	"bytes"
 	"context"
+
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contextcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
+	"github.com/go-logr/logr"
+	"github.com/google/uuid"
+	"github.com/tonglil/buflogr"
 )
 
 // ctxBuilder builds a test context.
@@ -46,7 +52,17 @@ func (b *ctxBuilder) StandardRetryDelaySecs(standardRetryDelaySecs int) *ctxBuil
 }
 
 func (b *ctxBuilder) Build() context.Context {
-	// TODO(wt) move everything from context.go and remove context.go
+	var c context.Context
 
-	return ctx(b.config)
+	if b.config.logBuffer == nil {
+		logging.Init(logging.DefaultW, logging.DefaultV, logging.DefaultAddCaller)
+		c = logr.NewContext(context.TODO(), logging.Logger)
+	} else {
+		c = logr.NewContext(context.TODO(), buflogr.NewWithBuffer(b.config.logBuffer))
+	}
+
+	c = context.WithValue(c, KeyUuid, uuid.New().String())
+	c = context.WithValue(c, contextcommon.KeyStandardRetryAttempts, b.config.standardRetryAttempts)
+	c = context.WithValue(c, contextcommon.KeyStandardRetryDelaySecs, b.config.standardRetryDelaySecs)
+	return c
 }

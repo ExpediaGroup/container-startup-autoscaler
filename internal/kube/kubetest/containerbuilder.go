@@ -19,6 +19,7 @@ package kubetest
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // ctxBuilder builds a test container.
@@ -36,6 +37,7 @@ func NewContainerBuilder() *containerBuilder {
 	b := &containerBuilder{}
 	b.enabledResources = []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory}
 	b.resourcesState = podcommon.StateResourcesStartup
+
 	return b
 }
 
@@ -44,8 +46,18 @@ func (b *containerBuilder) EnabledResources(enabledResources []v1.ResourceName) 
 	return b
 }
 
+func (b *containerBuilder) ResourcesState(resourcesState podcommon.StateResources) *containerBuilder {
+	b.resourcesState = resourcesState
+	return b
+}
+
 func (b *containerBuilder) ResourcesStatePostStartup() *containerBuilder {
 	b.resourcesState = podcommon.StateResourcesPostStartup
+	return b
+}
+
+func (b *containerBuilder) ResourcesStateUnknown() *containerBuilder {
+	b.resourcesState = podcommon.StateResourcesUnknown
 	return b
 }
 
@@ -75,17 +87,7 @@ func (b *containerBuilder) NilLimits() *containerBuilder {
 }
 
 func (b *containerBuilder) Build() *v1.Container {
-	// TODO(wt) move everything from container.go and remove container.go
-
-	c := container(newContainerConfig(b.enabledResources, b.resourcesState))
-
-	if b.startupProbe {
-		c.StartupProbe = &v1.Probe{}
-	}
-
-	if b.readinessProbe {
-		c.ReadinessProbe = &v1.Probe{}
-	}
+	c := b.container()
 
 	if b.nilResizePolicy {
 		c.ResizePolicy = nil
@@ -100,4 +102,44 @@ func (b *containerBuilder) Build() *v1.Container {
 	}
 
 	return c
+}
+
+func (b *containerBuilder) container() *v1.Container {
+	cpuRequests, cpuLimits, memoryRequests, memoryLimits := quantities(b.enabledResources, b.resourcesState)
+
+	var startupProbe *v1.Probe
+	if b.startupProbe {
+		startupProbe = &v1.Probe{}
+	}
+
+	var readinessProbe *v1.Probe
+	if b.readinessProbe {
+		readinessProbe = &v1.Probe{}
+	}
+
+	return &v1.Container{
+		Name: DefaultContainerName,
+		Resources: v1.ResourceRequirements{
+			Requests: map[v1.ResourceName]resource.Quantity{
+				v1.ResourceCPU:    cpuRequests,
+				v1.ResourceMemory: memoryRequests,
+			},
+			Limits: map[v1.ResourceName]resource.Quantity{
+				v1.ResourceCPU:    cpuLimits,
+				v1.ResourceMemory: memoryLimits,
+			},
+		},
+		ResizePolicy: []v1.ContainerResizePolicy{
+			{
+				ResourceName:  v1.ResourceCPU,
+				RestartPolicy: DefaultContainerCpuResizePolicy,
+			},
+			{
+				ResourceName:  v1.ResourceMemory,
+				RestartPolicy: DefaultContainerMemoryResizePolicy,
+			},
+		},
+		StartupProbe:   startupProbe,
+		ReadinessProbe: readinessProbe,
+	}
 }

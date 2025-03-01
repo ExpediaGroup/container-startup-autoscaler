@@ -18,13 +18,6 @@ package contexttest
 
 import (
 	"bytes"
-	"context"
-
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contextcommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
-	"github.com/go-logr/logr"
-	"github.com/google/uuid"
-	"github.com/tonglil/buflogr"
 )
 
 const KeyUuid = "uuid"
@@ -36,7 +29,7 @@ type ctxConfig struct {
 	standardRetryDelaySecs int
 }
 
-func NewCustomCtxConfig() ctxConfig {
+func NewCtxConfig() ctxConfig {
 	return ctxConfig{}
 }
 
@@ -54,21 +47,4 @@ func NewOneRetryCtxConfig(logBuffer *bytes.Buffer) ctxConfig {
 		standardRetryAttempts:  2,
 		standardRetryDelaySecs: 0,
 	}
-}
-
-// ctx returns a test context from the supplied config.
-func ctx(config ctxConfig) context.Context {
-	var c context.Context
-
-	if config.logBuffer == nil {
-		logging.Init(logging.DefaultW, logging.DefaultV, logging.DefaultAddCaller)
-		c = logr.NewContext(context.TODO(), logging.Logger)
-	} else {
-		c = logr.NewContext(context.TODO(), buflogr.NewWithBuffer(config.logBuffer))
-	}
-
-	c = context.WithValue(c, KeyUuid, uuid.New().String())
-	c = context.WithValue(c, contextcommon.KeyStandardRetryAttempts, config.standardRetryAttempts)
-	c = context.WithValue(c, contextcommon.KeyStandardRetryDelaySecs, config.standardRetryDelaySecs)
-	return c
 }

@@ -319,7 +319,7 @@ func TestContainerHelperRequests(t *testing.T) {
 				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
-			want: kubetest.PodAnnotationCpuStartupEnabledQuantity,
+			want: kubetest.PodCpuStartupEnabled,
 		},
 		{
 			name: "Memory",
@@ -327,7 +327,7 @@ func TestContainerHelperRequests(t *testing.T) {
 				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceMemory,
 			},
-			want: kubetest.PodAnnotationMemoryStartupEnabledQuantity,
+			want: kubetest.PodMemoryStartupEnabled,
 		},
 		{
 			name: "ResourceNameNotSupported",
@@ -378,7 +378,7 @@ func TestContainerHelperLimits(t *testing.T) {
 				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
-			want: kubetest.PodAnnotationCpuStartupEnabledQuantity,
+			want: kubetest.PodCpuStartupEnabled,
 		},
 		{
 			name: "Memory",
@@ -386,7 +386,7 @@ func TestContainerHelperLimits(t *testing.T) {
 				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceMemory,
 			},
-			want: kubetest.PodAnnotationMemoryStartupEnabledQuantity,
+			want: kubetest.PodMemoryStartupEnabled,
 		},
 		{
 			name: "ResourceNameNotSupported",
@@ -510,7 +510,7 @@ func TestContainerHelperCurrentRequests(t *testing.T) {
 				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
-			want: kubetest.PodAnnotationCpuStartupEnabledQuantity,
+			want: kubetest.PodCpuStartupEnabled,
 		},
 		{
 			name: "Memory",
@@ -519,7 +519,7 @@ func TestContainerHelperCurrentRequests(t *testing.T) {
 				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceMemory,
 			},
-			want: kubetest.PodAnnotationMemoryStartupEnabledQuantity,
+			want: kubetest.PodMemoryStartupEnabled,
 		},
 		{
 			name: "ResourceNameNotSupported",
@@ -593,7 +593,7 @@ func TestContainerHelperCurrentLimits(t *testing.T) {
 				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
-			want: kubetest.PodAnnotationCpuStartupEnabledQuantity,
+			want: kubetest.PodCpuStartupEnabled,
 		},
 		{
 			name: "Memory",
@@ -602,7 +602,7 @@ func TestContainerHelperCurrentLimits(t *testing.T) {
 				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceMemory,
 			},
-			want: kubetest.PodAnnotationMemoryStartupEnabledQuantity,
+			want: kubetest.PodMemoryStartupEnabled,
 		},
 		{
 			name: "ResourceNameNotSupported",

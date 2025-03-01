@@ -205,13 +205,13 @@ func TestPodHelperPatch(t *testing.T) {
 	t.Run("OkNoPatchResizeTrue", func(t *testing.T) {
 		pod := kubetest.NewPodBuilder().Build()
 		podMutationFunc1 := func(pod *v1.Pod) error {
-			pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU] = kubetest.PodAnnotationCpuPostStartupRequestsEnabledQuantity
-			pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU] = kubetest.PodAnnotationCpuPostStartupLimitsEnabledQuantity
+			pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU] = kubetest.PodCpuPostStartupRequestsEnabled
+			pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU] = kubetest.PodCpuPostStartupLimitsEnabled
 			return nil
 		}
 		podMutationFunc2 := func(pod *v1.Pod) error {
-			pod.Spec.Containers[0].Resources.Requests[v1.ResourceMemory] = kubetest.PodAnnotationMemoryPostStartupRequestsEnabledQuantity
-			pod.Spec.Containers[0].Resources.Limits[v1.ResourceMemory] = kubetest.PodAnnotationMemoryPostStartupLimitsEnabledQuantity
+			pod.Spec.Containers[0].Resources.Requests[v1.ResourceMemory] = kubetest.PodMemoryPostStartupRequestsEnabled
+			pod.Spec.Containers[0].Resources.Limits[v1.ResourceMemory] = kubetest.PodMemoryPostStartupLimitsEnabled
 			return nil
 		}
 		h := NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
@@ -227,28 +227,28 @@ func TestPodHelperPatch(t *testing.T) {
 			true,
 		)
 		assert.Nil(t, err)
-		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(kubetest.PodAnnotationCpuPostStartupRequestsEnabledQuantity))
-		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(kubetest.PodAnnotationCpuPostStartupLimitsEnabledQuantity))
-		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(kubetest.PodAnnotationMemoryPostStartupRequestsEnabledQuantity))
-		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceMemory].Equal(kubetest.PodAnnotationMemoryPostStartupLimitsEnabledQuantity))
+		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupRequestsEnabled))
+		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupLimitsEnabled))
+		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(kubetest.PodMemoryPostStartupRequestsEnabled))
+		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceMemory].Equal(kubetest.PodMemoryPostStartupLimitsEnabled))
 
 		// Ensure original pod isn't mutated
-		assert.False(t, pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(kubetest.PodAnnotationCpuPostStartupRequestsEnabledQuantity))
-		assert.False(t, pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(kubetest.PodAnnotationCpuPostStartupLimitsEnabledQuantity))
-		assert.False(t, pod.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(kubetest.PodAnnotationMemoryPostStartupRequestsEnabledQuantity))
-		assert.False(t, pod.Spec.Containers[0].Resources.Limits[v1.ResourceMemory].Equal(kubetest.PodAnnotationMemoryPostStartupLimitsEnabledQuantity))
+		assert.False(t, pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupRequestsEnabled))
+		assert.False(t, pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupLimitsEnabled))
+		assert.False(t, pod.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(kubetest.PodMemoryPostStartupRequestsEnabled))
+		assert.False(t, pod.Spec.Containers[0].Resources.Limits[v1.ResourceMemory].Equal(kubetest.PodMemoryPostStartupLimitsEnabled))
 	})
 
 	t.Run("OkWithResolvedConflictResizeTrue", func(t *testing.T) {
 		pod := kubetest.NewPodBuilder().Build()
 		podMutationFunc1 := func(pod *v1.Pod) error {
-			pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU] = kubetest.PodAnnotationCpuPostStartupRequestsEnabledQuantity
-			pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU] = kubetest.PodAnnotationCpuPostStartupLimitsEnabledQuantity
+			pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU] = kubetest.PodCpuPostStartupRequestsEnabled
+			pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU] = kubetest.PodCpuPostStartupLimitsEnabled
 			return nil
 		}
 		podMutationFunc2 := func(pod *v1.Pod) error {
-			pod.Spec.Containers[0].Resources.Requests[v1.ResourceMemory] = kubetest.PodAnnotationMemoryPostStartupRequestsEnabledQuantity
-			pod.Spec.Containers[0].Resources.Limits[v1.ResourceMemory] = kubetest.PodAnnotationMemoryPostStartupLimitsEnabledQuantity
+			pod.Spec.Containers[0].Resources.Requests[v1.ResourceMemory] = kubetest.PodMemoryPostStartupRequestsEnabled
+			pod.Spec.Containers[0].Resources.Limits[v1.ResourceMemory] = kubetest.PodMemoryPostStartupLimitsEnabled
 			return nil
 		}
 		conflictErr := kerrors.NewConflict(schema.GroupResource{}, "", errors.New(""))
@@ -268,10 +268,10 @@ func TestPodHelperPatch(t *testing.T) {
 			true,
 		)
 		assert.Nil(t, err)
-		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(kubetest.PodAnnotationCpuPostStartupRequestsEnabledQuantity))
-		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(kubetest.PodAnnotationCpuPostStartupLimitsEnabledQuantity))
-		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(kubetest.PodAnnotationMemoryPostStartupRequestsEnabledQuantity))
-		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceMemory].Equal(kubetest.PodAnnotationMemoryPostStartupLimitsEnabledQuantity))
+		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupRequestsEnabled))
+		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupLimitsEnabled))
+		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(kubetest.PodMemoryPostStartupRequestsEnabled))
+		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceMemory].Equal(kubetest.PodMemoryPostStartupLimitsEnabled))
 		afterMetricVal, _ := testutil.GetCounterMetricValue(retry.Retry(strings.ToLower(string(metav1.StatusReasonConflict))))
 		assert.Equal(t, beforeMetricVal+1, afterMetricVal)
 	})
@@ -279,13 +279,13 @@ func TestPodHelperPatch(t *testing.T) {
 	t.Run("OkWithoutConflictResizeTrue", func(t *testing.T) {
 		pod := kubetest.NewPodBuilder().Build()
 		podMutationFunc1 := func(pod *v1.Pod) error {
-			pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU] = kubetest.PodAnnotationCpuPostStartupRequestsEnabledQuantity
-			pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU] = kubetest.PodAnnotationCpuPostStartupLimitsEnabledQuantity
+			pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU] = kubetest.PodCpuPostStartupRequestsEnabled
+			pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU] = kubetest.PodCpuPostStartupLimitsEnabled
 			return nil
 		}
 		podMutationFunc2 := func(pod *v1.Pod) error {
-			pod.Spec.Containers[0].Resources.Requests[v1.ResourceMemory] = kubetest.PodAnnotationMemoryPostStartupRequestsEnabledQuantity
-			pod.Spec.Containers[0].Resources.Limits[v1.ResourceMemory] = kubetest.PodAnnotationMemoryPostStartupLimitsEnabledQuantity
+			pod.Spec.Containers[0].Resources.Requests[v1.ResourceMemory] = kubetest.PodMemoryPostStartupRequestsEnabled
+			pod.Spec.Containers[0].Resources.Limits[v1.ResourceMemory] = kubetest.PodMemoryPostStartupLimitsEnabled
 			return nil
 		}
 		h := NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
@@ -301,16 +301,16 @@ func TestPodHelperPatch(t *testing.T) {
 			true,
 		)
 		assert.Nil(t, err)
-		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(kubetest.PodAnnotationCpuPostStartupRequestsEnabledQuantity))
-		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(kubetest.PodAnnotationCpuPostStartupLimitsEnabledQuantity))
-		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(kubetest.PodAnnotationMemoryPostStartupRequestsEnabledQuantity))
-		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceMemory].Equal(kubetest.PodAnnotationMemoryPostStartupLimitsEnabledQuantity))
+		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupRequestsEnabled))
+		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupLimitsEnabled))
+		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(kubetest.PodMemoryPostStartupRequestsEnabled))
+		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceMemory].Equal(kubetest.PodMemoryPostStartupLimitsEnabled))
 
 		// Ensure original pod isn't mutated
-		assert.False(t, pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(kubetest.PodAnnotationCpuPostStartupRequestsEnabledQuantity))
-		assert.False(t, pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(kubetest.PodAnnotationCpuPostStartupLimitsEnabledQuantity))
-		assert.False(t, pod.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(kubetest.PodAnnotationMemoryPostStartupRequestsEnabledQuantity))
-		assert.False(t, pod.Spec.Containers[0].Resources.Limits[v1.ResourceMemory].Equal(kubetest.PodAnnotationMemoryPostStartupLimitsEnabledQuantity))
+		assert.False(t, pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupRequestsEnabled))
+		assert.False(t, pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupLimitsEnabled))
+		assert.False(t, pod.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(kubetest.PodMemoryPostStartupRequestsEnabled))
+		assert.False(t, pod.Spec.Containers[0].Resources.Limits[v1.ResourceMemory].Equal(kubetest.PodMemoryPostStartupLimitsEnabled))
 	})
 
 	t.Run("OkWithoutConflictResizeFalse", func(t *testing.T) {
@@ -473,7 +473,7 @@ func TestPodHelperExpectedAnnotationValueAs(t *testing.T) {
 				name: scalecommon.AnnotationCpuStartup,
 				as:   kubecommon.DataTypeString,
 			},
-			want: kubetest.PodAnnotationCpuStartupEnabled,
+			want: kubetest.PodAnnotationCpuStartup,
 		},
 	}
 	for _, tt := range tests {
@@ -544,7 +544,6 @@ func TestPodHelperResizeStatus(t *testing.T) {
 func TestPodHelperWaitForCacheUpdate(t *testing.T) {
 	t.Run("Ok", func(t *testing.T) {
 		pod := kubetest.NewPodBuilder().Build()
-		pod.ResourceVersion = "123"
 		h := podHelper{
 			client: kubetest.ControllerRuntimeFakeClientWithKubeFake(
 				func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
@@ -564,7 +563,6 @@ func TestPodHelperWaitForCacheUpdate(t *testing.T) {
 
 	t.Run("Timeout", func(t *testing.T) {
 		pod := kubetest.NewPodBuilder().Build()
-		pod.ResourceVersion = "123"
 		h := podHelper{
 			client: kubetest.ControllerRuntimeFakeClientWithKubeFake(
 				func() *kubefake.Clientset { return kubefake.NewClientset(&v1.Pod{}) },
