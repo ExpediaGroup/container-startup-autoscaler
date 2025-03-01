@@ -44,20 +44,8 @@ type containerConfig struct {
 	memoryResizePolicy v1.ResourceResizeRestartPolicy
 }
 
-func NewStartupContainerConfig(cpuEnabled bool, memoryEnabled bool) containerConfig {
-	return newContainerConfigForState(podcommon.StateResourcesStartup)
-}
-
-func NewPostStartupContainerConfig(cpuEnabled bool, memoryEnabled bool) containerConfig {
-	return newContainerConfigForState(podcommon.StateResourcesPostStartup)
-}
-
-func NewUnknownContainerConfig() containerConfig {
-	return newContainerConfigForState(podcommon.StateResourcesUnknown)
-}
-
-// TODO(wt) construct based on cpuEnabled and memoryEnabled
-func newContainerConfigForState(stateResources podcommon.StateResources) containerConfig {
+// TODO(wt) construct based on enabledResources
+func newContainerConfig(enabledResources []v1.ResourceName, stateResources podcommon.StateResources) containerConfig {
 	config := containerConfig{
 		name:               DefaultContainerName,
 		cpuResizePolicy:    DefaultContainerCpuResizePolicy,

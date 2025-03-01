@@ -36,12 +36,8 @@ type ctxConfig struct {
 	standardRetryDelaySecs int
 }
 
-func NewRetryCtxConfig(logBuffer *bytes.Buffer, standardRetryAttempts int, standardRetryDelaySecs int) ctxConfig {
-	return ctxConfig{
-		logBuffer:              logBuffer,
-		standardRetryAttempts:  standardRetryAttempts,
-		standardRetryDelaySecs: standardRetryDelaySecs,
-	}
+func NewCustomCtxConfig() ctxConfig {
+	return ctxConfig{}
 }
 
 func NewNoRetryCtxConfig(logBuffer *bytes.Buffer) ctxConfig {

@@ -34,7 +34,12 @@ func TestStandardRetryConfig(t *testing.T) {
 }
 
 func TestDoStandardRetry(t *testing.T) {
-	ctx := contexttest.NewCtxBuilder(contexttest.NewRetryCtxConfig(nil, 3, 1)).Build()
+	ctx := contexttest.NewCtxBuilder(contexttest.NewCustomCtxConfig()).
+		LogBuffer(nil).
+		StandardRetryAttempts(3).
+		StandardRetryDelaySecs(1).
+		Build()
+
 	start := time.Now()
 	err := DoStandardRetry(ctx, func() error { return errors.New("") })
 	assert.NotNil(t, err)
@@ -43,7 +48,11 @@ func TestDoStandardRetry(t *testing.T) {
 
 func TestDoStandardRetryWithMoreOpts(t *testing.T) {
 	buffer := &bytes.Buffer{}
-	ctx := contexttest.NewCtxBuilder(contexttest.NewRetryCtxConfig(buffer, 3, 1)).Build()
+	ctx := contexttest.NewCtxBuilder(contexttest.NewCustomCtxConfig()).
+		LogBuffer(buffer).
+		StandardRetryAttempts(3).
+		StandardRetryDelaySecs(1).
+		Build()
 	opt := retry.OnRetry(func(n uint, err error) {
 		logging.Errorf(ctx, err, "test")
 	})

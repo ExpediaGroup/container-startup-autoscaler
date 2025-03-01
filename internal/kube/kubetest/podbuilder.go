@@ -23,14 +23,12 @@ import (
 
 // podBuilder builds a test pod.
 type podBuilder struct {
-	// TODO(wt) new, rearrange
 	enabledResources            []v1.ResourceName
 	resourcesState              podcommon.StateResources
 	stateStarted                podcommon.StateBool
 	stateReady                  podcommon.StateBool
 	containerStatusState        v1.ContainerState
 	containerStatusResizeStatus v1.PodResizeStatus
-
 	additionalLabels            map[string]string
 	additionalAnnotations       map[string]string
 	nilContainerStatusStarted   bool

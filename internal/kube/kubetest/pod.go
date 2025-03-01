@@ -110,7 +110,7 @@ type podConfig struct {
 	containerConfig                        containerConfig
 }
 
-// TODO(wt) construct based on cpuEnabled and memoryEnabled (use []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory})
+// TODO(wt) construct based on enabledResources
 func newPodConfig(
 	enabledResources []corev1.ResourceName,
 	stateResources podcommon.StateResources,
@@ -131,7 +131,7 @@ func newPodConfig(
 		statusContainerName:                 DefaultStatusContainerName,
 		statusContainerState:                DefaultPodStatusContainerState,
 		statusResize:                        DefaultPodStatusResize,
-		containerConfig:                     newContainerConfigForState(stateResources),
+		containerConfig:                     newContainerConfig(enabledResources, stateResources),
 	}
 
 	switch stateStarted {

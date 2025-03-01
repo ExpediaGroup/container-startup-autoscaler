@@ -86,16 +86,14 @@ func TestContainerHelperHasStartupProbe(t *testing.T) {
 		{
 			name: "True",
 			args: args{
-				container: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).
-					StartupProbe().
-					Build(),
+				container: kubetest.NewContainerBuilder().StartupProbe().Build(),
 			},
 			want: true,
 		},
 		{
 			name: "False",
 			args: args{
-				container: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container: kubetest.NewContainerBuilder().Build(),
 			},
 			want: false,
 		},
@@ -120,16 +118,14 @@ func TestContainerHelperHasReadinessProbe(t *testing.T) {
 		{
 			name: "True",
 			args: args{
-				container: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).
-					ReadinessProbe().
-					Build(),
+				container: kubetest.NewContainerBuilder().ReadinessProbe().Build(),
 			},
 			want: true,
 		},
 		{
 			name: "False",
 			args: args{
-				container: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container: kubetest.NewContainerBuilder().Build(),
 			},
 			want: false,
 		},
@@ -166,7 +162,7 @@ func TestContainerHelperState(t *testing.T) {
 			name: "Ok",
 			args: args{
 				pod:       kubetest.NewPodBuilder().Build(),
-				container: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container: kubetest.NewContainerBuilder().Build(),
 			},
 			want: kubetest.DefaultPodStatusContainerState,
 		},
@@ -210,7 +206,7 @@ func TestContainerHelperIsStarted(t *testing.T) {
 			name: "True",
 			args: args{
 				pod:       kubetest.NewPodBuilder().StateStartedTrue().StateReadyTrue().Build(),
-				container: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container: kubetest.NewContainerBuilder().Build(),
 			},
 			want: true,
 		},
@@ -218,7 +214,7 @@ func TestContainerHelperIsStarted(t *testing.T) {
 			name: "FalseNotNil",
 			args: args{
 				pod:       kubetest.NewPodBuilder().Build(),
-				container: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container: kubetest.NewContainerBuilder().Build(),
 			},
 			want: false,
 		},
@@ -226,7 +222,7 @@ func TestContainerHelperIsStarted(t *testing.T) {
 			name: "FalseNil",
 			args: args{
 				pod:       kubetest.NewPodBuilder().NilContainerStatusStarted().Build(),
-				container: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container: kubetest.NewContainerBuilder().Build(),
 			},
 			want: false,
 		},
@@ -270,7 +266,7 @@ func TestContainerHelperIsReady(t *testing.T) {
 			name: "True",
 			args: args{
 				pod:       kubetest.NewPodBuilder().StateStartedTrue().StateReadyTrue().Build(),
-				container: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container: kubetest.NewContainerBuilder().Build(),
 			},
 			want: true,
 		},
@@ -278,7 +274,7 @@ func TestContainerHelperIsReady(t *testing.T) {
 			name: "False",
 			args: args{
 				pod:       kubetest.NewPodBuilder().Build(),
-				container: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container: kubetest.NewContainerBuilder().Build(),
 			},
 			want: false,
 		},
@@ -312,9 +308,7 @@ func TestContainerHelperRequests(t *testing.T) {
 		{
 			name: "NilRequests",
 			args: args{
-				container: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).
-					NilRequests().
-					Build(),
+				container:    kubetest.NewContainerBuilder().NilRequests().Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want: resource.Quantity{},
@@ -322,7 +316,7 @@ func TestContainerHelperRequests(t *testing.T) {
 		{
 			name: "Cpu",
 			args: args{
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want: kubetest.PodAnnotationCpuStartupEnabledQuantity,
@@ -330,7 +324,7 @@ func TestContainerHelperRequests(t *testing.T) {
 		{
 			name: "Memory",
 			args: args{
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceMemory,
 			},
 			want: kubetest.PodAnnotationMemoryStartupEnabledQuantity,
@@ -338,7 +332,7 @@ func TestContainerHelperRequests(t *testing.T) {
 		{
 			name: "ResourceNameNotSupported",
 			args: args{
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceConfigMaps,
 			},
 			wantPanicErrMsg: fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
@@ -373,9 +367,7 @@ func TestContainerHelperLimits(t *testing.T) {
 		{
 			name: "NilLimits",
 			args: args{
-				container: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).
-					NilLimits().
-					Build(),
+				container:    kubetest.NewContainerBuilder().NilLimits().Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want: resource.Quantity{},
@@ -383,7 +375,7 @@ func TestContainerHelperLimits(t *testing.T) {
 		{
 			name: "Cpu",
 			args: args{
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want: kubetest.PodAnnotationCpuStartupEnabledQuantity,
@@ -391,7 +383,7 @@ func TestContainerHelperLimits(t *testing.T) {
 		{
 			name: "Memory",
 			args: args{
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceMemory,
 			},
 			want: kubetest.PodAnnotationMemoryStartupEnabledQuantity,
@@ -399,7 +391,7 @@ func TestContainerHelperLimits(t *testing.T) {
 		{
 			name: "ResourceNameNotSupported",
 			args: args{
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceConfigMaps,
 			},
 			wantPanicErrMsg: fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
@@ -435,9 +427,7 @@ func TestContainerHelperResizePolicy(t *testing.T) {
 		{
 			name: "ContainerResizePolicyNull",
 			args: args{
-				container: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).
-					NilResizePolicy().
-					Build(),
+				container:    kubetest.NewContainerBuilder().NilResizePolicy().Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want:       v1.ResourceResizeRestartPolicy(""),
@@ -446,7 +436,7 @@ func TestContainerHelperResizePolicy(t *testing.T) {
 		{
 			name: "Ok",
 			args: args{
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want: v1.NotRequired,
@@ -454,7 +444,7 @@ func TestContainerHelperResizePolicy(t *testing.T) {
 		{
 			name: "ResourceNameNotSupported",
 			args: args{
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceConfigMaps,
 			},
 			wantPanicErrMsg: fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
@@ -497,7 +487,7 @@ func TestContainerHelperCurrentRequests(t *testing.T) {
 			name: "UnableToGetContainerStatus",
 			args: args{
 				pod:          &v1.Pod{},
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want:       resource.Quantity{},
@@ -507,7 +497,7 @@ func TestContainerHelperCurrentRequests(t *testing.T) {
 			name: "StatusResourcesNil",
 			args: args{
 				pod:          kubetest.NewPodBuilder().NilContainerStatusResources().Build(),
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want:       resource.Quantity{},
@@ -517,7 +507,7 @@ func TestContainerHelperCurrentRequests(t *testing.T) {
 			name: "Cpu",
 			args: args{
 				pod:          kubetest.NewPodBuilder().Build(),
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want: kubetest.PodAnnotationCpuStartupEnabledQuantity,
@@ -526,7 +516,7 @@ func TestContainerHelperCurrentRequests(t *testing.T) {
 			name: "Memory",
 			args: args{
 				pod:          kubetest.NewPodBuilder().Build(),
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceMemory,
 			},
 			want: kubetest.PodAnnotationMemoryStartupEnabledQuantity,
@@ -535,7 +525,7 @@ func TestContainerHelperCurrentRequests(t *testing.T) {
 			name: "ResourceNameNotSupported",
 			args: args{
 				pod:          kubetest.NewPodBuilder().Build(),
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceConfigMaps,
 			},
 			wantPanicErrMsg: fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
@@ -580,7 +570,7 @@ func TestContainerHelperCurrentLimits(t *testing.T) {
 			name: "UnableToGetContainerStatus",
 			args: args{
 				pod:          &v1.Pod{},
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want:       resource.Quantity{},
@@ -590,7 +580,7 @@ func TestContainerHelperCurrentLimits(t *testing.T) {
 			name: "StatusResourcesNil",
 			args: args{
 				pod:          kubetest.NewPodBuilder().NilContainerStatusResources().Build(),
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want:       resource.Quantity{},
@@ -600,7 +590,7 @@ func TestContainerHelperCurrentLimits(t *testing.T) {
 			name: "Cpu",
 			args: args{
 				pod:          kubetest.NewPodBuilder().Build(),
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want: kubetest.PodAnnotationCpuStartupEnabledQuantity,
@@ -609,7 +599,7 @@ func TestContainerHelperCurrentLimits(t *testing.T) {
 			name: "Memory",
 			args: args{
 				pod:          kubetest.NewPodBuilder().Build(),
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceMemory,
 			},
 			want: kubetest.PodAnnotationMemoryStartupEnabledQuantity,
@@ -618,7 +608,7 @@ func TestContainerHelperCurrentLimits(t *testing.T) {
 			name: "ResourceNameNotSupported",
 			args: args{
 				pod:          kubetest.NewPodBuilder().Build(),
-				container:    kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceConfigMaps,
 			},
 			wantPanicErrMsg: fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),

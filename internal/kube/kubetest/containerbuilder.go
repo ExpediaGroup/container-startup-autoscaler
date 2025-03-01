@@ -16,20 +16,37 @@ limitations under the License.
 
 package kubetest
 
-import "k8s.io/api/core/v1"
+import (
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"k8s.io/api/core/v1"
+)
 
 // ctxBuilder builds a test container.
 type containerBuilder struct {
-	config          containerConfig
-	startupProbe    bool
-	readinessProbe  bool
-	nilResizePolicy bool
-	nilRequests     bool
-	nilLimits       bool
+	enabledResources []v1.ResourceName
+	resourcesState   podcommon.StateResources
+	startupProbe     bool
+	readinessProbe   bool
+	nilResizePolicy  bool
+	nilRequests      bool
+	nilLimits        bool
 }
 
-func NewContainerBuilder(config containerConfig) *containerBuilder {
-	return &containerBuilder{config: config}
+func NewContainerBuilder() *containerBuilder {
+	b := &containerBuilder{}
+	b.enabledResources = []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory}
+	b.resourcesState = podcommon.StateResourcesStartup
+	return b
+}
+
+func (b *containerBuilder) EnabledResources(enabledResources []v1.ResourceName) *containerBuilder {
+	b.enabledResources = enabledResources
+	return b
+}
+
+func (b *containerBuilder) ResourcesStatePostStartup() *containerBuilder {
+	b.resourcesState = podcommon.StateResourcesPostStartup
+	return b
 }
 
 func (b *containerBuilder) StartupProbe() *containerBuilder {
@@ -58,7 +75,9 @@ func (b *containerBuilder) NilLimits() *containerBuilder {
 }
 
 func (b *containerBuilder) Build() *v1.Container {
-	c := container(b.config)
+	// TODO(wt) move everything from container.go and remove container.go
+
+	c := container(newContainerConfig(b.enabledResources, b.resourcesState))
 
 	if b.startupProbe {
 		c.StartupProbe = &v1.Probe{}

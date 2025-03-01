@@ -16,7 +16,10 @@ limitations under the License.
 
 package contexttest
 
-import "context"
+import (
+	"bytes"
+	"context"
+)
 
 // ctxBuilder builds a test context.
 type ctxBuilder struct {
@@ -27,6 +30,23 @@ func NewCtxBuilder(config ctxConfig) *ctxBuilder {
 	return &ctxBuilder{config: config}
 }
 
+func (b *ctxBuilder) LogBuffer(logBuffer *bytes.Buffer) *ctxBuilder {
+	b.config.logBuffer = logBuffer
+	return b
+}
+
+func (b *ctxBuilder) StandardRetryAttempts(standardRetryAttempts int) *ctxBuilder {
+	b.config.standardRetryAttempts = standardRetryAttempts
+	return b
+}
+
+func (b *ctxBuilder) StandardRetryDelaySecs(standardRetryDelaySecs int) *ctxBuilder {
+	b.config.standardRetryDelaySecs = standardRetryDelaySecs
+	return b
+}
+
 func (b *ctxBuilder) Build() context.Context {
+	// TODO(wt) move everything from context.go and remove context.go
+
 	return ctx(b.config)
 }

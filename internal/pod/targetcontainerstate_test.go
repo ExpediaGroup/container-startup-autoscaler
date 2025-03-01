@@ -109,7 +109,7 @@ func TestTargetContainerStateStates(t *testing.T) {
 		},
 		{
 			name:            "UnableToDetermineStatusResourcesStates",
-			targetContainer: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+			targetContainer: kubetest.NewContainerBuilder().Build(),
 			configMockFunc: func(m *kubetest.MockContainerHelper) {
 				m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
 					Return(resource.Quantity{}, errors.New(""))
@@ -190,7 +190,7 @@ func TestTargetContainerStateStates(t *testing.T) {
 		},
 		{
 			name:            "StateStatusResourcesNotShouldReturnError",
-			targetContainer: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+			targetContainer: kubetest.NewContainerBuilder().Build(),
 			configMockFunc: func(m *kubetest.MockContainerHelper) {
 				m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
 					Return(resource.Quantity{}, kube.NewContainerStatusNotPresentError())
@@ -213,7 +213,7 @@ func TestTargetContainerStateStates(t *testing.T) {
 		},
 		{
 			name:            string(podcommon.StateResourcesStartup),
-			targetContainer: kubetest.NewContainerBuilder(kubetest.NewStartupContainerConfig(true, true)).Build(),
+			targetContainer: kubetest.NewContainerBuilder().Build(),
 			configMockFunc: func(m *kubetest.MockContainerHelper) {
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
@@ -228,7 +228,7 @@ func TestTargetContainerStateStates(t *testing.T) {
 		},
 		{
 			name:            string(podcommon.StateResourcesPostStartup),
-			targetContainer: kubetest.NewContainerBuilder(kubetest.NewPostStartupContainerConfig(true, true)).Build(),
+			targetContainer: kubetest.NewContainerBuilder().Build(),
 			configMockFunc: func(m *kubetest.MockContainerHelper) {
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
@@ -243,7 +243,7 @@ func TestTargetContainerStateStates(t *testing.T) {
 		},
 		{
 			name:            string(podcommon.StateResourcesUnknown),
-			targetContainer: kubetest.NewContainerBuilder(kubetest.NewUnknownContainerConfig()).Build(),
+			targetContainer: kubetest.NewContainerBuilder().Build(),
 			configMockFunc: func(m *kubetest.MockContainerHelper) {
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
