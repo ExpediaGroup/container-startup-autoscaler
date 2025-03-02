@@ -37,14 +37,14 @@ import (
 
 func TestNewValidation(t *testing.T) {
 	recorder := &record.FakeRecorder{}
-	helper := kube.NewPodHelper(nil)
-	cHelper := kube.NewContainerHelper()
-	stat := newStatus(helper)
-	val := newValidation(recorder, stat, helper, cHelper)
+	podHelper := kube.NewPodHelper(nil)
+	containerHelper := kube.NewContainerHelper()
+	stat := newStatus(podHelper)
+	val := newValidation(recorder, stat, podHelper, containerHelper)
 	assert.Equal(t, recorder, val.recorder)
 	assert.Equal(t, stat, val.status)
-	assert.Equal(t, helper, val.podHelper)
-	assert.Equal(t, cHelper, val.containerHelper)
+	assert.Equal(t, podHelper, val.podHelper)
+	assert.Equal(t, containerHelper, val.containerHelper)
 }
 
 func TestValidationValidate(t *testing.T) {

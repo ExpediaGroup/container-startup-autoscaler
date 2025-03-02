@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 // TODO(wt) tests, comments
+// TODO(wt) check all method comments - might be out of date now
 // TODO(wt) ensure integration tests with only one of cpu/memory enabled
 // TODO(wt) ensure docs up to date completely - cpu/memory now optional (but at least one required)
 

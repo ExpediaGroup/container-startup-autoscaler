@@ -14,8 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// TODO(wt) tests, comments
-
 package pod
 
 import (
@@ -25,10 +23,12 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+// Configuration performs operations relating to configuration.
 type Configuration interface {
 	Configure(*v1.Pod) (scale.Configs, error)
 }
 
+// configuration is the default implementation of Configuration.
 type configuration struct {
 	podHelper       kube.PodHelper
 	containerHelper kube.ContainerHelper
@@ -44,6 +44,7 @@ func newConfiguration(
 	}
 }
 
+// Configure performs configuration tasks using the supplied pod.
 func (c *configuration) Configure(pod *v1.Pod) (scale.Configs, error) {
 	configs := scale.NewConfigs(c.podHelper, c.containerHelper)
 

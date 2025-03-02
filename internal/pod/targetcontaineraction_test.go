@@ -41,14 +41,14 @@ package pod
 //
 //func TestNewTargetContainerAction(t *testing.T) {
 //	config := controllercommon.ControllerConfig{}
-//	helper := kube.NewPodHelper(nil)
-//	cHelper := kube.NewContainerHelper()
+//	podHelper := kube.NewPodHelper(nil)
+//	containerHelper := kube.NewContainerHelper()
 //	stat := newStatus(helper)
-//	s := newTargetContainerAction(config, &record.FakeRecorder{}, stat, helper, cHelper)
+//	s := newTargetContainerAction(config, &record.FakeRecorder{}, stat, podHelper, containerHelper)
 //	assert.Equal(t, config, s.controllerConfig)
 //	assert.Equal(t, stat, s.status)
-//	assert.Equal(t, helper, s.podHelper)
-//	assert.Equal(t, cHelper, s.containerHelper)
+//	assert.Equal(t, podHelper, s.podHelper)
+//	assert.Equal(t, containerHelper, s.containerHelper)
 //}
 //
 //func TestTargetContainerActionExecute(t *testing.T) {

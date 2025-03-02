@@ -35,6 +35,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
+func TestNewStatus(t *testing.T) {
+	podHelper := kube.NewPodHelper(nil)
+	status := newStatus(podHelper)
+	assert.Equal(t, podHelper, status.podHelper)
+}
+
 func TestStatusUpdateCore(t *testing.T) {
 	t.Run("UnableToPatchPod", func(t *testing.T) {
 		s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(

@@ -59,9 +59,7 @@ func newValidation(
 	}
 }
 
-// Validate performs core validation using the supplied pod. Populates (or repopulates) scaleConfigToPopulate;
-// additional arbitrary code may be run immediately after the scale configuration is populated via
-// afterScaleConfigPopulatedFunc.
+// Validate performs core validation using the supplied pod.
 func (v *validation) Validate(
 	ctx context.Context,
 	pod *v1.Pod,
