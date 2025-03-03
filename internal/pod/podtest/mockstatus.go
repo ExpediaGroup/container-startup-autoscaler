@@ -42,9 +42,14 @@ func NewMockStatus(configFunc func(*MockStatus)) *MockStatus {
 }
 
 func NewMockStatusWithRun(configFunc func(*MockStatus, func()), run func()) *MockStatus {
-	mockStatus := &MockStatus{}
-	configFunc(mockStatus, run)
-	return mockStatus
+	m := &MockStatus{}
+	if configFunc != nil {
+		configFunc(m, run)
+	} else {
+		m.AllDefaults()
+	}
+
+	return m
 }
 
 func (m *MockStatus) Update(
