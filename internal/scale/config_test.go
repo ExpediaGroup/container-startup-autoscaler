@@ -190,7 +190,7 @@ func TestConfigStoreFromAnnotations(t *testing.T) {
 				annotationStartupName: scalecommon.AnnotationCpuStartup,
 				csaEnabled:            true,
 				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
-					m.On("ExpectedAnnotationValueAs", mock.Anything, mock.Anything, kubecommon.DataTypeString).
+					m.On("ExpectedAnnotationValueAs", mock.Anything, mock.Anything, mock.Anything).
 						Return("", errors.New(""))
 					m.HasAnnotationDefault()
 				}),
@@ -206,7 +206,7 @@ func TestConfigStoreFromAnnotations(t *testing.T) {
 				annotationStartupName: scalecommon.AnnotationCpuStartup,
 				csaEnabled:            true,
 				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
-					m.On("ExpectedAnnotationValueAs", mock.Anything, mock.Anything, kubecommon.DataTypeString).
+					m.On("ExpectedAnnotationValueAs", mock.Anything, mock.Anything, mock.Anything).
 						Return("test", nil)
 					m.HasAnnotationDefault()
 				}),
