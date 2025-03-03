@@ -19,6 +19,8 @@ package pod
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -26,13 +28,13 @@ import (
 // Pod is a facade (and the only package-external entry point) for pod interaction and contains a number of services.
 // It only exposes exported services methods via their corresponding interfaces.
 type Pod struct {
-	Configuration         Configuration
-	Validation            Validation
-	TargetContainerState  TargetContainerState
-	TargetContainerAction TargetContainerAction
-	Status                Status
-	PodHelper             kube.PodHelper
-	ContainerHelper       kube.ContainerHelper
+	Configuration         podcommon.Configuration
+	Validation            podcommon.Validation
+	TargetContainerState  podcommon.TargetContainerState
+	TargetContainerAction podcommon.TargetContainerAction
+	Status                podcommon.Status
+	PodHelper             kubecommon.PodHelper
+	ContainerHelper       kubecommon.ContainerHelper
 }
 
 func NewPod(

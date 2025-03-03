@@ -21,29 +21,15 @@ import (
 	"fmt"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-// ContainerHelper performs operations relating to Kube containers.
-type ContainerHelper interface {
-	Get(*v1.Pod, string) (*v1.Container, error)
-	HasStartupProbe(*v1.Container) bool
-	HasReadinessProbe(*v1.Container) bool
-	State(*v1.Pod, *v1.Container) (v1.ContainerState, error)
-	IsStarted(*v1.Pod, *v1.Container) (bool, error)
-	IsReady(*v1.Pod, *v1.Container) (bool, error)
-	Requests(*v1.Container, v1.ResourceName) resource.Quantity
-	Limits(*v1.Container, v1.ResourceName) resource.Quantity
-	ResizePolicy(*v1.Container, v1.ResourceName) (v1.ResourceResizeRestartPolicy, error)
-	CurrentRequests(*v1.Pod, *v1.Container, v1.ResourceName) (resource.Quantity, error)
-	CurrentLimits(*v1.Pod, *v1.Container, v1.ResourceName) (resource.Quantity, error)
-}
-
 // containerHelper is the default implementation of ContainerHelper.
 type containerHelper struct{}
 
-func NewContainerHelper() ContainerHelper {
+func NewContainerHelper() kubecommon.ContainerHelper {
 	return containerHelper{}
 }
 

@@ -18,25 +18,21 @@ package pod
 
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	v1 "k8s.io/api/core/v1"
 )
 
-// Configuration performs operations relating to configuration.
-type Configuration interface {
-	Configure(*v1.Pod) (scale.Configs, error)
-}
-
 // configuration is the default implementation of Configuration.
 type configuration struct {
-	podHelper       kube.PodHelper
-	containerHelper kube.ContainerHelper
+	podHelper       kubecommon.PodHelper
+	containerHelper kubecommon.ContainerHelper
 }
 
 func newConfiguration(
-	podHelper kube.PodHelper,
-	containerHelper kube.ContainerHelper,
+	podHelper kubecommon.PodHelper,
+	containerHelper kubecommon.ContainerHelper,
 ) *configuration {
 	return &configuration{
 		podHelper:       podHelper,
@@ -45,7 +41,7 @@ func newConfiguration(
 }
 
 // Configure performs configuration tasks using the supplied pod.
-func (c *configuration) Configure(pod *v1.Pod) (scale.Configs, error) {
+func (c *configuration) Configure(pod *v1.Pod) (scalecommon.Configs, error) {
 	configs := scale.NewConfigs(c.podHelper, c.containerHelper)
 
 	if err := configs.StoreFromAnnotationsAll(pod); err != nil {

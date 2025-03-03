@@ -18,30 +18,22 @@ package scale
 
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
 )
 
-type State interface {
-	ResourceName() v1.ResourceName
-	IsStartupConfigApplied(*v1.Container) *bool
-	IsPostStartupConfigApplied(*v1.Container) *bool
-	IsAnyCurrentZero(*v1.Pod, *v1.Container) (*bool, error)
-	DoesRequestsCurrentMatchSpec(*v1.Pod, *v1.Container) (*bool, error)
-	DoesLimitsCurrentMatchSpec(*v1.Pod, *v1.Container) (*bool, error)
-}
-
 type state struct {
 	resourceName    v1.ResourceName
-	config          Config
-	containerHelper kube.ContainerHelper
+	config          scalecommon.Config
+	containerHelper kubecommon.ContainerHelper
 }
 
 func NewState(
 	resourceName v1.ResourceName,
-	config Config,
-	containerHelper kube.ContainerHelper,
-) *state {
+	config scalecommon.Config,
+	containerHelper kubecommon.ContainerHelper,
+) scalecommon.State {
 	return &state{
 		resourceName:    resourceName,
 		config:          config,

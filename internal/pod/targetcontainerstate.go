@@ -22,23 +22,20 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
 )
 
-// TargetContainerState performs operations relating to determining target container state.
-type TargetContainerState interface {
-	States(context.Context, *v1.Pod, *v1.Container, scale.Configs) (podcommon.States, error)
-}
-
 // targetContainerState is the default implementation of TargetContainerState.
 type targetContainerState struct {
-	containerHelper kube.ContainerHelper
+	containerHelper kubecommon.ContainerHelper
 }
 
-func newTargetContainerState(containerHelper kube.ContainerHelper) targetContainerState {
+func newTargetContainerState(containerHelper kubecommon.ContainerHelper) targetContainerState {
 	return targetContainerState{containerHelper: containerHelper}
 }
 
@@ -47,7 +44,7 @@ func (s targetContainerState) States(
 	ctx context.Context,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) (podcommon.States, error) {
 	ret := podcommon.NewStatesAllUnknown()
 	ret.StartupProbe = s.stateStartupProbe(targetContainer)
@@ -181,7 +178,7 @@ func (s targetContainerState) stateResources(
 func (s targetContainerState) stateStatusResources(
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleStates scale.States,
+	scaleStates scalecommon.States,
 ) (podcommon.StateStatusResources, error) {
 	zero, err := scaleStates.IsAnyCurrentZeroAll(pod, targetContainer)
 	if err != nil {

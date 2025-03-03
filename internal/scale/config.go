@@ -14,6 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// TODO(wt) tests, comments
+// TODO(wt) check all method comments - might be out of date now
+// TODO(wt) ensure integration tests with only one of cpu/memory enabled
+// TODO(wt) ensure docs up to date completely - cpu/memory now optional (but at least one required)
+
 package scale
 
 import (
@@ -21,20 +26,11 @@ import (
 	"fmt"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
-
-type Config interface {
-	ResourceName() v1.ResourceName
-	IsEnabled() bool
-	Resources() Resources
-	StoreFromAnnotations(*v1.Pod) error
-	Validate(*v1.Container) error
-	String() string
-}
 
 type config struct {
 	resourceName                      v1.ResourceName
@@ -42,12 +38,12 @@ type config struct {
 	annotationPostStartupRequestsName string
 	annotationPostStartupLimitsName   string
 	csaEnabled                        bool
-	podHelper                         kube.PodHelper
-	containerHelper                   kube.ContainerHelper
+	podHelper                         kubecommon.PodHelper
+	containerHelper                   kubecommon.ContainerHelper
 
 	hasStoredFromAnnotations bool
 	userEnabled              bool
-	resources                Resources
+	resources                scalecommon.Resources
 }
 
 func NewConfig(
@@ -56,9 +52,9 @@ func NewConfig(
 	annotationPostStartupRequestsName string,
 	annotationPostStartupLimitsName string,
 	csaEnabled bool,
-	podHelper kube.PodHelper,
-	containerHelper kube.ContainerHelper,
-) *config {
+	podHelper kubecommon.PodHelper,
+	containerHelper kubecommon.ContainerHelper,
+) scalecommon.Config {
 	return &config{
 		resourceName:                      resourceName,
 		annotationStartupName:             annotationStartupName,
@@ -79,7 +75,7 @@ func (c *config) IsEnabled() bool {
 	return c.csaEnabled && c.userEnabled
 }
 
-func (c *config) Resources() Resources {
+func (c *config) Resources() scalecommon.Resources {
 	c.checkStored()
 	return c.resources
 }
@@ -131,7 +127,7 @@ func (c *config) StoreFromAnnotations(pod *v1.Pod) error {
 	}
 
 	c.userEnabled = true
-	c.resources = newResources(startup, postStartupRequests, postStartupLimits)
+	c.resources = scalecommon.NewResources(startup, postStartupRequests, postStartupLimits)
 	c.hasStoredFromAnnotations = true
 
 	return nil
@@ -210,23 +206,5 @@ func (c *config) String() string {
 func (c *config) checkStored() {
 	if !c.hasStoredFromAnnotations {
 		panic(errors.New("StoreFromAnnotations() hasn't been invoked first"))
-	}
-}
-
-type Resources struct {
-	Startup             resource.Quantity
-	PostStartupRequests resource.Quantity
-	PostStartupLimits   resource.Quantity
-}
-
-func newResources(
-	startup resource.Quantity,
-	postStartupRequests resource.Quantity,
-	postStartupLimits resource.Quantity,
-) Resources {
-	return Resources{
-		Startup:             startup,
-		PostStartupRequests: postStartupRequests,
-		PostStartupLimits:   postStartupLimits,
 	}
 }

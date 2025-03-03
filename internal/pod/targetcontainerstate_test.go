@@ -24,7 +24,7 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scaletest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -262,7 +262,7 @@ func TestTargetContainerStateStates(t *testing.T) {
 			s := newTargetContainerState(kubetest.NewMockContainerHelper(tt.configMockFunc))
 
 			cpuConfig := scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
-				m.On("Resources").Return(scale.Resources{
+				m.On("Resources").Return(scalecommon.Resources{
 					Startup:             kubetest.PodCpuStartupEnabled,
 					PostStartupRequests: kubetest.PodCpuPostStartupRequestsEnabled,
 					PostStartupLimits:   kubetest.PodCpuPostStartupLimitsEnabled,
@@ -271,7 +271,7 @@ func TestTargetContainerStateStates(t *testing.T) {
 			})
 
 			memoryConfig := scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
-				m.On("Resources").Return(scale.Resources{
+				m.On("Resources").Return(scalecommon.Resources{
 					Startup:             kubetest.PodMemoryStartupEnabled,
 					PostStartupRequests: kubetest.PodMemoryPostStartupRequestsEnabled,
 					PostStartupLimits:   kubetest.PodMemoryPostStartupLimitsEnabled,

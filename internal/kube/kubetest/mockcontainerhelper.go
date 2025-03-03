@@ -129,13 +129,13 @@ func (m *MockContainerHelper) IsReadyDefault() {
 }
 
 func (m *MockContainerHelper) RequestsDefault() {
-	m.On("Requests", mock.Anything, v1.ResourceCPU).Return(MockDefaultCpuQuantity)
-	m.On("Requests", mock.Anything, v1.ResourceMemory).Return(MockDefaultMemoryQuantity)
+	m.On("Requests", mock.Anything, v1.ResourceCPU).Return(PodCpuStartupEnabled)
+	m.On("Requests", mock.Anything, v1.ResourceMemory).Return(PodMemoryStartupEnabled)
 }
 
 func (m *MockContainerHelper) LimitsDefault() {
-	m.On("Limits", mock.Anything, v1.ResourceCPU).Return(MockDefaultCpuQuantity)
-	m.On("Limits", mock.Anything, v1.ResourceMemory).Return(MockDefaultMemoryQuantity)
+	m.On("Limits", mock.Anything, v1.ResourceCPU).Return(PodCpuStartupEnabled)
+	m.On("Limits", mock.Anything, v1.ResourceMemory).Return(PodMemoryStartupEnabled)
 }
 
 func (m *MockContainerHelper) ResizePolicyDefault() {
@@ -143,13 +143,13 @@ func (m *MockContainerHelper) ResizePolicyDefault() {
 }
 
 func (m *MockContainerHelper) CurrentRequestsDefault() {
-	m.On("CurrentRequests", mock.Anything, mock.Anything, v1.ResourceCPU).Return(MockDefaultCpuQuantity, nil)
-	m.On("CurrentRequests", mock.Anything, mock.Anything, v1.ResourceMemory).Return(MockDefaultMemoryQuantity, nil)
+	m.On("CurrentRequests", mock.Anything, mock.Anything, v1.ResourceCPU).Return(PodCpuStartupEnabled, nil)
+	m.On("CurrentRequests", mock.Anything, mock.Anything, v1.ResourceMemory).Return(PodMemoryStartupEnabled, nil)
 }
 
 func (m *MockContainerHelper) CurrentLimitsDefault() {
-	m.On("CurrentLimits", mock.Anything, mock.Anything, v1.ResourceCPU).Return(MockDefaultCpuQuantity, nil)
-	m.On("CurrentLimits", mock.Anything, mock.Anything, v1.ResourceMemory).Return(MockDefaultMemoryQuantity, nil)
+	m.On("CurrentLimits", mock.Anything, mock.Anything, v1.ResourceCPU).Return(PodCpuStartupEnabled, nil)
+	m.On("CurrentLimits", mock.Anything, mock.Anything, v1.ResourceMemory).Return(PodMemoryStartupEnabled, nil)
 }
 
 func (m *MockContainerHelper) AllDefaults() {

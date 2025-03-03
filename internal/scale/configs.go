@@ -14,38 +14,18 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// TODO(wt) tests, comments
-// TODO(wt) check all method comments - might be out of date now
-// TODO(wt) ensure integration tests with only one of cpu/memory enabled
-// TODO(wt) ensure docs up to date completely - cpu/memory now optional (but at least one required)
-
 package scale
 
 import (
 	"errors"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
 )
 
-type Configs interface {
-	TargetContainerName(*v1.Pod) (string, error)
-	StoreFromAnnotationsAll(*v1.Pod) error
-	ValidateAll(*v1.Container) error
-	ValidateCollection() error
-
-	ConfigFor(v1.ResourceName) Config
-	AllConfigs() []Config
-	AllEnabledConfigs() []Config
-	AllEnabledConfigsResourceNames() []v1.ResourceName
-
-	String() string
-}
-
-func NewConfigs(podHelper kube.PodHelper, containerHelper kube.ContainerHelper) Configs {
+func NewConfigs(podHelper kubecommon.PodHelper, containerHelper kubecommon.ContainerHelper) scalecommon.Configs {
 	return &configs{
 		cpuConfig: NewConfig(
 			v1.ResourceCPU,
@@ -70,10 +50,10 @@ func NewConfigs(podHelper kube.PodHelper, containerHelper kube.ContainerHelper) 
 }
 
 type configs struct {
-	cpuConfig    Config
-	memoryConfig Config
+	cpuConfig    scalecommon.Config
+	memoryConfig scalecommon.Config
 
-	podHelper kube.PodHelper
+	podHelper kubecommon.PodHelper
 }
 
 func (c *configs) TargetContainerName(pod *v1.Pod) (string, error) {
@@ -126,7 +106,7 @@ func (c *configs) ValidateCollection() error {
 	return nil
 }
 
-func (c *configs) ConfigFor(resourceName v1.ResourceName) Config {
+func (c *configs) ConfigFor(resourceName v1.ResourceName) scalecommon.Config {
 	switch resourceName {
 	case v1.ResourceCPU:
 		return c.cpuConfig
@@ -137,12 +117,12 @@ func (c *configs) ConfigFor(resourceName v1.ResourceName) Config {
 	}
 }
 
-func (c *configs) AllConfigs() []Config {
-	return []Config{c.cpuConfig, c.memoryConfig}
+func (c *configs) AllConfigs() []scalecommon.Config {
+	return []scalecommon.Config{c.cpuConfig, c.memoryConfig}
 }
 
-func (c *configs) AllEnabledConfigs() []Config {
-	var enabledConfigs []Config
+func (c *configs) AllEnabledConfigs() []scalecommon.Config {
+	var enabledConfigs []scalecommon.Config
 
 	for _, config := range c.AllConfigs() {
 		if config.IsEnabled() {

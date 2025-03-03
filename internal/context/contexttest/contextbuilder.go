@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"context"
 
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contextcommon"
+	context2 "github.com/ExpediaGroup/container-startup-autoscaler/internal/context"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/go-logr/logr"
 	"github.com/google/uuid"
@@ -62,7 +62,7 @@ func (b *ctxBuilder) Build() context.Context {
 	}
 
 	c = context.WithValue(c, KeyUuid, uuid.New().String())
-	c = context.WithValue(c, contextcommon.KeyStandardRetryAttempts, b.config.standardRetryAttempts)
-	c = context.WithValue(c, contextcommon.KeyStandardRetryDelaySecs, b.config.standardRetryDelaySecs)
+	c = context.WithValue(c, context2.KeyStandardRetryAttempts, b.config.standardRetryAttempts)
+	c = context.WithValue(c, context2.KeyStandardRetryDelaySecs, b.config.standardRetryDelaySecs)
 	return c
 }

@@ -26,7 +26,6 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podtest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scaletest"
 	"github.com/stretchr/testify/assert"
@@ -65,7 +64,7 @@ func TestValidationValidate(t *testing.T) {
 				m.UpdateDefaultAndRun(run)
 			},
 			configPodHelperMockFunc: func(m *kubetest.MockPodHelper) {
-				m.On("ExpectedLabelValueAs", mock.Anything, podcommon.LabelEnabled, kubecommon.DataTypeBool).
+				m.On("ExpectedLabelValueAs", mock.Anything, kubecommon.LabelEnabled, kubecommon.DataTypeBool).
 					Return(nil, errors.New(""))
 			},
 			wantErrMsg:       "unable to get pod enabled label value",
@@ -79,7 +78,7 @@ func TestValidationValidate(t *testing.T) {
 				m.UpdateDefaultAndRun(run)
 			},
 			configPodHelperMockFunc: func(m *kubetest.MockPodHelper) {
-				m.On("ExpectedLabelValueAs", mock.Anything, podcommon.LabelEnabled, kubecommon.DataTypeBool).
+				m.On("ExpectedLabelValueAs", mock.Anything, kubecommon.LabelEnabled, kubecommon.DataTypeBool).
 					Return(false, nil)
 			},
 			wantErrMsg:       "pod enabled label value is unexpectedly 'false'",
@@ -93,7 +92,7 @@ func TestValidationValidate(t *testing.T) {
 				m.UpdateDefaultAndRun(run)
 			},
 			configPodHelperMockFunc: func(m *kubetest.MockPodHelper) {
-				m.On("HasAnnotation", mock.Anything, podcommon.KnownVpaAnnotations[0]).Return(true, "")
+				m.On("HasAnnotation", mock.Anything, KnownVpaAnnotations[0]).Return(true, "")
 				m.ExpectedLabelValueAsDefault()
 			},
 			wantErrMsg:       "vpa not supported",

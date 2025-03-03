@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package podcommon
+package pod
 
 import (
 	"testing"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 )
@@ -26,12 +27,12 @@ import (
 func TestNewStatusAnnotation(t *testing.T) {
 	statAnn := NewStatusAnnotation(
 		"status",
-		States{},
+		podcommon.States{},
 		StatusAnnotationScale{},
 		"lastUpdated",
 	)
 	assert.Equal(t, "status", statAnn.Status)
-	assert.Equal(t, States{}, statAnn.States)
+	assert.Equal(t, podcommon.States{}, statAnn.States)
 	assert.Equal(t, StatusAnnotationScale{}, statAnn.Scale)
 	assert.Equal(t, "lastUpdated", statAnn.LastUpdated)
 }
@@ -39,7 +40,7 @@ func TestNewStatusAnnotation(t *testing.T) {
 func TestStatusAnnotationJson(t *testing.T) {
 	j := NewStatusAnnotation(
 		"status",
-		NewStates("1", "2", "3", "4", "5", "6", "7"),
+		podcommon.NewStates("1", "2", "3", "4", "5", "6", "7"),
 		NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, "lastCommanded", "lastEnacted", "lastFailed"),
 		"lastUpdated",
 	).Json()
@@ -115,7 +116,7 @@ func TestStatusAnnotationFromString(t *testing.T) {
 			t,
 			NewStatusAnnotation(
 				"status",
-				NewStates("1", "2", "3", "4", "5", "6", "7"),
+				podcommon.NewStates("1", "2", "3", "4", "5", "6", "7"),
 				NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, "lastCommanded", "lastEnacted", "lastFailed"),
 				"lastUpdated",
 			),

@@ -28,7 +28,6 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/informercache"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/retry"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
@@ -427,7 +426,7 @@ func TestPodHelperExpectedLabelValueAs(t *testing.T) {
 			name: "Ok",
 			args: args{
 				pod:  kubetest.NewPodBuilder().Build(),
-				name: podcommon.LabelEnabled,
+				name: kubecommon.LabelEnabled,
 				as:   kubecommon.DataTypeBool,
 			},
 			want: true,

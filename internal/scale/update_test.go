@@ -14,16 +14,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubetest
+package scale
 
-import "k8s.io/apimachinery/pkg/api/resource"
+import (
+	"testing"
 
-const (
-	MockDefaultCpu    = "1m"
-	MockDefaultMemory = "1M"
+	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 )
 
-var (
-	MockDefaultCpuQuantity    = resource.MustParse(MockDefaultCpu)
-	MockDefaultMemoryQuantity = resource.MustParse(MockDefaultMemory)
-)
+func TestNewUpdate(t *testing.T) {
+	resourceName := v1.ResourceCPU
+	update := NewUpdate(resourceName, nil)
+	assert.Equal(t, resourceName, update.ResourceName())
+}
+
+func TestUpdateResourceName(t *testing.T) {
+}
+
+func TestUpdateStartupPodMutationFunc(t *testing.T) {
+}
+
+func TestUpdatePostStartupPodMutationFunc(t *testing.T) {
+}

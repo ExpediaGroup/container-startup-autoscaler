@@ -25,7 +25,8 @@ import (
 	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
 	"k8s.io/api/core/v1"
 )
 
@@ -113,11 +114,11 @@ func csaWaitStatus(
 	podName string,
 	waitMsgContains string,
 	timeoutSecs int,
-) (*v1.Pod, podcommon.StatusAnnotation, error) {
+) (*v1.Pod, pod.StatusAnnotation, error) {
 	logMessage(t, fmt.Sprintf("waiting for csa status '%s' for pod '%s/%s'", waitMsgContains, podNamespace, podName))
 
 	var retPod *v1.Pod
-	retStatusAnn := podcommon.StatusAnnotation{}
+	retStatusAnn := pod.StatusAnnotation{}
 	started := time.Now()
 	lastStatusAnnJson := ""
 	getAgain := true
@@ -137,14 +138,14 @@ func csaWaitStatus(
 			return retPod, retStatusAnn, err
 		}
 
-		statusAnnStr, exists := pod.Annotations[podcommon.AnnotationStatus]
+		statusAnnStr, exists := pod.Annotations[kubecommon.AnnotationStatus]
 		if !exists {
 			logMessage(t, fmt.Sprintf("csa status for pod '%s/%s' doesn't yet exist", podNamespace, podName))
 			time.Sleep(csaStatusWaitMillis * time.Millisecond)
 			continue
 		}
 
-		statusAnn, err := podcommon.StatusAnnotationFromString(statusAnnStr)
+		statusAnn, err := pod.StatusAnnotationFromString(statusAnnStr)
 		if err != nil {
 			return retPod,
 				retStatusAnn,
@@ -182,8 +183,8 @@ func csaWaitStatusAll(
 	podNames []string,
 	waitMsgContains string,
 	timeoutSecs int,
-) (map[*v1.Pod]podcommon.StatusAnnotation, []error) {
-	retMap := make(map[*v1.Pod]podcommon.StatusAnnotation)
+) (map[*v1.Pod]pod.StatusAnnotation, []error) {
+	retMap := make(map[*v1.Pod]pod.StatusAnnotation)
 	var retErrs []error
 	var wg sync.WaitGroup
 	var mutex sync.Mutex

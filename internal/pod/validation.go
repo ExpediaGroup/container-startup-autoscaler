@@ -21,35 +21,29 @@ import (
 	"fmt"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 )
 
 const eventReasonValidation = "Validation"
 
-// Validation performs operations relating to validation.
-type Validation interface {
-	Validate(context.Context, *v1.Pod, string, scale.Configs) (*v1.Container, error)
-}
-
 // validation is the default implementation of Validation.
 type validation struct {
 	recorder        record.EventRecorder
-	status          Status
-	podHelper       kube.PodHelper
-	containerHelper kube.ContainerHelper
+	status          podcommon.Status
+	podHelper       kubecommon.PodHelper
+	containerHelper kubecommon.ContainerHelper
 }
 
 func newValidation(
 	recorder record.EventRecorder,
-	status Status,
-	podHelper kube.PodHelper,
-	containerHelper kube.ContainerHelper,
+	status podcommon.Status,
+	podHelper kubecommon.PodHelper,
+	containerHelper kubecommon.ContainerHelper,
 ) *validation {
 	return &validation{
 		recorder:        recorder,
@@ -64,10 +58,10 @@ func (v *validation) Validate(
 	ctx context.Context,
 	pod *v1.Pod,
 	targetContainerName string,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) (*v1.Container, error) {
 	// Double check enabled label (originally filtered for informer cache).
-	enabled, err := v.podHelper.ExpectedLabelValueAs(pod, podcommon.LabelEnabled, kubecommon.DataTypeBool)
+	enabled, err := v.podHelper.ExpectedLabelValueAs(pod, kubecommon.LabelEnabled, kubecommon.DataTypeBool)
 	if err != nil {
 		return nil, v.updateStatusAndGetError(ctx, pod, "unable to get pod enabled label value", err, scaleConfigs)
 	}
@@ -76,7 +70,7 @@ func (v *validation) Validate(
 	}
 
 	// Ensure pod is not managed by a VPA (not currently compatible).
-	for _, ann := range podcommon.KnownVpaAnnotations {
+	for _, ann := range KnownVpaAnnotations {
 		has, _ := v.podHelper.HasAnnotation(pod, ann)
 		if has {
 			return nil, v.updateStatusAndGetError(
@@ -118,7 +112,7 @@ func (v *validation) updateStatusAndGetError(
 	pod *v1.Pod,
 	errMessage string,
 	cause error,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) error {
 	ret := NewValidationError(errMessage, cause)
 

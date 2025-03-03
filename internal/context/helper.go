@@ -20,66 +20,65 @@ import (
 	"context"
 	"errors"
 
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contextcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 )
 
 // WithStandardRetryAttempts adds or replaces contextcommon.KeyStandardRetryAttempts to/in ctx.
 func WithStandardRetryAttempts(ctx context.Context, attempts int) context.Context {
-	return context.WithValue(ctx, contextcommon.KeyStandardRetryAttempts, attempts)
+	return context.WithValue(ctx, KeyStandardRetryAttempts, attempts)
 }
 
 // StandardRetryAttempts retrieves contextcommon.KeyStandardRetryAttempts from ctx.
 func StandardRetryAttempts(ctx context.Context) int {
-	value := ctx.Value(contextcommon.KeyStandardRetryAttempts)
+	value := ctx.Value(KeyStandardRetryAttempts)
 	if value == nil {
 		panic(errors.New("standard retry attempts should have been previously set"))
 	}
 
-	return ctx.Value(contextcommon.KeyStandardRetryAttempts).(int)
+	return ctx.Value(KeyStandardRetryAttempts).(int)
 }
 
 // WithStandardRetryDelaySecs adds or replaces contextcommon.KeyStandardRetryDelaySecs to/in ctx.
 func WithStandardRetryDelaySecs(ctx context.Context, secs int) context.Context {
-	return context.WithValue(ctx, contextcommon.KeyStandardRetryDelaySecs, secs)
+	return context.WithValue(ctx, KeyStandardRetryDelaySecs, secs)
 }
 
 // StandardRetryDelaySecs retrieves contextcommon.KeyStandardRetryDelaySecs from ctx.
 func StandardRetryDelaySecs(ctx context.Context) int {
-	value := ctx.Value(contextcommon.KeyStandardRetryDelaySecs)
+	value := ctx.Value(KeyStandardRetryDelaySecs)
 	if value == nil {
 		panic(errors.New("standard retry delay secs should have been previously set"))
 	}
 
-	return ctx.Value(contextcommon.KeyStandardRetryDelaySecs).(int)
+	return ctx.Value(KeyStandardRetryDelaySecs).(int)
 }
 
 // WithTargetContainerName adds or replaces contextcommon.KeyTargetContainerName to/in ctx.
 func WithTargetContainerName(ctx context.Context, name string) context.Context {
-	return context.WithValue(ctx, contextcommon.KeyTargetContainerName, name)
+	return context.WithValue(ctx, KeyTargetContainerName, name)
 }
 
 // TargetContainerName retrieves contextcommon.KeyTargetContainerName from ctx.
 func TargetContainerName(ctx context.Context) string {
-	value := ctx.Value(contextcommon.KeyTargetContainerName)
+	value := ctx.Value(KeyTargetContainerName)
 	if value == nil {
 		return ""
 	}
 
-	return ctx.Value(contextcommon.KeyTargetContainerName).(string)
+	return ctx.Value(KeyTargetContainerName).(string)
 }
 
 // WithTargetContainerStates adds or replaces contextcommon.KeyTargetContainerStates to/in ctx.
 func WithTargetContainerStates(ctx context.Context, states podcommon.States) context.Context {
-	return context.WithValue(ctx, contextcommon.KeyTargetContainerStates, states)
+	return context.WithValue(ctx, KeyTargetContainerStates, states)
 }
 
 // TargetContainerStates retrieves contextcommon.KeyTargetContainerStates from ctx.
 func TargetContainerStates(ctx context.Context) podcommon.States {
-	value := ctx.Value(contextcommon.KeyTargetContainerStates)
+	value := ctx.Value(KeyTargetContainerStates)
 	if value == nil {
 		return podcommon.States{}
 	}
 
-	return ctx.Value(contextcommon.KeyTargetContainerStates).(podcommon.States)
+	return ctx.Value(KeyTargetContainerStates).(podcommon.States)
 }

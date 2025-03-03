@@ -19,6 +19,7 @@ package integration
 import (
 	"strconv"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -267,8 +268,8 @@ func echoMatchLabels() map[string]string {
 
 func echoPodLabels() map[string]string {
 	return map[string]string{
-		"app":                  echoServerName,
-		podcommon.LabelEnabled: "true",
+		"app":                   echoServerName,
+		kubecommon.LabelEnabled: "true",
 	}
 }
 

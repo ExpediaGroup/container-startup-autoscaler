@@ -17,7 +17,7 @@ limitations under the License.
 package scaletest
 
 import (
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"
 )
@@ -48,9 +48,9 @@ func (m *MockConfig) IsEnabled() bool {
 	return args.Bool(0)
 }
 
-func (m *MockConfig) Resources() scale.Resources {
+func (m *MockConfig) Resources() scalecommon.Resources {
 	args := m.Called()
-	return args.Get(0).(scale.Resources)
+	return args.Get(0).(scalecommon.Resources)
 }
 
 func (m *MockConfig) StoreFromAnnotations(pod *v1.Pod) error {
@@ -77,7 +77,7 @@ func (m *MockConfig) IsEnabledDefault() {
 }
 
 func (m *MockConfig) ResourcesDefault() {
-	m.On("Resources").Return(scale.Resources{})
+	m.On("Resources").Return(scalecommon.Resources{})
 }
 
 func (m *MockConfig) StoreFromAnnotationsDefault() {

@@ -24,7 +24,7 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/reconciler"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
@@ -54,11 +54,11 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 		controllerConfig controllercommon.ControllerConfig
 	}
 	type mocks struct {
-		configuration         pod.Configuration
-		validation            pod.Validation
-		targetContainerState  pod.TargetContainerState
-		targetContainerAction pod.TargetContainerAction
-		podHelper             kube.PodHelper
+		configuration         podcommon.Configuration
+		validation            podcommon.Validation
+		targetContainerState  podcommon.TargetContainerState
+		targetContainerAction podcommon.TargetContainerAction
+		podHelper             kubecommon.PodHelper
 	}
 	tests := []struct {
 		name                    string

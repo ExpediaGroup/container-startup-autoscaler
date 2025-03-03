@@ -17,18 +17,11 @@ limitations under the License.
 package scale
 
 import (
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
 )
 
-type Updates interface {
-	StartupPodMutationFuncAll(*v1.Container) []func(pod *v1.Pod) error
-	PostStartupPodMutationFuncAll(*v1.Container) []func(pod *v1.Pod) error
-
-	UpdateFor(v1.ResourceName) Update
-	AllUpdates() []Update
-}
-
-func NewUpdates(configs Configs) Updates {
+func NewUpdates(configs scalecommon.Configs) scalecommon.Updates {
 	return &updates{
 		cpuUpdate:    NewUpdate(v1.ResourceCPU, configs.ConfigFor(v1.ResourceCPU)),
 		memoryUpdate: NewUpdate(v1.ResourceMemory, configs.ConfigFor(v1.ResourceMemory)),
@@ -36,8 +29,8 @@ func NewUpdates(configs Configs) Updates {
 }
 
 type updates struct {
-	cpuUpdate    Update
-	memoryUpdate Update
+	cpuUpdate    scalecommon.Update
+	memoryUpdate scalecommon.Update
 }
 
 func (u *updates) StartupPodMutationFuncAll(container *v1.Container) []func(pod *v1.Pod) error {
@@ -60,7 +53,7 @@ func (u *updates) PostStartupPodMutationFuncAll(container *v1.Container) []func(
 	return funcs
 }
 
-func (u *updates) UpdateFor(resourceName v1.ResourceName) Update {
+func (u *updates) UpdateFor(resourceName v1.ResourceName) scalecommon.Update {
 	switch resourceName {
 	case v1.ResourceCPU:
 		return u.cpuUpdate
@@ -71,6 +64,6 @@ func (u *updates) UpdateFor(resourceName v1.ResourceName) Update {
 	}
 }
 
-func (u *updates) AllUpdates() []Update {
-	return []Update{u.cpuUpdate, u.memoryUpdate}
+func (u *updates) AllUpdates() []scalecommon.Update {
+	return []scalecommon.Update{u.cpuUpdate, u.memoryUpdate}
 }

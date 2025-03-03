@@ -17,7 +17,7 @@ limitations under the License.
 package scaletest
 
 import (
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"
 )
@@ -63,14 +63,14 @@ func (m *MockStates) DoesLimitsCurrentMatchSpecAll(pod *v1.Pod, container *v1.Co
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *MockStates) StateFor(name v1.ResourceName) scale.State {
+func (m *MockStates) StateFor(name v1.ResourceName) scalecommon.State {
 	args := m.Called(name)
-	return args.Get(0).(scale.State)
+	return args.Get(0).(scalecommon.State)
 }
 
-func (m *MockStates) AllStates() []scale.State {
+func (m *MockStates) AllStates() []scalecommon.State {
 	args := m.Called()
-	return args.Get(0).([]scale.State)
+	return args.Get(0).([]scalecommon.State)
 }
 
 func (m *MockStates) IsStartupConfigAppliedAllDefault() {
@@ -98,7 +98,7 @@ func (m *MockStates) StateForDefault() {
 }
 
 func (m *MockStates) AllStatesDefault() {
-	m.On("AllStates").Return([]scale.State{NewMockState(nil)})
+	m.On("AllStates").Return([]scalecommon.State{NewMockState(nil)})
 }
 
 func (m *MockStates) AllDefaults() {

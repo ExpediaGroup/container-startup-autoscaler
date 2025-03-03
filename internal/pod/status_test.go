@@ -23,6 +23,7 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/metricscommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
@@ -70,7 +71,7 @@ func TestStatusUpdateCore(t *testing.T) {
 
 		_, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
-			kubetest.NewPodBuilder().AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: "test"}).Build(),
+			kubetest.NewPodBuilder().AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: "test"}).Build(),
 			"test",
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
@@ -95,15 +96,15 @@ func TestStatusUpdateCore(t *testing.T) {
 			scaletest.NewMockConfigs(nil),
 		)
 		assert.Nil(t, err)
-		ann, gotAnn := got.Annotations[podcommon.AnnotationStatus]
+		ann, gotAnn := got.Annotations[kubecommon.AnnotationStatus]
 		assert.True(t, gotAnn)
-		stat := &podcommon.StatusAnnotation{}
+		stat := &StatusAnnotation{}
 		_ = json.Unmarshal([]byte(ann), stat)
 		assert.Equal(t, "Test", stat.Status)
 		assert.NotEmpty(t, stat.LastUpdated)
 
 		// Ensure pod isn't mutated
-		_, gotAnn = pod.Annotations[podcommon.AnnotationStatus]
+		_, gotAnn = pod.Annotations[kubecommon.AnnotationStatus]
 		assert.False(t, gotAnn)
 	})
 
@@ -115,15 +116,15 @@ func TestStatusUpdateCore(t *testing.T) {
 			func() interceptor.Funcs { return interceptor.Funcs{} },
 		)))
 
-		previousStat := podcommon.NewStatusAnnotation(
+		previousStat := NewStatusAnnotation(
 			"Test",
 			podcommon.States{},
-			podcommon.NewEmptyStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}),
+			NewEmptyStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}),
 			"",
 		).Json()
 		got, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
-			kubetest.NewPodBuilder().AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: previousStat}).Build(),
+			kubetest.NewPodBuilder().AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: previousStat}).Build(),
 			"test",
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
@@ -131,8 +132,8 @@ func TestStatusUpdateCore(t *testing.T) {
 		)
 		assert.Nil(t, err)
 
-		stat := &podcommon.StatusAnnotation{}
-		_ = json.Unmarshal([]byte(got.Annotations[podcommon.AnnotationStatus]), stat)
+		stat := &StatusAnnotation{}
+		_ = json.Unmarshal([]byte(got.Annotations[kubecommon.AnnotationStatus]), stat)
 		assert.Empty(t, stat.LastUpdated)
 	})
 }
@@ -154,7 +155,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			name: "StatusScaleStateNotApplicablePrevious",
 			args: args{
 				kubetest.NewPodBuilder().
-					AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: fullStatusAnnotationString()}).
+					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateNotApplicable,
 			},
@@ -196,7 +197,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			name: "StatusScaleStateEnactedPrevious",
 			args: args{
 				kubetest.NewPodBuilder().
-					AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: fullStatusAnnotationString()}).
+					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateUpEnacted,
 			},
@@ -218,7 +219,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			name: "StatusScaleStateFailedPrevious",
 			args: args{
 				kubetest.NewPodBuilder().
-					AdditionalAnnotations(map[string]string{podcommon.AnnotationStatus: fullStatusAnnotationString()}).
+					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateUpFailed,
 			},
@@ -269,8 +270,8 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			)
 			assert.Nil(t, err)
 
-			stat := &podcommon.StatusAnnotation{}
-			_ = json.Unmarshal([]byte(got.Annotations[podcommon.AnnotationStatus]), stat)
+			stat := &StatusAnnotation{}
+			_ = json.Unmarshal([]byte(got.Annotations[kubecommon.AnnotationStatus]), stat)
 			if tt.wantLastScaleCommanded {
 				assert.NotEmpty(t, stat.Scale.LastCommanded)
 			} else {
@@ -365,10 +366,10 @@ func TestStatusUpdateDurationMetric(t *testing.T) {
 func fullStatusAnnotationString() string {
 	now := newStatus(nil).formattedNow(timeFormatMilli)
 
-	return podcommon.NewStatusAnnotation(
+	return NewStatusAnnotation(
 		"test",
 		podcommon.States{},
-		podcommon.NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, now, now, now),
+		NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, now, now, now),
 		now,
 	).Json()
 }

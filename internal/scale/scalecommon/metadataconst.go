@@ -16,16 +16,18 @@ limitations under the License.
 
 package scalecommon
 
-import "github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+import (
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
+)
 
 const (
-	AnnotationTargetContainerName = podcommon.Namespace + "/target-container-name"
+	AnnotationTargetContainerName = kubecommon.Namespace + "/target-container-name"
 
-	AnnotationCpuStartup             = podcommon.Namespace + "/cpu-startup"
-	AnnotationCpuPostStartupRequests = podcommon.Namespace + "/cpu-post-startup-requests"
-	AnnotationCpuPostStartupLimits   = podcommon.Namespace + "/cpu-post-startup-limits"
+	AnnotationCpuStartup             = kubecommon.Namespace + "/cpu-startup"
+	AnnotationCpuPostStartupRequests = kubecommon.Namespace + "/cpu-post-startup-requests"
+	AnnotationCpuPostStartupLimits   = kubecommon.Namespace + "/cpu-post-startup-limits"
 
-	AnnotationMemoryStartup             = podcommon.Namespace + "/memory-startup"
-	AnnotationMemoryPostStartupRequests = podcommon.Namespace + "/memory-post-startup-requests"
-	AnnotationMemoryPostStartupLimits   = podcommon.Namespace + "/memory-post-startup-limits"
+	AnnotationMemoryStartup             = kubecommon.Namespace + "/memory-startup"
+	AnnotationMemoryPostStartupRequests = kubecommon.Namespace + "/memory-post-startup-requests"
+	AnnotationMemoryPostStartupLimits   = kubecommon.Namespace + "/memory-post-startup-limits"
 )

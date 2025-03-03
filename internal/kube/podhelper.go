@@ -40,17 +40,6 @@ const (
 	waitForCacheUpdateMaxWaitSecs = 3
 )
 
-// PodHelper performs operations relating to Kube pods.
-type PodHelper interface {
-	Get(context.Context, types.NamespacedName) (bool, *v1.Pod, error)
-	Patch(context.Context, *v1.Pod, []func(*v1.Pod) error, bool, bool) (*v1.Pod, error)
-	HasAnnotation(pod *v1.Pod, name string) (bool, string)
-	ExpectedLabelValueAs(*v1.Pod, string, kubecommon.DataType) (any, error)
-	ExpectedAnnotationValueAs(*v1.Pod, string, kubecommon.DataType) (any, error)
-	IsContainerInSpec(*v1.Pod, string) bool
-	ResizeStatus(*v1.Pod) v1.PodResizeStatus
-}
-
 type mapFor string
 
 const (
@@ -63,7 +52,7 @@ type podHelper struct {
 	client client.Client
 }
 
-func NewPodHelper(client client.Client) PodHelper {
+func NewPodHelper(client client.Client) kubecommon.PodHelper {
 	return &podHelper{client: client}
 }
 

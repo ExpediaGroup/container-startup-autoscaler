@@ -20,22 +20,17 @@ import (
 	"errors"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-type Update interface {
-	ResourceName() v1.ResourceName
-	StartupPodMutationFunc(*v1.Container) func(pod *v1.Pod) error
-	PostStartupPodMutationFunc(*v1.Container) func(pod *v1.Pod) error
-}
-
 type update struct {
 	resourceName v1.ResourceName
-	config       Config
+	config       scalecommon.Config
 }
 
-func NewUpdate(resourceName v1.ResourceName, config Config) *update {
+func NewUpdate(resourceName v1.ResourceName, config scalecommon.Config) scalecommon.Update {
 	return &update{
 		resourceName: resourceName,
 		config:       config,

@@ -16,10 +16,34 @@ limitations under the License.
 
 package kubetest
 
-import v1 "k8s.io/api/core/v1"
+import (
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+)
 
 const (
 	DefaultContainerName = "container"
+)
+
+var (
+	PodCpuStartupEnabled             = resource.MustParse(PodAnnotationCpuStartup)
+	PodCpuPostStartupRequestsEnabled = resource.MustParse(PodAnnotationCpuPostStartupRequests)
+	PodCpuPostStartupLimitsEnabled   = resource.MustParse(PodAnnotationCpuPostStartupLimits)
+
+	PodCpuStartupDisabled             = PodCpuStartupEnabled
+	PodCpuPostStartupRequestsDisabled = PodCpuStartupEnabled
+	PodCpuPostStartupLimitsDisabled   = PodCpuStartupEnabled
+
+	PodMemoryStartupEnabled             = resource.MustParse(PodAnnotationMemoryStartup)
+	PodMemoryPostStartupRequestsEnabled = resource.MustParse(PodAnnotationMemoryPostStartupRequests)
+	PodMemoryPostStartupLimitsEnabled   = resource.MustParse(PodAnnotationMemoryPostStartupLimits)
+
+	PodMemoryStartupDisabled             = PodMemoryStartupEnabled
+	PodMemoryPostStartupRequestsDisabled = PodMemoryStartupEnabled
+	PodMemoryPostStartupLimitsDisabled   = PodMemoryStartupEnabled
+
+	PodCpuUnknown    = resource.MustParse(PodAnnotationCpuUnknown)
+	PodMemoryUnknown = resource.MustParse(PodAnnotationMemoryUnknown)
 )
 
 var (

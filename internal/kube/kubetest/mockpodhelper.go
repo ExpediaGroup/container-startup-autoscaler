@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
@@ -102,7 +101,7 @@ func (m *MockPodHelper) HasAnnotationDefault() {
 
 func (m *MockPodHelper) ExpectedLabelValueAsDefault() {
 	enabledMatchFunc := func(label string) bool {
-		return strings.Contains(label, podcommon.LabelEnabled)
+		return strings.Contains(label, kubecommon.LabelEnabled)
 	}
 
 	m.On("ExpectedLabelValueAs", mock.Anything, mock.MatchedBy(enabledMatchFunc), kubecommon.DataTypeBool).
@@ -114,20 +113,50 @@ func (m *MockPodHelper) ExpectedAnnotationValueAsDefault() {
 		return strings.Contains(ann, scalecommon.AnnotationTargetContainerName)
 	}
 
-	cpuMatchFunc := func(ann string) bool {
-		return strings.Contains(ann, "cpu")
+	cpuStartupMatchFunc := func(ann string) bool {
+		return strings.Contains(ann, scalecommon.AnnotationCpuStartup)
 	}
 
-	memoryMatchFunc := func(ann string) bool {
-		return strings.Contains(ann, "memory")
+	cpuPostStartupRequestsMatchFunc := func(ann string) bool {
+		return strings.Contains(ann, scalecommon.AnnotationCpuPostStartupRequests)
+	}
+
+	cpuPostStartupLimitsMatchFunc := func(ann string) bool {
+		return strings.Contains(ann, scalecommon.AnnotationCpuPostStartupLimits)
+	}
+
+	memoryStartupMatchFunc := func(ann string) bool {
+		return strings.Contains(ann, scalecommon.AnnotationMemoryStartup)
+	}
+
+	memoryPostStartupRequestsMatchFunc := func(ann string) bool {
+		return strings.Contains(ann, scalecommon.AnnotationMemoryPostStartupRequests)
+	}
+
+	memoryPostStartupLimitsMatchFunc := func(ann string) bool {
+		return strings.Contains(ann, scalecommon.AnnotationMemoryPostStartupLimits)
 	}
 
 	m.On("ExpectedAnnotationValueAs", mock.Anything, mock.MatchedBy(targetContainerNameMatchFunc), kubecommon.DataTypeString).
 		Return(DefaultContainerName, nil)
-	m.On("ExpectedAnnotationValueAs", mock.Anything, mock.MatchedBy(cpuMatchFunc), kubecommon.DataTypeString).
-		Return(MockDefaultCpu, nil)
-	m.On("ExpectedAnnotationValueAs", mock.Anything, mock.MatchedBy(memoryMatchFunc), kubecommon.DataTypeString).
-		Return(MockDefaultMemory, nil)
+
+	m.On("ExpectedAnnotationValueAs", mock.Anything, mock.MatchedBy(cpuStartupMatchFunc), kubecommon.DataTypeString).
+		Return(PodAnnotationCpuStartup, nil)
+
+	m.On("ExpectedAnnotationValueAs", mock.Anything, mock.MatchedBy(cpuPostStartupRequestsMatchFunc), kubecommon.DataTypeString).
+		Return(PodAnnotationCpuPostStartupRequests, nil)
+
+	m.On("ExpectedAnnotationValueAs", mock.Anything, mock.MatchedBy(cpuPostStartupLimitsMatchFunc), kubecommon.DataTypeString).
+		Return(PodAnnotationCpuPostStartupLimits, nil)
+
+	m.On("ExpectedAnnotationValueAs", mock.Anything, mock.MatchedBy(memoryStartupMatchFunc), kubecommon.DataTypeString).
+		Return(PodAnnotationMemoryStartup, nil)
+
+	m.On("ExpectedAnnotationValueAs", mock.Anything, mock.MatchedBy(memoryPostStartupRequestsMatchFunc), kubecommon.DataTypeString).
+		Return(PodAnnotationMemoryPostStartupRequests, nil)
+
+	m.On("ExpectedAnnotationValueAs", mock.Anything, mock.MatchedBy(memoryPostStartupLimitsMatchFunc), kubecommon.DataTypeString).
+		Return(PodAnnotationMemoryPostStartupLimits, nil)
 }
 
 func (m *MockPodHelper) IsContainerInSpecDefault() {

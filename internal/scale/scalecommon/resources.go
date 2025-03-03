@@ -14,14 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package podcommon
+package scalecommon
 
-const Namespace = "csa.expediagroup.com"
+import "k8s.io/apimachinery/pkg/api/resource"
 
-const (
-	LabelEnabled = Namespace + "/enabled"
-)
+type Resources struct {
+	Startup             resource.Quantity
+	PostStartupRequests resource.Quantity
+	PostStartupLimits   resource.Quantity
+}
 
-const (
-	AnnotationStatus = Namespace + "/status"
-)
+func NewResources(
+	startup resource.Quantity,
+	postStartupRequests resource.Quantity,
+	postStartupLimits resource.Quantity,
+) Resources {
+	return Resources{
+		Startup:             startup,
+		PostStartupRequests: postStartupRequests,
+		PostStartupLimits:   postStartupLimits,
+	}
+}

@@ -20,14 +20,13 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contextcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestWithStandardRetryAttempts(t *testing.T) {
 	got := WithStandardRetryAttempts(context.TODO(), 1000)
-	assert.Equal(t, 1000, got.Value(contextcommon.KeyStandardRetryAttempts).(int))
+	assert.Equal(t, 1000, got.Value(KeyStandardRetryAttempts).(int))
 }
 
 func TestStandardRetryAttempts(t *testing.T) {
@@ -41,14 +40,14 @@ func TestStandardRetryAttempts(t *testing.T) {
 
 	t.Run("Ok", func(t *testing.T) {
 		ctx := context.TODO()
-		ctx = context.WithValue(ctx, contextcommon.KeyStandardRetryAttempts, 1000)
+		ctx = context.WithValue(ctx, KeyStandardRetryAttempts, 1000)
 		assert.Equal(t, 1000, StandardRetryAttempts(ctx))
 	})
 }
 
 func TestWithStandardRetryDelaySecs(t *testing.T) {
 	got := WithStandardRetryDelaySecs(context.TODO(), 2000)
-	assert.Equal(t, 2000, got.Value(contextcommon.KeyStandardRetryDelaySecs).(int))
+	assert.Equal(t, 2000, got.Value(KeyStandardRetryDelaySecs).(int))
 }
 
 func TestStandardRetryDelaySecs(t *testing.T) {
@@ -61,14 +60,14 @@ func TestStandardRetryDelaySecs(t *testing.T) {
 	})
 
 	t.Run("Ok", func(t *testing.T) {
-		ctx := context.WithValue(context.TODO(), contextcommon.KeyStandardRetryDelaySecs, 2000)
+		ctx := context.WithValue(context.TODO(), KeyStandardRetryDelaySecs, 2000)
 		assert.Equal(t, 2000, StandardRetryDelaySecs(ctx))
 	})
 }
 
 func TestWithTargetContainerName(t *testing.T) {
 	got := WithTargetContainerName(context.TODO(), "test")
-	assert.Equal(t, "test", got.Value(contextcommon.KeyTargetContainerName).(string))
+	assert.Equal(t, "test", got.Value(KeyTargetContainerName).(string))
 }
 
 func TestTargetContainerName(t *testing.T) {
@@ -77,7 +76,7 @@ func TestTargetContainerName(t *testing.T) {
 	})
 
 	t.Run("NotNil", func(t *testing.T) {
-		ctx := context.WithValue(context.TODO(), contextcommon.KeyTargetContainerName, "test")
+		ctx := context.WithValue(context.TODO(), KeyTargetContainerName, "test")
 		assert.Equal(t, "test", TargetContainerName(ctx))
 	})
 }
@@ -85,7 +84,7 @@ func TestTargetContainerName(t *testing.T) {
 func TestWithTargetContainerStates(t *testing.T) {
 	states := podcommon.NewStatesAllUnknown()
 	got := WithTargetContainerStates(context.TODO(), states)
-	assert.Equal(t, states, got.Value(contextcommon.KeyTargetContainerStates).(podcommon.States))
+	assert.Equal(t, states, got.Value(KeyTargetContainerStates).(podcommon.States))
 }
 
 func TestTargetContainerStates(t *testing.T) {
@@ -95,7 +94,7 @@ func TestTargetContainerStates(t *testing.T) {
 
 	t.Run("NotNil", func(t *testing.T) {
 		states := podcommon.NewStatesAllUnknown()
-		ctx := context.WithValue(context.TODO(), contextcommon.KeyTargetContainerStates, states)
+		ctx := context.WithValue(context.TODO(), KeyTargetContainerStates, states)
 		assert.Equal(t, states, TargetContainerStates(ctx))
 	})
 }

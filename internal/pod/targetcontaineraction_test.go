@@ -1056,22 +1056,20 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 }
 
 func TestTargetContainerActionContainerResourceConfig(t *testing.T) {
-	t.Run("Ok", func(t *testing.T) {
-		a := newTargetContainerAction(
-			controllercommon.ControllerConfig{},
-			&record.FakeRecorder{},
-			nil,
-			nil,
-		)
+	a := newTargetContainerAction(
+		controllercommon.ControllerConfig{},
+		&record.FakeRecorder{},
+		nil,
+		nil,
+	)
 
-		mockContainer := kubetest.NewContainerBuilder().Build()
-		mockScaleConfigs := scaletest.NewMockConfigs(func(m *scaletest.MockConfigs) {
-			m.On("String").Return("test")
-		})
-		got := a.containerResourceConfig(mockContainer, mockScaleConfigs)
-		assert.Contains(t, got, "target container resources: [")
-		assert.Contains(t, got, "], configurations: [test]")
+	mockContainer := kubetest.NewContainerBuilder().Build()
+	mockScaleConfigs := scaletest.NewMockConfigs(func(m *scaletest.MockConfigs) {
+		m.On("String").Return("test")
 	})
+	got := a.containerResourceConfig(mockContainer, mockScaleConfigs)
+	assert.Contains(t, got, "target container resources: [")
+	assert.Contains(t, got, "], configurations: [test]")
 }
 
 func TestTargetContainerActionUpdateStatus(t *testing.T) {

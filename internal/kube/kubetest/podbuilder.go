@@ -19,6 +19,7 @@ package kubetest
 import (
 	"errors"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
@@ -147,7 +148,7 @@ func (b *podBuilder) Build() *v1.Pod {
 
 func (b *podBuilder) pod() *v1.Pod {
 	var labels = make(map[string]string)
-	labels[podcommon.LabelEnabled] = DefaultLabelEnabledValue
+	labels[kubecommon.LabelEnabled] = DefaultLabelEnabledValue
 
 	for name, value := range b.additionalLabels {
 		labels[name] = value

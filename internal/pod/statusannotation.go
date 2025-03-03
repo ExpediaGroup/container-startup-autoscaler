@@ -14,26 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package podcommon
+package pod
 
 import (
 	"encoding/json"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	v1 "k8s.io/api/core/v1"
 )
 
 // StatusAnnotation holds status information that's serialized to JSON for status reporting.
 type StatusAnnotation struct {
 	Status      string                `json:"status"`
-	States      States                `json:"states"`
+	States      podcommon.States      `json:"states"`
 	Scale       StatusAnnotationScale `json:"scale"`
 	LastUpdated string                `json:"lastUpdated"`
 }
 
 func NewStatusAnnotation(
 	status string,
-	states States,
+	states podcommon.States,
 	scale StatusAnnotationScale,
 	lastUpdated string,
 ) StatusAnnotation {

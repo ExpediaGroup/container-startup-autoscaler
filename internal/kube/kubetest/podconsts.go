@@ -18,7 +18,6 @@ package kubetest
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -33,27 +32,6 @@ const (
 
 	PodAnnotationCpuUnknown    = "999m"
 	PodAnnotationMemoryUnknown = "999M"
-)
-
-var (
-	PodCpuStartupEnabled             = resource.MustParse(PodAnnotationCpuStartup)
-	PodCpuPostStartupRequestsEnabled = resource.MustParse(PodAnnotationCpuPostStartupRequests)
-	PodCpuPostStartupLimitsEnabled   = resource.MustParse(PodAnnotationCpuPostStartupLimits)
-
-	PodCpuStartupDisabled             = PodCpuStartupEnabled
-	PodCpuPostStartupRequestsDisabled = PodCpuStartupEnabled
-	PodCpuPostStartupLimitsDisabled   = PodCpuStartupEnabled
-
-	PodMemoryStartupEnabled             = resource.MustParse(PodAnnotationMemoryStartup)
-	PodMemoryPostStartupRequestsEnabled = resource.MustParse(PodAnnotationMemoryPostStartupRequests)
-	PodMemoryPostStartupLimitsEnabled   = resource.MustParse(PodAnnotationMemoryPostStartupLimits)
-
-	PodMemoryStartupDisabled             = PodMemoryStartupEnabled
-	PodMemoryPostStartupRequestsDisabled = PodMemoryStartupEnabled
-	PodMemoryPostStartupLimitsDisabled   = PodMemoryStartupEnabled
-
-	PodCpuUnknown    = resource.MustParse(PodAnnotationCpuUnknown)
-	PodMemoryUnknown = resource.MustParse(PodAnnotationMemoryUnknown)
 )
 
 const (

@@ -17,7 +17,7 @@ limitations under the License.
 package podtest
 
 import (
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scaletest"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
@@ -39,9 +39,9 @@ func NewMockConfiguration(configFunc func(*MockConfiguration)) *MockConfiguratio
 	return m
 }
 
-func (m *MockConfiguration) Configure(pod *v1.Pod) (scale.Configs, error) {
+func (m *MockConfiguration) Configure(pod *v1.Pod) (scalecommon.Configs, error) {
 	args := m.Called(pod)
-	return args.Get(0).(scale.Configs), args.Error(1)
+	return args.Get(0).(scalecommon.Configs), args.Error(1)
 }
 
 func (m *MockConfiguration) ConfigureDefault() {

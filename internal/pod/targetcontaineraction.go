@@ -23,35 +23,31 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	metricsscale "github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 )
 
 const eventReasonScaling = "Scaling"
 
-// TargetContainerAction performs actions based on target container state.
-type TargetContainerAction interface {
-	Execute(context.Context, podcommon.States, *v1.Pod, *v1.Container, scale.Configs) error
-}
-
 // targetContainerAction is the default implementation of TargetContainerAction.
 type targetContainerAction struct {
 	controllerConfig controllercommon.ControllerConfig
 	recorder         record.EventRecorder
-	status           Status
-	podHelper        kube.PodHelper
+	status           podcommon.Status
+	podHelper        kubecommon.PodHelper
 }
 
 func newTargetContainerAction(
 	controllerConfig controllercommon.ControllerConfig,
 	recorder record.EventRecorder,
-	status Status,
-	podHelper kube.PodHelper,
+	status podcommon.Status,
+	podHelper kubecommon.PodHelper,
 ) *targetContainerAction {
 	return &targetContainerAction{
 		controllerConfig: controllerConfig,
@@ -67,7 +63,7 @@ func (a *targetContainerAction) Execute(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) error {
 	if states.StartupProbe != podcommon.StateBoolTrue && states.StartupProbe != podcommon.StateBoolFalse {
 		panic(fmt.Errorf("unsupported startup probe state '%s'", states.StartupProbe))
@@ -150,7 +146,7 @@ func (a *targetContainerAction) containerNotRunningAction(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) error {
 	a.logInfoAndUpdateStatus(
 		ctx,
@@ -168,7 +164,7 @@ func (a *targetContainerAction) startedUnknownAction(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) error {
 	a.logInfoAndUpdateStatus(
 		ctx,
@@ -186,7 +182,7 @@ func (a *targetContainerAction) readyUnknownAction(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) error {
 	a.logInfoAndUpdateStatus(
 		ctx,
@@ -206,7 +202,7 @@ func (a *targetContainerAction) resUnknownAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) error {
 	msg := "unknown resources applied"
 	a.updateStatus(ctx, states, podcommon.StatusScaleStateNotApplicable, pod, msg, scaleConfigs)
@@ -220,7 +216,7 @@ func (a *targetContainerAction) notStartedWithStartupResAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) error {
 	return a.processConfigEnacted(ctx, states, pod, targetContainer, scaleConfigs)
 }
@@ -233,7 +229,7 @@ func (a *targetContainerAction) notStartedWithPostStartupResAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).StartupPodMutationFuncAll(targetContainer)
 	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
@@ -263,7 +259,7 @@ func (a *targetContainerAction) startedWithStartupResAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).PostStartupPodMutationFuncAll(targetContainer)
 	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
@@ -293,7 +289,7 @@ func (a *targetContainerAction) startedWithPostStartupResAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) error {
 	return a.processConfigEnacted(ctx, states, pod, targetContainer, scaleConfigs)
 }
@@ -306,7 +302,7 @@ func (a *targetContainerAction) notStartedWithUnknownResAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).StartupPodMutationFuncAll(targetContainer)
 	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
@@ -337,7 +333,7 @@ func (a *targetContainerAction) startedWithUnknownResAction(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).PostStartupPodMutationFuncAll(targetContainer)
 	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
@@ -367,7 +363,7 @@ func (a *targetContainerAction) processConfigEnacted(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) error {
 	// Examine resize status.
 	switch a.podHelper.ResizeStatus(pod) {
@@ -508,7 +504,7 @@ func (a *targetContainerAction) processConfigEnacted(
 // information purposes.
 func (a *targetContainerAction) containerResourceConfig(
 	targetContainer *v1.Container,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) string {
 	return fmt.Sprintf(
 		"target container resources: [%s], configurations: [%s]",
@@ -524,7 +520,7 @@ func (a *targetContainerAction) updateStatus(
 	scaleState podcommon.StatusScaleState,
 	pod *v1.Pod,
 	status string,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) {
 	_, err := a.status.Update(ctx, pod, status, states, scaleState, scaleConfigs)
 	if err != nil {
@@ -540,7 +536,7 @@ func (a *targetContainerAction) logInfoAndUpdateStatus(
 	scaleState podcommon.StatusScaleState,
 	pod *v1.Pod,
 	message string,
-	scaleConfigs scale.Configs,
+	scaleConfigs scalecommon.Configs,
 ) {
 	logging.Infof(ctx, v, message)
 	a.updateStatus(ctx, states, scaleState, pod, message, scaleConfigs)

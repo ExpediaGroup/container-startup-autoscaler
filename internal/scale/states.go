@@ -18,22 +18,12 @@ package scale
 
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
 )
 
-type States interface {
-	IsStartupConfigAppliedAll(*v1.Container) bool
-	IsPostStartupConfigAppliedAll(*v1.Container) bool
-	IsAnyCurrentZeroAll(*v1.Pod, *v1.Container) (bool, error)
-	DoesRequestsCurrentMatchSpecAll(*v1.Pod, *v1.Container) (bool, error)
-	DoesLimitsCurrentMatchSpecAll(*v1.Pod, *v1.Container) (bool, error)
-
-	StateFor(v1.ResourceName) State
-	AllStates() []State
-}
-
-func NewStates(configs Configs, containerHelper kube.ContainerHelper) States {
+func NewStates(configs scalecommon.Configs, containerHelper kubecommon.ContainerHelper) scalecommon.States {
 	return &states{
 		cpuState:    NewState(v1.ResourceCPU, configs.ConfigFor(v1.ResourceCPU), containerHelper),
 		memoryState: NewState(v1.ResourceMemory, configs.ConfigFor(v1.ResourceMemory), containerHelper),
@@ -41,8 +31,8 @@ func NewStates(configs Configs, containerHelper kube.ContainerHelper) States {
 }
 
 type states struct {
-	cpuState    State
-	memoryState State
+	cpuState    scalecommon.State
+	memoryState scalecommon.State
 }
 
 func (s *states) IsStartupConfigAppliedAll(container *v1.Container) bool {
@@ -123,7 +113,7 @@ func (s *states) DoesLimitsCurrentMatchSpecAll(pod *v1.Pod, container *v1.Contai
 	return matchAll, nil
 }
 
-func (s *states) StateFor(resourceName v1.ResourceName) State {
+func (s *states) StateFor(resourceName v1.ResourceName) scalecommon.State {
 	switch resourceName {
 	case v1.ResourceCPU:
 		return s.cpuState
@@ -134,6 +124,6 @@ func (s *states) StateFor(resourceName v1.ResourceName) State {
 	}
 }
 
-func (s *states) AllStates() []State {
-	return []State{s.cpuState, s.memoryState}
+func (s *states) AllStates() []scalecommon.State {
+	return []scalecommon.State{s.cpuState, s.memoryState}
 }

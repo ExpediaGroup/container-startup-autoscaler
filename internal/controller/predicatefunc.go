@@ -18,8 +18,8 @@ package controller
 
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/reconciler"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
@@ -79,8 +79,8 @@ func PredicateUpdateFunc(event event.TypedUpdateEvent[*v1.Pod]) bool {
 		return false
 	}
 
-	_, hasOldAnnStatusString := oldPod.Annotations[podcommon.AnnotationStatus]
-	_, hasNewAnnStatusString := newPod.Annotations[podcommon.AnnotationStatus]
+	_, hasOldAnnStatusString := oldPod.Annotations[kubecommon.AnnotationStatus]
+	_, hasNewAnnStatusString := newPod.Annotations[kubecommon.AnnotationStatus]
 
 	// Reconcile if controller status not present in old and new (something non-status has changed).
 	if !hasOldAnnStatusString && !hasNewAnnStatusString {
@@ -103,8 +103,8 @@ func PredicateUpdateFunc(event event.TypedUpdateEvent[*v1.Pod]) bool {
 				oldPodCopy, newPodCopy := oldPod.DeepCopy(), newPod.DeepCopy()
 				oldPodCopy.ResourceVersion, newPodCopy.ResourceVersion = "", ""
 				oldPodCopy.ManagedFields, newPodCopy.ManagedFields = nil, nil
-				delete(oldPodCopy.Annotations, podcommon.AnnotationStatus)
-				delete(newPodCopy.Annotations, podcommon.AnnotationStatus)
+				delete(oldPodCopy.Annotations, kubecommon.AnnotationStatus)
+				delete(newPodCopy.Annotations, kubecommon.AnnotationStatus)
 
 				if common.AreStructsEqual(oldPodCopy.ObjectMeta, newPodCopy.ObjectMeta) {
 					reconciler.SkippedOnlyStatusChange().Inc()

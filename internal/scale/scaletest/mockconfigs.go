@@ -18,7 +18,7 @@ package scaletest
 
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"
 )
@@ -59,19 +59,19 @@ func (m *MockConfigs) ValidateCollection() error {
 	return args.Error(0)
 }
 
-func (m *MockConfigs) ConfigFor(resourceName v1.ResourceName) scale.Config {
+func (m *MockConfigs) ConfigFor(resourceName v1.ResourceName) scalecommon.Config {
 	args := m.Called(resourceName)
-	return args.Get(0).(scale.Config)
+	return args.Get(0).(scalecommon.Config)
 }
 
-func (m *MockConfigs) AllConfigs() []scale.Config {
+func (m *MockConfigs) AllConfigs() []scalecommon.Config {
 	args := m.Called()
-	return args.Get(0).([]scale.Config)
+	return args.Get(0).([]scalecommon.Config)
 }
 
-func (m *MockConfigs) AllEnabledConfigs() []scale.Config {
+func (m *MockConfigs) AllEnabledConfigs() []scalecommon.Config {
 	args := m.Called()
-	return args.Get(0).([]scale.Config)
+	return args.Get(0).([]scalecommon.Config)
 }
 
 func (m *MockConfigs) AllEnabledConfigsResourceNames() []v1.ResourceName {
@@ -105,11 +105,11 @@ func (m *MockConfigs) ConfigForDefault() {
 }
 
 func (m *MockConfigs) AllConfigsDefault() {
-	m.On("AllConfigs").Return([]scale.Config{NewMockConfig(nil)})
+	m.On("AllConfigs").Return([]scalecommon.Config{NewMockConfig(nil)})
 }
 
 func (m *MockConfigs) AllEnabledConfigsDefault() {
-	m.On("AllEnabledConfigs").Return([]scale.Config{NewMockConfig(nil)})
+	m.On("AllEnabledConfigs").Return([]scalecommon.Config{NewMockConfig(nil)})
 }
 
 func (m *MockConfigs) AllEnabledConfigsResourceNamesDefault() {
