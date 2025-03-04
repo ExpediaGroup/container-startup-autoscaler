@@ -69,10 +69,10 @@ func TestConfigsTargetContainerName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &configs{
+			configs := &configs{
 				podHelper: tt.fields.podHelper,
 			}
-			got, err := c.TargetContainerName(&v1.Pod{})
+			got, err := configs.TargetContainerName(&v1.Pod{})
 			if tt.wantErrMsg != "" {
 				assert.Contains(t, err.Error(), tt.wantErrMsg)
 			} else {
@@ -114,11 +114,11 @@ func TestConfigsStoreFromAnnotationsAll(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &configs{
+			configs := &configs{
 				cpuConfig:    tt.fields.cpuConfig,
 				memoryConfig: tt.fields.memoryConfig,
 			}
-			err := c.StoreFromAnnotationsAll(&v1.Pod{})
+			err := configs.StoreFromAnnotationsAll(&v1.Pod{})
 			if tt.wantErr {
 				assert.NotNil(t, err)
 			} else {
@@ -159,11 +159,11 @@ func TestConfigsValidateAll(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &configs{
+			configs := &configs{
 				cpuConfig:    tt.fields.cpuConfig,
 				memoryConfig: tt.fields.memoryConfig,
 			}
-			err := c.ValidateAll(&v1.Container{})
+			err := configs.ValidateAll(&v1.Container{})
 			if tt.wantErr {
 				assert.NotNil(t, err)
 			} else {
@@ -206,11 +206,11 @@ func TestConfigsValidateCollection(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &configs{
+			configs := &configs{
 				cpuConfig:    tt.fields.cpuConfig,
 				memoryConfig: tt.fields.memoryConfig,
 			}
-			err := c.ValidateCollection()
+			err := configs.ValidateCollection()
 			if tt.wantErrMsg != "" {
 				assert.Contains(t, err.Error(), tt.wantErrMsg)
 			} else {
@@ -270,11 +270,11 @@ func TestConfigsConfigFor(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &configs{
+			configs := &configs{
 				cpuConfig:    tt.fields.cpuConfig,
 				memoryConfig: tt.fields.memoryConfig,
 			}
-			got := c.ConfigFor(tt.args.resourceName)
+			got := configs.ConfigFor(tt.args.resourceName)
 			if tt.wantNil {
 				assert.Nil(t, got)
 			} else {
@@ -286,13 +286,62 @@ func TestConfigsConfigFor(t *testing.T) {
 }
 
 func TestConfigsAllConfigs(t *testing.T) {
+	configs := &configs{
+		cpuConfig:    &config{resourceName: v1.ResourceCPU},
+		memoryConfig: &config{resourceName: v1.ResourceMemory},
+	}
+	allConfigs := configs.AllConfigs()
+	assert.Equal(t, 2, len(allConfigs))
+	assert.Equal(t, v1.ResourceCPU, allConfigs[0].ResourceName())
+	assert.Equal(t, v1.ResourceMemory, allConfigs[1].ResourceName())
 }
 
 func TestConfigsAllEnabledConfigs(t *testing.T) {
+	configs := &configs{
+		cpuConfig: &config{
+			resourceName:             v1.ResourceCPU,
+			csaEnabled:               false,
+			hasStoredFromAnnotations: true,
+			userEnabled:              false,
+		},
+		memoryConfig: &config{
+			resourceName:             v1.ResourceMemory,
+			csaEnabled:               true,
+			hasStoredFromAnnotations: true,
+			userEnabled:              true,
+		},
+	}
+	allConfigs := configs.AllEnabledConfigs()
+	assert.Equal(t, 1, len(allConfigs))
+	assert.Equal(t, v1.ResourceMemory, allConfigs[0].ResourceName())
 }
 
 func TestConfigsAllEnabledConfigsResourceNames(t *testing.T) {
+	configs := &configs{
+		cpuConfig: &config{
+			resourceName:             v1.ResourceCPU,
+			csaEnabled:               false,
+			hasStoredFromAnnotations: true,
+			userEnabled:              false,
+		},
+		memoryConfig: &config{
+			resourceName:             v1.ResourceMemory,
+			csaEnabled:               true,
+			hasStoredFromAnnotations: true,
+			userEnabled:              true,
+		},
+	}
+	assert.Equal(t, []v1.ResourceName{v1.ResourceMemory}, configs.AllEnabledConfigsResourceNames())
 }
 
 func TestConfigsString(t *testing.T) {
+	configs := &configs{
+		cpuConfig: scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
+			m.On("String").Return("cpuConfig")
+		}),
+		memoryConfig: scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
+			m.On("String").Return("memoryConfig")
+		}),
+	}
+	assert.Equal(t, "cpuConfig, memoryConfig", configs.String())
 }

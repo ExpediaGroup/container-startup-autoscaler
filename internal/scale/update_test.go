@@ -32,8 +32,8 @@ func TestNewUpdate(t *testing.T) {
 func TestUpdateResourceName(t *testing.T) {
 }
 
-func TestUpdateStartupPodMutationFunc(t *testing.T) {
+func TestStartupPodMutationFunc(t *testing.T) {
 }
 
-func TestUpdatePostStartupPodMutationFunc(t *testing.T) {
+func TestPostStartupPodMutationFunc(t *testing.T) {
 }

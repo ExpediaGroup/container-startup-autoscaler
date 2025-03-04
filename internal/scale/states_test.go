@@ -19,6 +19,7 @@ package scale
 import (
 	"testing"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 )
@@ -47,7 +48,77 @@ func TestStatesDoesLimitsCurrentMatchSpecAll(t *testing.T) {
 }
 
 func TestStatesStateFor(t *testing.T) {
+	type fields struct {
+		cpuState    scalecommon.State
+		memoryState scalecommon.State
+	}
+	type args struct {
+		resourceName v1.ResourceName
+	}
+	tests := []struct {
+		name             string
+		fields           fields
+		args             args
+		wantNil          bool
+		wantResourceName v1.ResourceName
+	}{
+		{
+			name: "Cpu",
+			fields: fields{
+				cpuState:    &state{resourceName: v1.ResourceCPU},
+				memoryState: &state{resourceName: v1.ResourceMemory},
+			},
+			args: args{
+				resourceName: v1.ResourceCPU,
+			},
+			wantNil:          false,
+			wantResourceName: v1.ResourceCPU,
+		},
+		{
+			name: "Memory",
+			fields: fields{
+				cpuState:    &state{resourceName: v1.ResourceCPU},
+				memoryState: &state{resourceName: v1.ResourceMemory},
+			},
+			args: args{
+				resourceName: v1.ResourceMemory,
+			},
+			wantNil:          false,
+			wantResourceName: v1.ResourceMemory,
+		},
+		{
+			name:   "Default",
+			fields: fields{},
+			args: args{
+				resourceName: v1.ResourceName(""),
+			},
+			wantNil: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			states := &states{
+				cpuState:    tt.fields.cpuState,
+				memoryState: tt.fields.memoryState,
+			}
+			got := states.StateFor(tt.args.resourceName)
+			if tt.wantNil {
+				assert.Nil(t, got)
+			} else {
+				assert.NotNil(t, got)
+				assert.Equal(t, tt.wantResourceName, got.ResourceName())
+			}
+		})
+	}
 }
 
 func TestStatesAllStates(t *testing.T) {
+	states := &states{
+		cpuState:    &state{resourceName: v1.ResourceCPU},
+		memoryState: &state{resourceName: v1.ResourceMemory},
+	}
+	allStates := states.AllStates()
+	assert.Equal(t, 2, len(allStates))
+	assert.Equal(t, v1.ResourceCPU, allStates[0].ResourceName())
+	assert.Equal(t, v1.ResourceMemory, allStates[1].ResourceName())
 }

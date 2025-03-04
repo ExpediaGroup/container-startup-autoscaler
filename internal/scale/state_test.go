@@ -30,6 +30,7 @@ func TestNewState(t *testing.T) {
 }
 
 func TestStateResourceName(t *testing.T) {
+	// TODO(wt) continue
 }
 
 func TestStateIsStartupConfigApplied(t *testing.T) {

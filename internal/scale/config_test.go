@@ -88,15 +88,15 @@ func TestConfigIsEnabled(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &config{
+			config := &config{
 				csaEnabled:               tt.fields.csaEnabled,
 				hasStoredFromAnnotations: tt.fields.hasStoredFromAnnotations,
 				userEnabled:              true,
 			}
 			if tt.wantPanicMsg != "" {
-				assert.PanicsWithError(t, tt.wantPanicMsg, func() { c.IsEnabled() })
+				assert.PanicsWithError(t, tt.wantPanicMsg, func() { config.IsEnabled() })
 			} else {
-				assert.Equal(t, tt.want, c.IsEnabled())
+				assert.Equal(t, tt.want, config.IsEnabled())
 			}
 		})
 	}
@@ -132,16 +132,16 @@ func TestConfigResources(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &config{
+			config := &config{
 				csaEnabled:               true,
 				hasStoredFromAnnotations: tt.fields.hasStoredFromAnnotations,
 				userEnabled:              true,
 				resources:                tt.fields.resources,
 			}
 			if tt.wantPanicMsg != "" {
-				assert.PanicsWithError(t, tt.wantPanicMsg, func() { c.Resources() })
+				assert.PanicsWithError(t, tt.wantPanicMsg, func() { config.Resources() })
 			} else {
-				assert.Equal(t, tt.want, c.Resources())
+				assert.Equal(t, tt.want, config.Resources())
 			}
 		})
 	}
@@ -355,22 +355,22 @@ func TestConfigStoreFromAnnotations(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &config{
+			config := &config{
 				annotationStartupName:             tt.fields.annotationStartupName,
 				annotationPostStartupRequestsName: tt.fields.annotationPostStartupRequestsName,
 				annotationPostStartupLimitsName:   tt.fields.annotationPostStartupLimitsName,
 				csaEnabled:                        tt.fields.csaEnabled,
 				podHelper:                         tt.fields.podHelper,
 			}
-			err := c.StoreFromAnnotations(&v1.Pod{})
+			err := config.StoreFromAnnotations(&v1.Pod{})
 			if tt.wantErrMsg != "" {
 				assert.Contains(t, err.Error(), tt.wantErrMsg)
 			} else {
 				assert.Nil(t, err)
 			}
-			assert.Equal(t, tt.wantUserEnabled, c.userEnabled)
-			assert.Equal(t, tt.wantHasStoredFromAnnotations, c.hasStoredFromAnnotations)
-			assert.Equal(t, tt.wantResources, c.resources)
+			assert.Equal(t, tt.wantUserEnabled, config.userEnabled)
+			assert.Equal(t, tt.wantHasStoredFromAnnotations, config.hasStoredFromAnnotations)
+			assert.Equal(t, tt.wantResources, config.resources)
 		})
 	}
 }
@@ -516,7 +516,7 @@ func TestConfigValidate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &config{
+			config := &config{
 				resourceName:             v1.ResourceCPU,
 				csaEnabled:               tt.fields.csaEnabled,
 				containerHelper:          tt.fields.containerHelper,
@@ -525,9 +525,9 @@ func TestConfigValidate(t *testing.T) {
 				resources:                tt.fields.resources,
 			}
 			if tt.wantPanicMsg != "" {
-				assert.PanicsWithError(t, tt.wantPanicMsg, func() { _ = c.Validate(&v1.Container{}) })
+				assert.PanicsWithError(t, tt.wantPanicMsg, func() { _ = config.Validate(&v1.Container{}) })
 			} else {
-				err := c.Validate(&v1.Container{})
+				err := config.Validate(&v1.Container{})
 				if tt.wantErrMsg != "" {
 					assert.Contains(t, err.Error(), tt.wantErrMsg)
 				} else {
@@ -579,7 +579,7 @@ func TestConfigString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &config{
+			config := &config{
 				resourceName:             v1.ResourceCPU,
 				csaEnabled:               tt.fields.csaEnabled,
 				userEnabled:              true,
@@ -587,9 +587,9 @@ func TestConfigString(t *testing.T) {
 				resources:                tt.fields.resources,
 			}
 			if tt.wantPanicMsg != "" {
-				assert.PanicsWithError(t, tt.wantPanicMsg, func() { _ = c.String() })
+				assert.PanicsWithError(t, tt.wantPanicMsg, func() { _ = config.String() })
 			} else {
-				assert.Equal(t, tt.want, c.String())
+				assert.Equal(t, tt.want, config.String())
 			}
 		})
 	}
