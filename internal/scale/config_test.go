@@ -333,7 +333,6 @@ func TestConfigStoreFromAnnotations(t *testing.T) {
 					m.HasAnnotationDefault()
 				}),
 			},
-
 			wantErrMsg:                   "unable to parse '" + scalecommon.AnnotationCpuPostStartupLimits + "' annotation value ('test')",
 			wantUserEnabled:              false,
 			wantHasStoredFromAnnotations: false,
@@ -402,6 +401,7 @@ func TestConfigValidate(t *testing.T) {
 				csaEnabled:               false,
 				hasStoredFromAnnotations: true,
 			},
+			wantErrMsg: "",
 		},
 		{
 			name: "PostStartupRequestsMustEqualPostStartupLimits",
@@ -511,6 +511,7 @@ func TestConfigValidate(t *testing.T) {
 					PostStartupLimits:   resource.MustParse("1m"),
 				},
 			},
+			wantErrMsg: "",
 		},
 	}
 	for _, tt := range tests {
