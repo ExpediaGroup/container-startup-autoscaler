@@ -8,7 +8,7 @@
 ### Added
 - Ability to supply _either_ CPU or memory scaling configuration through pod annotations (rather than always requiring
   both).
-- New `enabledForResources` sub-item within the `scale` status item that indicates which resources that are enabled for
+- New `enabledForResources` sub-item within the `scale` status item that indicates which resources are enabled for
   scaling.
 - New `failure_configuration` counter metric that shows the number of reconciles where there was a configuration-related
   failure.
@@ -16,6 +16,7 @@
 
 ### Changed
 - Upgrades Go to 1.23.6.
+- Upgrades all dependencies.
 
 ### Helm Chart
 [1.5.0](charts/container-startup-autoscaler/CHANGELOG.md#150)

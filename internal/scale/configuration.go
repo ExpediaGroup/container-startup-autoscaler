@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 // TODO(wt) ensure sandbox scripts with only one of cpu/memory enabled (add changelog too)
-// TODO(wt) update all dependencies to latest versions (add changelog too)
 // TODO(wt) ensure docs up to date completely - cpu/memory now optional (but at least one required)
 
 package scale
