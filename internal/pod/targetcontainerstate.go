@@ -30,7 +30,7 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-// targetContainerState is the default implementation of TargetContainerState.
+// targetContainerState is the default implementation of podcommon.TargetContainerState.
 type targetContainerState struct {
 	containerHelper kubecommon.ContainerHelper
 }
@@ -110,7 +110,7 @@ func (s targetContainerState) stateReadinessProbe(container *v1.Container) podco
 	return podcommon.StateBoolFalse
 }
 
-// stateContainer returns the container state for the target container, using the supplied config.
+// stateContainer returns the container state for the target container.
 func (s targetContainerState) stateContainer(pod *v1.Pod, targetContainer *v1.Container) (podcommon.StateContainer, error) {
 	containerState, err := s.containerHelper.State(pod, targetContainer)
 	if err != nil {
@@ -132,7 +132,7 @@ func (s targetContainerState) stateContainer(pod *v1.Pod, targetContainer *v1.Co
 	return podcommon.StateContainerUnknown, nil
 }
 
-// stateStarted returns the ready state for the target container, using the supplied config.
+// stateStarted returns the ready state for the target container.
 func (s targetContainerState) stateStarted(pod *v1.Pod, targetContainer *v1.Container) (podcommon.StateBool, error) {
 	started, err := s.containerHelper.IsStarted(pod, targetContainer)
 	if err != nil {
@@ -146,7 +146,7 @@ func (s targetContainerState) stateStarted(pod *v1.Pod, targetContainer *v1.Cont
 	return podcommon.StateBoolFalse, nil
 }
 
-// stateReady returns the ready state for the target container, using the supplied config.
+// stateReady returns the ready state for the target container.
 func (s targetContainerState) stateReady(pod *v1.Pod, targetContainer *v1.Container) (podcommon.StateBool, error) {
 	ready, err := s.containerHelper.IsReady(pod, targetContainer)
 	if err != nil {
@@ -174,7 +174,7 @@ func (s targetContainerState) stateResources(
 	}
 }
 
-// stateStatusResources returns the status resources state for the target container, using the supplied config.
+// stateStatusResources returns the status resources state for the target container.
 func (s targetContainerState) stateStatusResources(
 	pod *v1.Pod,
 	targetContainer *v1.Container,
@@ -205,7 +205,7 @@ func (s targetContainerState) stateStatusResources(
 	return podcommon.StateStatusResourcesContainerResourcesMismatch, nil
 }
 
-// shouldReturnError reports whether to return an error after examining the type of the supplied err. Certain errors
+// shouldReturnError returns whether to return an error after examining the type of the supplied err. Certain errors
 // should not propagate since they are likely transient in nature i.e. 'resolved' in future reconciles.
 func (s targetContainerState) shouldReturnError(ctx context.Context, err error) bool {
 	if errors.As(err, &kube.ContainerStatusNotPresentError{}) {

@@ -31,7 +31,7 @@ import (
 
 const eventReasonValidation = "Validation"
 
-// validation is the default implementation of Validation.
+// validation is the default implementation of podcommon.Validation.
 type validation struct {
 	recorder        record.EventRecorder
 	status          podcommon.Status

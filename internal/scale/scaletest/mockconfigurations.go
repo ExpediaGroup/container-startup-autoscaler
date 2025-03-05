@@ -23,7 +23,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// MockConfigurations is a generic mock for scalecommon.Configurations.
 type MockConfigurations struct {
 	mock.Mock
 }

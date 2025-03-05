@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=$BUILDPLATFORM golang:1.23.3 AS build
+FROM --platform=$BUILDPLATFORM golang:1.23.6 AS build
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG TARGETOS

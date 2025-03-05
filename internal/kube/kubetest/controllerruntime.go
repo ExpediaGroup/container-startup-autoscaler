@@ -23,8 +23,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
-// ControllerRuntimeFakeClientWithKubeFake returns a fake client configured using the clientset and interceptor.Funcs
-// as built from the supplied fakeClientFunc and interceptorFuncsFunc.
 func ControllerRuntimeFakeClientWithKubeFake(
 	fakeClientFunc func() *kubefake.Clientset,
 	interceptorFuncsFunc func() interceptor.Funcs,

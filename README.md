@@ -262,7 +262,7 @@ Example output:
 
 Explanation of status items:
 
-| Item          | Sub Item              | Description                                                                                                |
+| Item          | Sub-Item              | Description                                                                                                |
 |---------------|-----------------------|------------------------------------------------------------------------------------------------------------|
 | `status`      | -                     | Human-readable status. Any validation errors are indicated here.                                           |
 | `states`      | -                     | The states of the target container.                                                                        |

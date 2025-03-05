@@ -22,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-// MockContainerHelper is a generic mock for pod.ContainerHelper.
 type MockContainerHelper struct {
 	mock.Mock
 }

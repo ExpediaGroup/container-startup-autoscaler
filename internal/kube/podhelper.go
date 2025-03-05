@@ -47,7 +47,7 @@ const (
 	mapForAnnotation mapFor = "annotation"
 )
 
-// podHelper is the default implementation of PodHelper.
+// podHelper is the default implementation of kubecommon.PodHelper.
 type podHelper struct {
 	client client.Client
 }
@@ -77,8 +77,9 @@ func (h *podHelper) Get(ctx context.Context, name types.NamespacedName) (bool, *
 
 // Patch applies the mutations dictated by mutatePodFuncs to either the 'resize' subresource of the supplied pod, or the
 // pod itself. If mustSyncCache is true, it waits for the patched pod to be updated in the informer cache. It returns
-// the new server representation of the pod. Patches are retried and specially handled if there's a conflict: the
-// latest version is retrieved and the patch is reapplied before attempting again. The supplied pod is never mutated.
+// the new server representation of the pod. The patch is retried and specially handled if there's a conflict: the
+// latest version is retrieved and the mutations are reapplied before attempting again. The supplied pod is never
+// mutated.
 func (h *podHelper) Patch(
 	ctx context.Context,
 	pod *v1.Pod,
@@ -148,7 +149,7 @@ func (h *podHelper) Patch(
 	return mutatedPod, nil
 }
 
-// HasAnnotation reports whether the supplied pod has the supplied name annotation.
+// HasAnnotation returns whether the supplied pod has the supplied name annotation.
 func (h *podHelper) HasAnnotation(pod *v1.Pod, name string) (bool, string) {
 	if value, has := pod.Annotations[name]; has {
 		return true, value
@@ -169,7 +170,7 @@ func (h *podHelper) ExpectedAnnotationValueAs(pod *v1.Pod, name string, as kubec
 	return h.expectedLabelOrAnnotationAs(mapForAnnotation, pod.Annotations, name, as)
 }
 
-// IsContainerInSpec reports whether the container with the supplied containerName is present in the supplied pod's
+// IsContainerInSpec returns whether the container with the supplied containerName is present in the supplied pod's
 // spec.
 func (h *podHelper) IsContainerInSpec(pod *v1.Pod, containerName string) bool {
 	for _, container := range pod.Spec.Containers {

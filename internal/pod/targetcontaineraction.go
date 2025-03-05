@@ -35,7 +35,7 @@ import (
 
 const eventReasonScaling = "Scaling"
 
-// targetContainerAction is the default implementation of TargetContainerAction.
+// targetContainerAction is the default implementation of podcommon.TargetContainerAction.
 type targetContainerAction struct {
 	controllerConfig controllercommon.ControllerConfig
 	recorder         record.EventRecorder

@@ -27,7 +27,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// podBuilder builds a test pod.
 type podBuilder struct {
 	enabledResources            []v1.ResourceName
 	resourcesState              podcommon.StateResources

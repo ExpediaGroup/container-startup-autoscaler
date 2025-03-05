@@ -36,7 +36,7 @@ const (
 	timeFormatMilli = "2006-01-02T15:04:05.000-0700"
 )
 
-// status is the default implementation of Status.
+// status is the default implementation of podcommon.Status.
 type status struct {
 	podHelper kubecommon.PodHelper
 }
@@ -45,8 +45,8 @@ func newStatus(podHelper kubecommon.PodHelper) *status {
 	return &status{podHelper: podHelper}
 }
 
-// Update updates controller status by applying mutations to the supplied pod using the supplied status, states and
-// scaleState. The supplied pod is never mutated. Returns the new server representation of the pod.
+// Update updates controller status by applying mutations to the supplied pod. The supplied pod is never mutated.
+// Returns the new server representation of the pod.
 func (s *status) Update(
 	ctx context.Context,
 	pod *v1.Pod,
@@ -65,8 +65,7 @@ func (s *status) Update(
 	return newPod, nil
 }
 
-// PodMutationFunc returns a function that performs the actual work of updating controller status. This is used both by
-// Update and elsewhere (package-externally) as additional mutations when patching for something else.
+// PodMutationFunc returns a function that performs the actual work of updating controller status.
 func (s *status) PodMutationFunc(
 	ctx context.Context,
 	status string,

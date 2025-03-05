@@ -27,7 +27,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// MockPodHelper is a generic mock for pod.PodHelper.
 type MockPodHelper struct {
 	mock.Mock
 }

@@ -22,7 +22,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// MockStates is a generic mock for scale.States.
 type MockStates struct {
 	mock.Mock
 }

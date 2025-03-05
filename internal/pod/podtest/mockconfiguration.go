@@ -23,7 +23,6 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-// MockConfiguration is a generic mock for pod.Configuration.
 type MockConfiguration struct {
 	mock.Mock
 }

@@ -125,7 +125,7 @@ func buildMessage(format string, args []any, isFatal bool) string {
 	return msg
 }
 
-// buildMessage returns a logger that's been configured with additional values.
+// configuredLogger returns a logger that's been configured with additional values.
 func configuredLogger(ctx context.Context) logr.Logger {
 	logger := Logger
 

@@ -18,7 +18,7 @@ package common
 
 import "reflect"
 
-// IsStructEmpty reports whether s is (deeply) empty. Supports pointers. Returns false if s is not a struct.
+// IsStructEmpty returns whether s is (deeply) empty. Supports pointers. Returns false if s is not a struct.
 func IsStructEmpty(s any) bool {
 	value := reflect.ValueOf(s)
 
@@ -35,7 +35,7 @@ func IsStructEmpty(s any) bool {
 	return false
 }
 
-// AreStructsEqual reports whether s1 and s2 are (deeply) equal. Supports pointers. Returns false if s1 or s2 are not
+// AreStructsEqual returns whether s1 and s2 are (deeply) equal. Supports pointers. Returns false if s1 or s2 are not
 // structs.
 func AreStructsEqual(s1 any, s2 any) bool {
 	value1 := reflect.ValueOf(s1)

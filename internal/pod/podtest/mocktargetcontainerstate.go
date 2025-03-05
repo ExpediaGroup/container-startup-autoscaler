@@ -25,7 +25,6 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-// MockTargetContainerState is a generic mock for pod.TargetContainerState.
 type MockTargetContainerState struct {
 	mock.Mock
 }

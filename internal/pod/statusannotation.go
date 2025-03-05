@@ -52,7 +52,7 @@ func (s StatusAnnotation) Json() string {
 	return string(bytes)
 }
 
-// Equal reports whether this is to equal to another.
+// Equal returns whether this is to equal to another.
 func (s StatusAnnotation) Equal(to StatusAnnotation) bool {
 	// Ignore s.LastUpdated.
 	return s.Status == to.Status &&

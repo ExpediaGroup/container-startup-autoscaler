@@ -18,6 +18,7 @@ package scalecommon
 
 import "k8s.io/apimachinery/pkg/api/resource"
 
+// Resources represents the startup and post-started resources for a container.
 type Resources struct {
 	Startup             resource.Quantity
 	PostStartupRequests resource.Quantity

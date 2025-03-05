@@ -24,7 +24,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// configuration is the default implementation of Configuration.
+// configuration is the default implementation of podcommon.Configuration.
 type configuration struct {
 	podHelper       kubecommon.PodHelper
 	containerHelper kubecommon.ContainerHelper

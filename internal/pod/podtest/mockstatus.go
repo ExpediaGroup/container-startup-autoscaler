@@ -25,7 +25,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// MockStatus is a generic mock for pod.Status.
 type MockStatus struct {
 	mock.Mock
 }

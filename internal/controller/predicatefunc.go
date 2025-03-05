@@ -52,19 +52,19 @@ import (
 	  predicates.
 */
 
-// PredicateCreateFunc reports whether create events should be reconciled.
+// PredicateCreateFunc returns whether create events should be reconciled.
 func PredicateCreateFunc(_ event.TypedCreateEvent[*v1.Pod]) bool {
 	// Never filter.
 	return true
 }
 
-// PredicateDeleteFunc reports whether delete events should be reconciled.
+// PredicateDeleteFunc returns whether delete events should be reconciled.
 func PredicateDeleteFunc(_ event.TypedDeleteEvent[*v1.Pod]) bool {
 	// Don't need to reconcile deletes.
 	return false
 }
 
-// PredicateUpdateFunc reports whether update events should be reconciled.
+// PredicateUpdateFunc returns whether update events should be reconciled.
 func PredicateUpdateFunc(event event.TypedUpdateEvent[*v1.Pod]) bool {
 	oldPod := event.ObjectOld
 	newPod := event.ObjectNew
@@ -117,7 +117,7 @@ func PredicateUpdateFunc(event event.TypedUpdateEvent[*v1.Pod]) bool {
 	return true
 }
 
-// PredicateGenericFunc reports whether generic events should be reconciled.
+// PredicateGenericFunc returns whether generic events should be reconciled.
 func PredicateGenericFunc(_ event.TypedGenericEvent[*v1.Pod]) bool {
 	return false
 }

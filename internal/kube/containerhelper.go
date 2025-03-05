@@ -26,14 +26,14 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-// containerHelper is the default implementation of ContainerHelper.
+// containerHelper is the default implementation of kubecommon.ContainerHelper.
 type containerHelper struct{}
 
 func NewContainerHelper() kubecommon.ContainerHelper {
 	return containerHelper{}
 }
 
-// Get returns the container with the supplied containerName, from the supplied pod.
+// Get returns the container with the supplied container name, from the supplied pod.
 func (h containerHelper) Get(pod *v1.Pod, containerName string) (*v1.Container, error) {
 	for _, container := range pod.Spec.Containers {
 		if container.Name == containerName {
@@ -44,12 +44,12 @@ func (h containerHelper) Get(pod *v1.Pod, containerName string) (*v1.Container, 
 	return &v1.Container{}, errors.New("container not present")
 }
 
-// HasStartupProbe reports whether container has a startup probe.
+// HasStartupProbe returns whether container has a startup probe.
 func (h containerHelper) HasStartupProbe(container *v1.Container) bool {
 	return container.StartupProbe != nil
 }
 
-// HasReadinessProbe reports whether container has a readiness probe.
+// HasReadinessProbe returns whether container has a readiness probe.
 func (h containerHelper) HasReadinessProbe(container *v1.Container) bool {
 	return container.ReadinessProbe != nil
 }
@@ -64,7 +64,7 @@ func (h containerHelper) State(pod *v1.Pod, container *v1.Container) (v1.Contain
 	return stat.State, nil
 }
 
-// IsStarted reports whether the container is started.
+// IsStarted returns whether the container is started.
 func (h containerHelper) IsStarted(pod *v1.Pod, container *v1.Container) (bool, error) {
 	stat, err := h.status(pod, container)
 	if err != nil {
@@ -78,7 +78,7 @@ func (h containerHelper) IsStarted(pod *v1.Pod, container *v1.Container) (bool, 
 	return *stat.Started, nil
 }
 
-// IsReady reports whether the container is ready.
+// IsReady returns whether the container is ready.
 func (h containerHelper) IsReady(pod *v1.Pod, container *v1.Container) (bool, error) {
 	stat, err := h.status(pod, container)
 	if err != nil {
@@ -88,7 +88,7 @@ func (h containerHelper) IsReady(pod *v1.Pod, container *v1.Container) (bool, er
 	return stat.Ready, nil
 }
 
-// Requests returns requests for the supplied resourceName, from the supplied container.
+// Requests returns requests for the supplied resource name, from the supplied container.
 func (h containerHelper) Requests(container *v1.Container, resourceName v1.ResourceName) resource.Quantity {
 	if container.Resources.Requests == nil {
 		return resource.Quantity{}
@@ -104,7 +104,7 @@ func (h containerHelper) Requests(container *v1.Container, resourceName v1.Resou
 	panic(fmt.Errorf("resourceName '%s' not supported", resourceName))
 }
 
-// Limits returns limits for the supplied resourceName, from the supplied container.
+// Limits returns limits for the supplied resource name, from the supplied container.
 func (h containerHelper) Limits(container *v1.Container, resourceName v1.ResourceName) resource.Quantity {
 	if container.Resources.Limits == nil {
 		return resource.Quantity{}
@@ -120,7 +120,7 @@ func (h containerHelper) Limits(container *v1.Container, resourceName v1.Resourc
 	panic(fmt.Errorf("resourceName '%s' not supported", resourceName))
 }
 
-// ResizePolicy returns the resource resize restart policy for the supplied resourceName, from the supplied container.
+// ResizePolicy returns the resource resize restart policy for the supplied resource name, from the supplied container.
 func (h containerHelper) ResizePolicy(
 	container *v1.Container,
 	resourceName v1.ResourceName,
@@ -138,7 +138,7 @@ func (h containerHelper) ResizePolicy(
 	panic(fmt.Errorf("resourceName '%s' not supported", resourceName))
 }
 
-// CurrentRequests returns currently enacted requests for the supplied container and resourceName.
+// CurrentRequests returns currently enacted requests for the supplied container and resource name.
 func (h containerHelper) CurrentRequests(
 	pod *v1.Pod,
 	container *v1.Container,
@@ -163,7 +163,7 @@ func (h containerHelper) CurrentRequests(
 	panic(fmt.Errorf("resourceName '%s' not supported", resourceName))
 }
 
-// CurrentLimits returns currently enacted limits for the supplied container and resourceName, from the supplied
+// CurrentLimits returns currently enacted limits for the supplied container and resource name, from the supplied
 // pod.
 func (h containerHelper) CurrentLimits(
 	pod *v1.Pod,

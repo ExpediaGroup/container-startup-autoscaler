@@ -22,7 +22,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-// ctxBuilder builds a test container.
 type containerBuilder struct {
 	enabledResources []v1.ResourceName
 	resourcesState   podcommon.StateResources

@@ -24,7 +24,6 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-// MockValidation is a generic mock for pod.Validation.
 type MockValidation struct {
 	mock.Mock
 }

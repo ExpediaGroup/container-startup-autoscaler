@@ -27,7 +27,6 @@ import (
 	"github.com/tonglil/buflogr"
 )
 
-// ctxBuilder builds a test context.
 type ctxBuilder struct {
 	config ctxConfig
 }

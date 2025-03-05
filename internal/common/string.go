@@ -21,7 +21,7 @@ import (
 	"unicode"
 )
 
-// IsStringEmpty reports whether s is empty. All-spaces are reported empty.
+// IsStringEmpty returns whether s is empty. All-spaces are reported empty.
 func IsStringEmpty(s string) bool {
 	return strings.ReplaceAll(s, " ", "") == ""
 }

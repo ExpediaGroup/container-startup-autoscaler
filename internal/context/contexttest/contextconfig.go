@@ -22,7 +22,6 @@ import (
 
 const KeyUuid = "uuid"
 
-// ctxConfig holds configuration for generating a test context.
 type ctxConfig struct {
 	logBuffer              *bytes.Buffer
 	standardRetryAttempts  int

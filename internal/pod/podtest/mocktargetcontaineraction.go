@@ -25,7 +25,6 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-// MockTargetContainerAction is a generic mock for pod.TargetContainerAction.
 type MockTargetContainerAction struct {
 	mock.Mock
 }
