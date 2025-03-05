@@ -29,15 +29,15 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-func TestNewConfigs(t *testing.T) {
-	configs := NewConfigs(nil, nil)
-	allConfigs := configs.AllConfigs()
+func TestNewConfigurations(t *testing.T) {
+	configs := NewConfigurations(nil, nil)
+	allConfigs := configs.AllConfigurations()
 	assert.Equal(t, 2, len(allConfigs))
 	assert.Equal(t, v1.ResourceCPU, allConfigs[0].ResourceName())
 	assert.Equal(t, v1.ResourceMemory, allConfigs[1].ResourceName())
 }
 
-func TestConfigsTargetContainerName(t *testing.T) {
+func TestConfigurationsTargetContainerName(t *testing.T) {
 	type fields struct {
 		podHelper kubecommon.PodHelper
 	}
@@ -69,7 +69,7 @@ func TestConfigsTargetContainerName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			configs := &configs{
+			configs := &configurations{
 				podHelper: tt.fields.podHelper,
 			}
 			got, err := configs.TargetContainerName(&v1.Pod{})
@@ -83,10 +83,10 @@ func TestConfigsTargetContainerName(t *testing.T) {
 	}
 }
 
-func TestConfigsStoreFromAnnotationsAll(t *testing.T) {
+func TestConfigurationsStoreFromAnnotationsAll(t *testing.T) {
 	type fields struct {
-		cpuConfig    scalecommon.Config
-		memoryConfig scalecommon.Config
+		cpuConfig    scalecommon.Configuration
+		memoryConfig scalecommon.Configuration
 	}
 	tests := []struct {
 		name    string
@@ -96,8 +96,8 @@ func TestConfigsStoreFromAnnotationsAll(t *testing.T) {
 		{
 			name: "Error",
 			fields: fields{
-				cpuConfig: scaletest.NewMockConfig(nil),
-				memoryConfig: scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
+				cpuConfig: scaletest.NewMockConfiguration(nil),
+				memoryConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 					m.On("StoreFromAnnotations", mock.Anything).Return(errors.New(""))
 				}),
 			},
@@ -106,15 +106,15 @@ func TestConfigsStoreFromAnnotationsAll(t *testing.T) {
 		{
 			name: "Ok",
 			fields: fields{
-				cpuConfig:    scaletest.NewMockConfig(nil),
-				memoryConfig: scaletest.NewMockConfig(nil),
+				cpuConfig:    scaletest.NewMockConfiguration(nil),
+				memoryConfig: scaletest.NewMockConfiguration(nil),
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			configs := &configs{
+			configs := &configurations{
 				cpuConfig:    tt.fields.cpuConfig,
 				memoryConfig: tt.fields.memoryConfig,
 			}
@@ -128,10 +128,10 @@ func TestConfigsStoreFromAnnotationsAll(t *testing.T) {
 	}
 }
 
-func TestConfigsValidateAll(t *testing.T) {
+func TestConfigurationsValidateAll(t *testing.T) {
 	type fields struct {
-		cpuConfig    scalecommon.Config
-		memoryConfig scalecommon.Config
+		cpuConfig    scalecommon.Configuration
+		memoryConfig scalecommon.Configuration
 	}
 	tests := []struct {
 		name    string
@@ -141,8 +141,8 @@ func TestConfigsValidateAll(t *testing.T) {
 		{
 			name: "Error",
 			fields: fields{
-				cpuConfig: scaletest.NewMockConfig(nil),
-				memoryConfig: scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
+				cpuConfig: scaletest.NewMockConfiguration(nil),
+				memoryConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 					m.On("Validate", mock.Anything).Return(errors.New(""))
 				}),
 			},
@@ -151,15 +151,15 @@ func TestConfigsValidateAll(t *testing.T) {
 		{
 			name: "Ok",
 			fields: fields{
-				cpuConfig:    scaletest.NewMockConfig(nil),
-				memoryConfig: scaletest.NewMockConfig(nil),
+				cpuConfig:    scaletest.NewMockConfiguration(nil),
+				memoryConfig: scaletest.NewMockConfiguration(nil),
 			},
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			configs := &configs{
+			configs := &configurations{
 				cpuConfig:    tt.fields.cpuConfig,
 				memoryConfig: tt.fields.memoryConfig,
 			}
@@ -173,10 +173,10 @@ func TestConfigsValidateAll(t *testing.T) {
 	}
 }
 
-func TestConfigsValidateCollection(t *testing.T) {
+func TestConfigurationsValidateCollection(t *testing.T) {
 	type fields struct {
-		cpuConfig    scalecommon.Config
-		memoryConfig scalecommon.Config
+		cpuConfig    scalecommon.Configuration
+		memoryConfig scalecommon.Configuration
 	}
 	tests := []struct {
 		name       string
@@ -186,10 +186,10 @@ func TestConfigsValidateCollection(t *testing.T) {
 		{
 			name: "NoResourcesAreConfiguredForScaling",
 			fields: fields{
-				cpuConfig: scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
+				cpuConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 					m.On("IsEnabled").Return(false)
 				}),
-				memoryConfig: scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
+				memoryConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 					m.On("IsEnabled").Return(false)
 				}),
 			},
@@ -198,15 +198,15 @@ func TestConfigsValidateCollection(t *testing.T) {
 		{
 			name: "Ok",
 			fields: fields{
-				cpuConfig:    scaletest.NewMockConfig(nil),
-				memoryConfig: scaletest.NewMockConfig(nil),
+				cpuConfig:    scaletest.NewMockConfiguration(nil),
+				memoryConfig: scaletest.NewMockConfiguration(nil),
 			},
 			wantErrMsg: "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			configs := &configs{
+			configs := &configurations{
 				cpuConfig:    tt.fields.cpuConfig,
 				memoryConfig: tt.fields.memoryConfig,
 			}
@@ -220,10 +220,10 @@ func TestConfigsValidateCollection(t *testing.T) {
 	}
 }
 
-func TestConfigsConfigFor(t *testing.T) {
+func TestConfigurationsConfigFor(t *testing.T) {
 	type fields struct {
-		cpuConfig    scalecommon.Config
-		memoryConfig scalecommon.Config
+		cpuConfig    scalecommon.Configuration
+		memoryConfig scalecommon.Configuration
 	}
 	type args struct {
 		resourceName v1.ResourceName
@@ -238,8 +238,8 @@ func TestConfigsConfigFor(t *testing.T) {
 		{
 			name: "Cpu",
 			fields: fields{
-				cpuConfig:    &config{resourceName: v1.ResourceCPU},
-				memoryConfig: &config{resourceName: v1.ResourceMemory},
+				cpuConfig:    &configuration{resourceName: v1.ResourceCPU},
+				memoryConfig: &configuration{resourceName: v1.ResourceMemory},
 			},
 			args: args{
 				resourceName: v1.ResourceCPU,
@@ -250,8 +250,8 @@ func TestConfigsConfigFor(t *testing.T) {
 		{
 			name: "Memory",
 			fields: fields{
-				cpuConfig:    &config{resourceName: v1.ResourceCPU},
-				memoryConfig: &config{resourceName: v1.ResourceMemory},
+				cpuConfig:    &configuration{resourceName: v1.ResourceCPU},
+				memoryConfig: &configuration{resourceName: v1.ResourceMemory},
 			},
 			args: args{
 				resourceName: v1.ResourceMemory,
@@ -270,11 +270,11 @@ func TestConfigsConfigFor(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			configs := &configs{
+			configs := &configurations{
 				cpuConfig:    tt.fields.cpuConfig,
 				memoryConfig: tt.fields.memoryConfig,
 			}
-			got := configs.ConfigFor(tt.args.resourceName)
+			got := configs.ConfigurationFor(tt.args.resourceName)
 			if tt.wantNil {
 				assert.Nil(t, got)
 			} else {
@@ -285,61 +285,61 @@ func TestConfigsConfigFor(t *testing.T) {
 	}
 }
 
-func TestConfigsAllConfigs(t *testing.T) {
-	configs := &configs{
-		cpuConfig:    &config{resourceName: v1.ResourceCPU},
-		memoryConfig: &config{resourceName: v1.ResourceMemory},
+func TestConfigurationsAllConfigs(t *testing.T) {
+	configs := &configurations{
+		cpuConfig:    &configuration{resourceName: v1.ResourceCPU},
+		memoryConfig: &configuration{resourceName: v1.ResourceMemory},
 	}
-	allConfigs := configs.AllConfigs()
+	allConfigs := configs.AllConfigurations()
 	assert.Equal(t, 2, len(allConfigs))
 	assert.Equal(t, v1.ResourceCPU, allConfigs[0].ResourceName())
 	assert.Equal(t, v1.ResourceMemory, allConfigs[1].ResourceName())
 }
 
-func TestConfigsAllEnabledConfigs(t *testing.T) {
-	configs := &configs{
-		cpuConfig: &config{
+func TestConfigurationsAllEnabledConfigs(t *testing.T) {
+	configs := &configurations{
+		cpuConfig: &configuration{
 			resourceName:             v1.ResourceCPU,
 			csaEnabled:               false,
 			hasStoredFromAnnotations: true,
 			userEnabled:              false,
 		},
-		memoryConfig: &config{
+		memoryConfig: &configuration{
 			resourceName:             v1.ResourceMemory,
 			csaEnabled:               true,
 			hasStoredFromAnnotations: true,
 			userEnabled:              true,
 		},
 	}
-	allConfigs := configs.AllEnabledConfigs()
+	allConfigs := configs.AllEnabledConfigurations()
 	assert.Equal(t, 1, len(allConfigs))
 	assert.Equal(t, v1.ResourceMemory, allConfigs[0].ResourceName())
 }
 
-func TestConfigsAllEnabledConfigsResourceNames(t *testing.T) {
-	configs := &configs{
-		cpuConfig: &config{
+func TestConfigurationsAllEnabledConfigsResourceNames(t *testing.T) {
+	configs := &configurations{
+		cpuConfig: &configuration{
 			resourceName:             v1.ResourceCPU,
 			csaEnabled:               false,
 			hasStoredFromAnnotations: true,
 			userEnabled:              false,
 		},
-		memoryConfig: &config{
+		memoryConfig: &configuration{
 			resourceName:             v1.ResourceMemory,
 			csaEnabled:               true,
 			hasStoredFromAnnotations: true,
 			userEnabled:              true,
 		},
 	}
-	assert.Equal(t, []v1.ResourceName{v1.ResourceMemory}, configs.AllEnabledConfigsResourceNames())
+	assert.Equal(t, []v1.ResourceName{v1.ResourceMemory}, configs.AllEnabledConfigurationsResourceNames())
 }
 
-func TestConfigsString(t *testing.T) {
-	configs := &configs{
-		cpuConfig: scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
+func TestConfigurationsString(t *testing.T) {
+	configs := &configurations{
+		cpuConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 			m.On("String").Return("cpuConfig")
 		}),
-		memoryConfig: scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
+		memoryConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 			m.On("String").Return("memoryConfig")
 		}),
 	}

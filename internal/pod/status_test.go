@@ -55,7 +55,7 @@ func TestStatusUpdateCore(t *testing.T) {
 			"test",
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
-			scaletest.NewMockConfigs(nil),
+			scaletest.NewMockConfigurations(nil),
 		)
 		assert.Nil(t, got)
 		assert.Contains(t, err.Error(), "unable to patch pod")
@@ -75,7 +75,7 @@ func TestStatusUpdateCore(t *testing.T) {
 			"test",
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
-			scaletest.NewMockConfigs(nil),
+			scaletest.NewMockConfigurations(nil),
 		)
 		assert.Contains(t, err.Error(), "unable to get status annotation from string")
 	})
@@ -93,7 +93,7 @@ func TestStatusUpdateCore(t *testing.T) {
 			"test",
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
-			scaletest.NewMockConfigs(nil),
+			scaletest.NewMockConfigurations(nil),
 		)
 		assert.Nil(t, err)
 		ann, gotAnn := got.Annotations[kubecommon.AnnotationStatus]
@@ -128,7 +128,7 @@ func TestStatusUpdateCore(t *testing.T) {
 			"test",
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
-			scaletest.NewMockConfigs(nil),
+			scaletest.NewMockConfigurations(nil),
 		)
 		assert.Nil(t, err)
 
@@ -228,12 +228,12 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			wantLastScaleFailed:    true,
 		},
 		{
-			name: "ScaleStateNotSupported",
+			name: "StatusScaleStateNotSupported",
 			args: args{
 				&v1.Pod{},
 				podcommon.StatusScaleState("test"),
 			},
-			wantPanicErrMsg: "scaleState 'test' not supported",
+			wantPanicErrMsg: "statusScaleState 'test' not supported",
 		},
 	}
 	for _, tt := range tests {
@@ -254,7 +254,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 						"test",
 						podcommon.States{},
 						tt.args.scaleState,
-						scaletest.NewMockConfigs(nil),
+						scaletest.NewMockConfigurations(nil),
 					)
 				})
 				return
@@ -266,7 +266,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 				"test",
 				podcommon.States{},
 				tt.args.scaleState,
-				scaletest.NewMockConfigs(nil),
+				scaletest.NewMockConfigurations(nil),
 			)
 			assert.Nil(t, err)
 

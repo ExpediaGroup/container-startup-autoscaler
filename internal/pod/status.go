@@ -52,10 +52,10 @@ func (s *status) Update(
 	pod *v1.Pod,
 	status string,
 	states podcommon.States,
-	scaleState podcommon.StatusScaleState,
-	scaleConfigs scalecommon.Configs,
+	statusScaleState podcommon.StatusScaleState,
+	scaleConfigs scalecommon.Configurations,
 ) (*v1.Pod, error) {
-	mutatePodFunc := s.PodMutationFunc(ctx, status, states, scaleState, scaleConfigs)
+	mutatePodFunc := s.PodMutationFunc(ctx, status, states, statusScaleState, scaleConfigs)
 
 	newPod, err := s.podHelper.Patch(ctx, pod, []func(*v1.Pod) error{mutatePodFunc}, false, true)
 	if err != nil {
@@ -71,8 +71,8 @@ func (s *status) PodMutationFunc(
 	ctx context.Context,
 	status string,
 	states podcommon.States,
-	scaleState podcommon.StatusScaleState,
-	scaleConfigs scalecommon.Configs,
+	statusScaleState podcommon.StatusScaleState,
+	scaleConfigs scalecommon.Configurations,
 ) func(pod *v1.Pod) error {
 	return func(pod *v1.Pod) error {
 		var currentStat StatusAnnotation
@@ -85,9 +85,9 @@ func (s *status) PodMutationFunc(
 			}
 		}
 
-		statScale := NewEmptyStatusAnnotationScale(scaleConfigs.AllEnabledConfigsResourceNames())
+		statScale := NewEmptyStatusAnnotationScale(scaleConfigs.AllEnabledConfigurationsResourceNames())
 
-		switch scaleState {
+		switch statusScaleState {
 		case podcommon.StatusScaleStateNotApplicable: // Preserve current status.
 			if gotStatAnn {
 				statScale.LastCommanded = currentStat.Scale.LastCommanded
@@ -109,7 +109,7 @@ func (s *status) PodMutationFunc(
 				statScale.LastEnacted = now
 				s.updateDurationMetric(
 					ctx,
-					scaleState.Direction(), metricscommon.OutcomeSuccess,
+					statusScaleState.Direction(), metricscommon.OutcomeSuccess,
 					statScale.LastCommanded, now,
 				)
 			}
@@ -123,12 +123,12 @@ func (s *status) PodMutationFunc(
 				statScale.LastFailed = now
 				s.updateDurationMetric(
 					ctx,
-					scaleState.Direction(), metricscommon.OutcomeFailure,
+					statusScaleState.Direction(), metricscommon.OutcomeFailure,
 					statScale.LastCommanded, now,
 				)
 			}
 		default:
-			panic(fmt.Errorf("scaleState '%s' not supported", scaleState))
+			panic(fmt.Errorf("statusScaleState '%s' not supported", statusScaleState))
 		}
 
 		newStat := NewStatusAnnotation(common.CapitalizeFirstChar(status), states, statScale, s.formattedNow(timeFormatSecs))

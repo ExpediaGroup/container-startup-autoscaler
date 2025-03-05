@@ -44,7 +44,7 @@ func (m *MockValidation) Validate(
 	ctx context.Context,
 	pod *v1.Pod,
 	targetContainerName string,
-	scaleConfigs scalecommon.Configs,
+	scaleConfigs scalecommon.Configurations,
 ) (*v1.Container, error) {
 	args := m.Called(ctx, pod, targetContainerName, scaleConfigs)
 	return args.Get(0).(*v1.Container), args.Error(1)

@@ -135,7 +135,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			fields: fields{},
 			mocks: mocks{
 				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
-					m.On("Configure", mock.Anything).Return(scaletest.NewMockConfigs(nil), errors.New(""))
+					m.On("Configure", mock.Anything).Return(scaletest.NewMockConfigurations(nil), errors.New(""))
 				}),
 				podHelper: kubetest.NewMockPodHelper(nil),
 			},
@@ -156,7 +156,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			mocks: mocks{
 				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
 					m.On("Configure", mock.Anything).Return(
-						scaletest.NewMockConfigs(func(m *scaletest.MockConfigs) {
+						scaletest.NewMockConfigurations(func(m *scaletest.MockConfigurations) {
 							m.On("TargetContainerName", mock.Anything).Return("", errors.New(""))
 						}),
 						nil,

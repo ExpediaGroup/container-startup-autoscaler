@@ -25,22 +25,25 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+// update is the default implementation of scalecommon.Update.
 type update struct {
 	resourceName v1.ResourceName
-	config       scalecommon.Config
+	config       scalecommon.Configuration
 }
 
-func NewUpdate(resourceName v1.ResourceName, config scalecommon.Config) scalecommon.Update {
+func NewUpdate(resourceName v1.ResourceName, config scalecommon.Configuration) scalecommon.Update {
 	return &update{
 		resourceName: resourceName,
 		config:       config,
 	}
 }
 
+// ResourceName returns the resource name that the update relates to.
 func (u *update) ResourceName() v1.ResourceName {
 	return u.resourceName
 }
 
+// StartupPodMutationFunc returns a function that mutates a pod to apply startup resources for the resource.
 func (u *update) StartupPodMutationFunc(container *v1.Container) func(pod *v1.Pod) error {
 	if !u.config.IsEnabled() {
 		return func(pod *v1.Pod) error {
@@ -63,6 +66,7 @@ func (u *update) StartupPodMutationFunc(container *v1.Container) func(pod *v1.Po
 	}
 }
 
+// PostStartupPodMutationFunc returns a function that mutates a pod to apply post-startup resources for the resource.
 func (u *update) PostStartupPodMutationFunc(container *v1.Container) func(pod *v1.Pod) error {
 	if !u.config.IsEnabled() {
 		return func(pod *v1.Pod) error {
@@ -85,6 +89,7 @@ func (u *update) PostStartupPodMutationFunc(container *v1.Container) func(pod *v
 	}
 }
 
+// setResources sets resources within the supplied pod.
 func (u *update) setResources(
 	pod *v1.Pod,
 	container *v1.Container,

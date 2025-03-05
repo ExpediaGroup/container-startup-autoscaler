@@ -23,23 +23,26 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-func NewStates(configs scalecommon.Configs, containerHelper kubecommon.ContainerHelper) scalecommon.States {
-	return &states{
-		cpuState:    NewState(v1.ResourceCPU, configs.ConfigFor(v1.ResourceCPU), containerHelper),
-		memoryState: NewState(v1.ResourceMemory, configs.ConfigFor(v1.ResourceMemory), containerHelper),
-	}
-}
-
+// states is the default implementation of scalecommon.States.
 type states struct {
 	cpuState    scalecommon.State
 	memoryState scalecommon.State
 }
 
-func (s *states) IsStartupConfigAppliedAll(container *v1.Container) bool {
+func NewStates(configs scalecommon.Configurations, containerHelper kubecommon.ContainerHelper) scalecommon.States {
+	return &states{
+		cpuState:    NewState(v1.ResourceCPU, configs.ConfigurationFor(v1.ResourceCPU), containerHelper),
+		memoryState: NewState(v1.ResourceMemory, configs.ConfigurationFor(v1.ResourceMemory), containerHelper),
+	}
+}
+
+// IsStartupConfigurationAppliedAll invokes IsStartupConfigurationApplied on each state within this collection and
+// returns whether they all returned true.
+func (s *states) IsStartupConfigurationAppliedAll(container *v1.Container) bool {
 	appliedAll := true
 
 	for _, state := range s.AllStates() {
-		applied := state.IsStartupConfigApplied(container)
+		applied := state.IsStartupConfigurationApplied(container)
 		if applied != nil {
 			appliedAll = appliedAll && *applied
 		}
@@ -48,11 +51,13 @@ func (s *states) IsStartupConfigAppliedAll(container *v1.Container) bool {
 	return appliedAll
 }
 
-func (s *states) IsPostStartupConfigAppliedAll(container *v1.Container) bool {
+// IsPostStartupConfigurationAppliedAll invokes IsPostStartupConfigurationApplied on each state within this collection
+// and returns whether they all returned true.
+func (s *states) IsPostStartupConfigurationAppliedAll(container *v1.Container) bool {
 	appliedAll := true
 
 	for _, state := range s.AllStates() {
-		applied := state.IsPostStartupConfigApplied(container)
+		applied := state.IsPostStartupConfigurationApplied(container)
 		if applied != nil {
 			appliedAll = appliedAll && *applied
 		}
@@ -61,6 +66,8 @@ func (s *states) IsPostStartupConfigAppliedAll(container *v1.Container) bool {
 	return appliedAll
 }
 
+// IsAnyCurrentZeroAll invokes IsAnyCurrentZero on each state within this collection and returns whether any returned
+// true.
 func (s *states) IsAnyCurrentZeroAll(pod *v1.Pod, container *v1.Container) (bool, error) {
 	zeroAny := false
 
@@ -69,8 +76,7 @@ func (s *states) IsAnyCurrentZeroAll(pod *v1.Pod, container *v1.Container) (bool
 		if err != nil {
 			return false, common.WrapErrorf(err, "unable to determine if any current %s is zero", state.ResourceName())
 		}
-
-		if zero != nil {
+		if zero != nil && *zero == true {
 			zeroAny = true
 			break
 		}
@@ -79,6 +85,8 @@ func (s *states) IsAnyCurrentZeroAll(pod *v1.Pod, container *v1.Container) (bool
 	return zeroAny, nil
 }
 
+// DoesRequestsCurrentMatchSpecAll invokes DoesRequestsCurrentMatchSpec on each state within this collection and
+// returns whether they all returned true.
 func (s *states) DoesRequestsCurrentMatchSpecAll(pod *v1.Pod, container *v1.Container) (bool, error) {
 	matchAll := true
 
@@ -96,6 +104,8 @@ func (s *states) DoesRequestsCurrentMatchSpecAll(pod *v1.Pod, container *v1.Cont
 	return matchAll, nil
 }
 
+// DoesLimitsCurrentMatchSpecAll invokes DoesLimitsCurrentMatchSpec on each state within this collection and returns
+// whether they all returned true.
 func (s *states) DoesLimitsCurrentMatchSpecAll(pod *v1.Pod, container *v1.Container) (bool, error) {
 	matchAll := true
 
@@ -113,6 +123,7 @@ func (s *states) DoesLimitsCurrentMatchSpecAll(pod *v1.Pod, container *v1.Contai
 	return matchAll, nil
 }
 
+// StateFor returns the state for the supplied resource name.
 func (s *states) StateFor(resourceName v1.ResourceName) scalecommon.State {
 	switch resourceName {
 	case v1.ResourceCPU:
@@ -124,6 +135,7 @@ func (s *states) StateFor(resourceName v1.ResourceName) scalecommon.State {
 	}
 }
 
+// AllStates returns all states within this collection.
 func (s *states) AllStates() []scalecommon.State {
 	return []scalecommon.State{s.cpuState, s.memoryState}
 }

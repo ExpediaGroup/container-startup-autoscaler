@@ -1,17 +1,17 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+	Copyright 2024 Expedia Group, Inc.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	    http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
 */
 
 package kubecommon
@@ -26,26 +26,100 @@ import (
 
 // PodHelper performs operations relating to Kube pods.
 type PodHelper interface {
-	Get(context.Context, types.NamespacedName) (bool, *v1.Pod, error)
-	Patch(context.Context, *v1.Pod, []func(*v1.Pod) error, bool, bool) (*v1.Pod, error)
-	HasAnnotation(pod *v1.Pod, name string) (bool, string)
-	ExpectedLabelValueAs(*v1.Pod, string, DataType) (any, error)
-	ExpectedAnnotationValueAs(*v1.Pod, string, DataType) (any, error)
-	IsContainerInSpec(*v1.Pod, string) bool
-	ResizeStatus(*v1.Pod) v1.PodResizeStatus
+	Get(
+		ctx context.Context,
+		name types.NamespacedName,
+	) (bool, *v1.Pod, error)
+
+	Patch(
+		ctx context.Context,
+		pod *v1.Pod,
+		podMutationFuncs []func(*v1.Pod) error,
+		patchResize bool,
+		mustSyncCache bool,
+	) (*v1.Pod, error)
+
+	HasAnnotation(
+		pod *v1.Pod,
+		name string,
+	) (bool, string)
+
+	ExpectedLabelValueAs(
+		pod *v1.Pod,
+		name string,
+		as DataType,
+	) (any, error)
+
+	ExpectedAnnotationValueAs(
+		pod *v1.Pod,
+		name string,
+		as DataType,
+	) (any, error)
+
+	IsContainerInSpec(
+		pod *v1.Pod,
+		containerName string,
+	) bool
+
+	ResizeStatus(
+		pod *v1.Pod,
+	) v1.PodResizeStatus
 }
 
 // ContainerHelper performs operations relating to Kube containers.
 type ContainerHelper interface {
-	Get(*v1.Pod, string) (*v1.Container, error)
-	HasStartupProbe(*v1.Container) bool
-	HasReadinessProbe(*v1.Container) bool
-	State(*v1.Pod, *v1.Container) (v1.ContainerState, error)
-	IsStarted(*v1.Pod, *v1.Container) (bool, error)
-	IsReady(*v1.Pod, *v1.Container) (bool, error)
-	Requests(*v1.Container, v1.ResourceName) resource.Quantity
-	Limits(*v1.Container, v1.ResourceName) resource.Quantity
-	ResizePolicy(*v1.Container, v1.ResourceName) (v1.ResourceResizeRestartPolicy, error)
-	CurrentRequests(*v1.Pod, *v1.Container, v1.ResourceName) (resource.Quantity, error)
-	CurrentLimits(*v1.Pod, *v1.Container, v1.ResourceName) (resource.Quantity, error)
+	Get(
+		pod *v1.Pod,
+		containerName string,
+	) (*v1.Container, error)
+
+	HasStartupProbe(
+		container *v1.Container,
+	) bool
+
+	HasReadinessProbe(
+		container *v1.Container,
+	) bool
+
+	State(
+		pod *v1.Pod,
+		container *v1.Container,
+	) (v1.ContainerState, error)
+
+	IsStarted(
+		pod *v1.Pod,
+		container *v1.Container,
+	) (bool, error)
+
+	IsReady(
+		pod *v1.Pod,
+		container *v1.Container,
+	) (bool, error)
+
+	Requests(
+		container *v1.Container,
+		resourceName v1.ResourceName,
+	) resource.Quantity
+
+	Limits(
+		container *v1.Container,
+		resourceName v1.ResourceName,
+	) resource.Quantity
+
+	ResizePolicy(
+		container *v1.Container,
+		resourceName v1.ResourceName,
+	) (v1.ResourceResizeRestartPolicy, error)
+
+	CurrentRequests(
+		pod *v1.Pod,
+		container *v1.Container,
+		resourceName v1.ResourceName,
+	) (resource.Quantity, error)
+
+	CurrentLimits(
+		pod *v1.Pod,
+		container *v1.Container,
+		resourceName v1.ResourceName,
+	) (resource.Quantity, error)
 }

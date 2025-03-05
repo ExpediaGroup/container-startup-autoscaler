@@ -295,7 +295,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 
 			if tt.wantPanicErrMsg != "" {
 				assert.PanicsWithError(t, tt.wantPanicErrMsg, func() {
-					_ = a.Execute(nil, tt.states, &v1.Pod{}, &v1.Container{}, scaletest.NewMockConfigs(nil))
+					_ = a.Execute(nil, tt.states, &v1.Pod{}, &v1.Container{}, scaletest.NewMockConfigurations(nil))
 				})
 				return
 			}
@@ -306,7 +306,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 				tt.states,
 				&v1.Pod{},
 				&v1.Container{},
-				scaletest.NewMockConfigs(nil),
+				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErrMsg != "" {
 				assert.Contains(t, err.Error(), tt.wantErrMsg)
@@ -343,7 +343,7 @@ func TestTargetContainerActionContainerNotRunningAction(t *testing.T) {
 		contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(&buffer)).Build(),
 		podcommon.States{},
 		&v1.Pod{},
-		scaletest.NewMockConfigs(nil),
+		scaletest.NewMockConfigurations(nil),
 	)
 	assert.Contains(t, buffer.String(), "target container currently not running")
 	assert.True(t, statusUpdated)
@@ -367,7 +367,7 @@ func TestTargetContainerActionStartedUnknownAction(t *testing.T) {
 		contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(&buffer)).Build(),
 		podcommon.States{},
 		&v1.Pod{},
-		scaletest.NewMockConfigs(nil),
+		scaletest.NewMockConfigurations(nil),
 	)
 	assert.Contains(t, buffer.String(), "target container started status currently unknown")
 	assert.True(t, statusUpdated)
@@ -391,7 +391,7 @@ func TestTargetContainerActionReadyUnknownAction(t *testing.T) {
 		contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(&buffer)).Build(),
 		podcommon.States{},
 		&v1.Pod{},
-		scaletest.NewMockConfigs(nil),
+		scaletest.NewMockConfigurations(nil),
 	)
 	assert.Contains(t, buffer.String(), "target container ready status currently unknown")
 	assert.True(t, statusUpdated)
@@ -415,7 +415,7 @@ func TestTargetContainerActionResUnknownAction(t *testing.T) {
 		podcommon.States{},
 		&v1.Pod{},
 		&v1.Container{},
-		scaletest.NewMockConfigs(nil),
+		scaletest.NewMockConfigurations(nil),
 	)
 	assert.Contains(t, err.Error(), "unknown resources applied")
 	assert.True(t, statusUpdated)
@@ -469,7 +469,7 @@ func TestTargetContainerActionNotStartedWithStartupResAction(t *testing.T) {
 				tt.states,
 				&v1.Pod{},
 				&v1.Container{},
-				scaletest.NewMockConfigs(nil),
+				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErr {
 				assert.NotNil(t, err)
@@ -528,7 +528,7 @@ func TestTargetContainerActionNotStartedWithPostStartupResAction(t *testing.T) {
 				podcommon.States{},
 				&v1.Pod{},
 				&v1.Container{},
-				scaletest.NewMockConfigs(nil),
+				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErrMsg != "" {
 				assert.Contains(t, err.Error(), tt.wantErrMsg)
@@ -595,7 +595,7 @@ func TestTargetContainerActionStartedWithStartupResAction(t *testing.T) {
 				podcommon.States{},
 				&v1.Pod{},
 				&v1.Container{},
-				scaletest.NewMockConfigs(nil),
+				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErrMsg != "" {
 				assert.Contains(t, err.Error(), tt.wantErrMsg)
@@ -667,7 +667,7 @@ func TestTargetContainerActionStartedWithPostStartupResAction(t *testing.T) {
 				tt.states,
 				&v1.Pod{},
 				&v1.Container{},
-				scaletest.NewMockConfigs(nil),
+				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErr {
 				assert.NotNil(t, err)
@@ -726,7 +726,7 @@ func TestTargetContainerActionNotStartedWithUnknownResAction(t *testing.T) {
 				podcommon.States{},
 				&v1.Pod{},
 				&v1.Container{},
-				scaletest.NewMockConfigs(nil),
+				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErrMsg != "" {
 				assert.Contains(t, err.Error(), tt.wantErrMsg)
@@ -793,7 +793,7 @@ func TestTargetContainerActionStartedWithUnknownResAction(t *testing.T) {
 				podcommon.States{},
 				&v1.Pod{},
 				&v1.Container{},
-				scaletest.NewMockConfigs(nil),
+				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErrMsg != "" {
 				assert.Contains(t, err.Error(), tt.wantErrMsg)
@@ -1014,7 +1014,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 
 			if tt.wantPanicErrMsg != "" {
 				assert.PanicsWithError(t, tt.wantPanicErrMsg, func() {
-					_ = a.processConfigEnacted(nil, tt.states, &v1.Pod{}, &v1.Container{}, scaletest.NewMockConfigs(nil))
+					_ = a.processConfigEnacted(nil, tt.states, &v1.Pod{}, &v1.Container{}, scaletest.NewMockConfigurations(nil))
 				})
 				return
 			}
@@ -1025,7 +1025,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 				tt.states,
 				&v1.Pod{},
 				&v1.Container{},
-				scaletest.NewMockConfigs(nil),
+				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErrMsg != "" {
 				assert.Contains(t, err.Error(), tt.wantErrMsg)
@@ -1064,7 +1064,7 @@ func TestTargetContainerActionContainerResourceConfig(t *testing.T) {
 	)
 
 	mockContainer := kubetest.NewContainerBuilder().Build()
-	mockScaleConfigs := scaletest.NewMockConfigs(func(m *scaletest.MockConfigs) {
+	mockScaleConfigs := scaletest.NewMockConfigurations(func(m *scaletest.MockConfigurations) {
 		m.On("String").Return("test")
 	})
 	got := a.containerResourceConfig(mockContainer, mockScaleConfigs)
@@ -1092,7 +1092,7 @@ func TestTargetContainerActionUpdateStatus(t *testing.T) {
 			podcommon.StatusScaleStateNotApplicable,
 			&v1.Pod{},
 			"",
-			scaletest.NewMockConfigs(nil),
+			scaletest.NewMockConfigurations(nil),
 		)
 		assert.Contains(t, buffer.String(), "unable to update status")
 	})

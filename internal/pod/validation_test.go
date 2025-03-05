@@ -52,7 +52,7 @@ func TestValidationValidate(t *testing.T) {
 		configStatusMockFunc       func(*podtest.MockStatus, func())
 		configPodHelperMockFunc    func(*kubetest.MockPodHelper)
 		configContHelperMockFunc   func(*kubetest.MockContainerHelper)
-		configScaleConfigsMockFunc func(*scaletest.MockConfigs)
+		configScaleConfigsMockFunc func(*scaletest.MockConfigurations)
 		wantErrMsg                 string
 		wantNilContainer           bool
 		wantStatusUpdate           bool
@@ -145,7 +145,7 @@ func TestValidationValidate(t *testing.T) {
 				m.ExpectedLabelValueAsDefault()
 				m.IsContainerInSpecDefault()
 			},
-			configScaleConfigsMockFunc: func(m *scaletest.MockConfigs) {
+			configScaleConfigsMockFunc: func(m *scaletest.MockConfigurations) {
 				m.On("ValidateAll", mock.Anything).Return(errors.New(""))
 			},
 			wantErrMsg:       "unable to validate configuration",
@@ -163,7 +163,7 @@ func TestValidationValidate(t *testing.T) {
 				m.ExpectedLabelValueAsDefault()
 				m.IsContainerInSpecDefault()
 			},
-			configScaleConfigsMockFunc: func(m *scaletest.MockConfigs) {
+			configScaleConfigsMockFunc: func(m *scaletest.MockConfigurations) {
 				m.On("ValidateAll", mock.Anything).Return(nil)
 				m.On("ValidateCollection", mock.Anything).Return(errors.New(""))
 			},
@@ -195,7 +195,7 @@ func TestValidationValidate(t *testing.T) {
 				kubetest.NewMockPodHelper(tt.configPodHelperMockFunc),
 				kubetest.NewMockContainerHelper(tt.configContHelperMockFunc),
 			)
-			configs := scaletest.NewMockConfigs(tt.configScaleConfigsMockFunc)
+			configs := scaletest.NewMockConfigurations(tt.configScaleConfigsMockFunc)
 
 			container, err := v.Validate(
 				contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),

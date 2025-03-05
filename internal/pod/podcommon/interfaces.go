@@ -25,26 +25,58 @@ import (
 
 // Configuration performs operations relating to configuration.
 type Configuration interface {
-	Configure(*v1.Pod) (scalecommon.Configs, error)
+	Configure(
+		pod *v1.Pod,
+	) (scalecommon.Configurations, error)
 }
 
 // Validation performs operations relating to validation.
 type Validation interface {
-	Validate(context.Context, *v1.Pod, string, scalecommon.Configs) (*v1.Container, error)
+	Validate(
+		ctx context.Context,
+		pod *v1.Pod,
+		targetContainerName string,
+		scaleConfigs scalecommon.Configurations,
+	) (*v1.Container, error)
 }
 
 // TargetContainerState performs operations relating to determining target container state.
 type TargetContainerState interface {
-	States(context.Context, *v1.Pod, *v1.Container, scalecommon.Configs) (States, error)
+	States(
+		ctx context.Context,
+		pod *v1.Pod,
+		targetContainer *v1.Container,
+		scaleConfigs scalecommon.Configurations,
+	) (States, error)
 }
 
 // TargetContainerAction performs actions based on target container state.
 type TargetContainerAction interface {
-	Execute(context.Context, States, *v1.Pod, *v1.Container, scalecommon.Configs) error
+	Execute(
+		ctx context.Context,
+		states States,
+		pod *v1.Pod,
+		targetContainer *v1.Container,
+		scaleConfigs scalecommon.Configurations,
+	) error
 }
 
 // Status performs operations relating to controller status.
 type Status interface {
-	Update(context.Context, *v1.Pod, string, States, StatusScaleState, scalecommon.Configs) (*v1.Pod, error)
-	PodMutationFunc(context.Context, string, States, StatusScaleState, scalecommon.Configs) func(pod *v1.Pod) error
+	Update(
+		ctx context.Context,
+		pod *v1.Pod,
+		status string,
+		states States,
+		statusScaleState StatusScaleState,
+		scaleConfigs scalecommon.Configurations,
+	) (*v1.Pod, error)
+
+	PodMutationFunc(
+		ctx context.Context,
+		status string,
+		states States,
+		statusScaleState StatusScaleState,
+		scaleConfigs scalecommon.Configurations,
+	) func(pod *v1.Pod) error
 }

@@ -41,8 +41,8 @@ func newConfiguration(
 }
 
 // Configure performs configuration tasks using the supplied pod.
-func (c *configuration) Configure(pod *v1.Pod) (scalecommon.Configs, error) {
-	configs := scale.NewConfigs(c.podHelper, c.containerHelper)
+func (c *configuration) Configure(pod *v1.Pod) (scalecommon.Configurations, error) {
+	configs := scale.NewConfigurations(c.podHelper, c.containerHelper)
 
 	if err := configs.StoreFromAnnotationsAll(pod); err != nil {
 		return nil, common.WrapErrorf(err, "unable to store configuration from annotations")

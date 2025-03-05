@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// TODO(wt) tests, comments
 // TODO(wt) update go to latest 1.23
 // TODO(wt) check all method comments - might be out of date now
 // TODO(wt) ensure integration tests with only one of cpu/memory enabled
@@ -33,7 +32,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-type config struct {
+// configuration is the default implementation of scalecommon.Configuration.
+type configuration struct {
 	resourceName                      v1.ResourceName
 	annotationStartupName             string
 	annotationPostStartupRequestsName string
@@ -47,7 +47,7 @@ type config struct {
 	resources                scalecommon.Resources
 }
 
-func NewConfig(
+func NewConfiguration(
 	resourceName v1.ResourceName,
 	annotationStartupName string,
 	annotationPostStartupRequestsName string,
@@ -55,8 +55,8 @@ func NewConfig(
 	csaEnabled bool,
 	podHelper kubecommon.PodHelper,
 	containerHelper kubecommon.ContainerHelper,
-) scalecommon.Config {
-	return &config{
+) scalecommon.Configuration {
+	return &configuration{
 		resourceName:                      resourceName,
 		annotationStartupName:             annotationStartupName,
 		annotationPostStartupRequestsName: annotationPostStartupRequestsName,
@@ -67,21 +67,28 @@ func NewConfig(
 	}
 }
 
-func (c *config) ResourceName() v1.ResourceName {
+// ResourceName returns the resource name that the configuration relates to.
+func (c *configuration) ResourceName() v1.ResourceName {
 	return c.resourceName
 }
 
-func (c *config) IsEnabled() bool {
+// IsEnabled returns whether this configuration is enabled. Only true if both enabled by CSA and user. Panics if
+// StoreFromAnnotations has not first been invoked.
+func (c *configuration) IsEnabled() bool {
 	c.checkStored()
 	return c.csaEnabled && c.userEnabled
 }
 
-func (c *config) Resources() scalecommon.Resources {
+// Resources returns scalecommon.Resources stored from annotations. Panics if StoreFromAnnotations has not first been
+// invoked.
+func (c *configuration) Resources() scalecommon.Resources {
 	c.checkStored()
 	return c.resources
 }
 
-func (c *config) StoreFromAnnotations(pod *v1.Pod) error {
+// StoreFromAnnotations parses and stores configuration from annotations within the supplied pod. Does nothing if not
+// enabled by CSA or user.
+func (c *configuration) StoreFromAnnotations(pod *v1.Pod) error {
 	if !c.csaEnabled {
 		c.hasStoredFromAnnotations = true
 		return nil
@@ -134,7 +141,9 @@ func (c *config) StoreFromAnnotations(pod *v1.Pod) error {
 	return nil
 }
 
-func (c *config) Validate(container *v1.Container) error {
+// Validate performs validation against the stored configuration and supplied container. Panics if StoreFromAnnotations
+// has not first been invoked.
+func (c *configuration) Validate(container *v1.Container) error {
 	c.checkStored()
 
 	if !c.csaEnabled || !c.userEnabled {
@@ -188,7 +197,9 @@ func (c *config) Validate(container *v1.Container) error {
 	return nil
 }
 
-func (c *config) String() string {
+// String returns a string representation of the configuration. Panics if StoreFromAnnotations has not first been
+// invoked.
+func (c *configuration) String() string {
 	c.checkStored()
 
 	if !c.csaEnabled || !c.userEnabled {
@@ -204,7 +215,8 @@ func (c *config) String() string {
 	)
 }
 
-func (c *config) checkStored() {
+// checkStored panics if StoreFromAnnotations has not been invoked.
+func (c *configuration) checkStored() {
 	if !c.hasStoredFromAnnotations {
 		panic(errors.New("StoreFromAnnotations() hasn't been invoked first"))
 	}

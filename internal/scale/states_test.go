@@ -17,15 +17,18 @@ limitations under the License.
 package scale
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scaletest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"
 )
 
 func TestNewStates(t *testing.T) {
-	states := NewStates(NewConfigs(nil, nil), nil)
+	states := NewStates(NewConfigurations(nil, nil), nil)
 	allStates := states.AllStates()
 	assert.Equal(t, 2, len(allStates))
 	assert.Equal(t, v1.ResourceCPU, allStates[0].ResourceName())
@@ -33,18 +36,337 @@ func TestNewStates(t *testing.T) {
 }
 
 func TestStatesIsStartupConfigAppliedAll(t *testing.T) {
+	type fields struct {
+		cpuState    scalecommon.State
+		memoryState scalecommon.State
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   bool
+	}{
+		{
+			name: "True",
+			fields: fields{
+				cpuState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsStartupConfigurationApplied", mock.Anything).Return(func() *bool { b := true; return &b }())
+				}),
+				memoryState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsStartupConfigurationApplied", mock.Anything).Return(func() *bool { b := true; return &b }())
+				}),
+			},
+			want: true,
+		},
+		{
+			name: "False1",
+			fields: fields{
+				cpuState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsStartupConfigurationApplied", mock.Anything).Return(func() *bool { b := false; return &b }())
+				}),
+				memoryState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsStartupConfigurationApplied", mock.Anything).Return(func() *bool { b := true; return &b }())
+				}),
+			},
+			want: false,
+		},
+		{
+			name: "False2",
+			fields: fields{
+				cpuState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsStartupConfigurationApplied", mock.Anything).Return(func() *bool { b := true; return &b }())
+				}),
+				memoryState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsStartupConfigurationApplied", mock.Anything).Return(func() *bool { b := false; return &b }())
+				}),
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &states{
+				cpuState:    tt.fields.cpuState,
+				memoryState: tt.fields.memoryState,
+			}
+			assert.Equal(t, tt.want, s.IsStartupConfigurationAppliedAll(&v1.Container{}))
+		})
+	}
 }
 
 func TestStatesIsPostStartupConfigAppliedAll(t *testing.T) {
+	type fields struct {
+		cpuState    scalecommon.State
+		memoryState scalecommon.State
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   bool
+	}{
+		{
+			name: "True",
+			fields: fields{
+				cpuState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsPostStartupConfigurationApplied", mock.Anything).Return(func() *bool { b := true; return &b }())
+				}),
+				memoryState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsPostStartupConfigurationApplied", mock.Anything).Return(func() *bool { b := true; return &b }())
+				}),
+			},
+			want: true,
+		},
+		{
+			name: "False1",
+			fields: fields{
+				cpuState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsPostStartupConfigurationApplied", mock.Anything).Return(func() *bool { b := false; return &b }())
+				}),
+				memoryState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsPostStartupConfigurationApplied", mock.Anything).Return(func() *bool { b := true; return &b }())
+				}),
+			},
+			want: false,
+		},
+		{
+			name: "False2",
+			fields: fields{
+				cpuState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsPostStartupConfigurationApplied", mock.Anything).Return(func() *bool { b := true; return &b }())
+				}),
+				memoryState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsPostStartupConfigurationApplied", mock.Anything).Return(func() *bool { b := false; return &b }())
+				}),
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &states{
+				cpuState:    tt.fields.cpuState,
+				memoryState: tt.fields.memoryState,
+			}
+			assert.Equal(t, tt.want, s.IsPostStartupConfigurationAppliedAll(&v1.Container{}))
+		})
+	}
 }
 
 func TestStatesIsAnyCurrentZeroAll(t *testing.T) {
+	type fields struct {
+		cpuState    scalecommon.State
+		memoryState scalecommon.State
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		wantErrMsg string
+		want       bool
+	}{
+		{
+			name: "UnableToDetermineIfAnyCurrentIsZero",
+			fields: fields{
+				cpuState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsAnyCurrentZero", mock.Anything, mock.Anything).
+						Return(func() *bool { b := false; return &b }(), errors.New(""))
+					m.ResourceNameDefault()
+				}),
+				memoryState: scaletest.NewMockState(nil),
+			},
+			wantErrMsg: "unable to determine if any current cpu is zero",
+			want:       false,
+		},
+		{
+			name: "True",
+			fields: fields{
+				cpuState: scaletest.NewMockState(nil),
+				memoryState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("IsAnyCurrentZero", mock.Anything, mock.Anything).
+						Return(func() *bool { b := true; return &b }(), nil)
+					m.ResourceNameDefault()
+				}),
+			},
+			wantErrMsg: "",
+			want:       true,
+		},
+		{
+			name: "False",
+			fields: fields{
+				cpuState:    scaletest.NewMockState(nil),
+				memoryState: scaletest.NewMockState(nil),
+			},
+			wantErrMsg: "",
+			want:       false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &states{
+				cpuState:    tt.fields.cpuState,
+				memoryState: tt.fields.memoryState,
+			}
+			got, err := s.IsAnyCurrentZeroAll(&v1.Pod{}, &v1.Container{})
+			if tt.wantErrMsg != "" {
+				assert.Contains(t, err.Error(), tt.wantErrMsg)
+			} else {
+				assert.Nil(t, err)
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }
 
 func TestStatesDoesRequestsCurrentMatchSpecAll(t *testing.T) {
+	type fields struct {
+		cpuState    scalecommon.State
+		memoryState scalecommon.State
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		wantErrMsg string
+		want       bool
+	}{
+		{
+			name: "UnableToDetermineIfCurrentRequestsMatchesSpec",
+			fields: fields{
+				cpuState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("DoesRequestsCurrentMatchSpec", mock.Anything, mock.Anything).
+						Return(func() *bool { b := false; return &b }(), errors.New(""))
+					m.ResourceNameDefault()
+				}),
+				memoryState: scaletest.NewMockState(nil),
+			},
+			wantErrMsg: "unable to determine if current cpu requests matches spec",
+			want:       false,
+		},
+		{
+			name: "True",
+			fields: fields{
+				cpuState:    scaletest.NewMockState(nil),
+				memoryState: scaletest.NewMockState(nil),
+			},
+			wantErrMsg: "",
+			want:       true,
+		},
+		{
+			name: "False1",
+			fields: fields{
+				cpuState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("DoesRequestsCurrentMatchSpec", mock.Anything, mock.Anything).
+						Return(func() *bool { b := false; return &b }(), nil)
+					m.ResourceNameDefault()
+				}),
+				memoryState: scaletest.NewMockState(nil),
+			},
+			wantErrMsg: "",
+			want:       false,
+		},
+		{
+			name: "False2",
+			fields: fields{
+				cpuState: scaletest.NewMockState(nil),
+				memoryState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("DoesRequestsCurrentMatchSpec", mock.Anything, mock.Anything).
+						Return(func() *bool { b := false; return &b }(), nil)
+					m.ResourceNameDefault()
+				}),
+			},
+			wantErrMsg: "",
+			want:       false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &states{
+				cpuState:    tt.fields.cpuState,
+				memoryState: tt.fields.memoryState,
+			}
+			got, err := s.DoesRequestsCurrentMatchSpecAll(&v1.Pod{}, &v1.Container{})
+			if tt.wantErrMsg != "" {
+				assert.Contains(t, err.Error(), tt.wantErrMsg)
+			} else {
+				assert.Nil(t, err)
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }
 
 func TestStatesDoesLimitsCurrentMatchSpecAll(t *testing.T) {
+	type fields struct {
+		cpuState    scalecommon.State
+		memoryState scalecommon.State
+	}
+	tests := []struct {
+		name       string
+		fields     fields
+		wantErrMsg string
+		want       bool
+	}{
+		{
+			name: "UnableToDetermineIfCurrentLimitsMatchesSpec",
+			fields: fields{
+				cpuState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("DoesLimitsCurrentMatchSpec", mock.Anything, mock.Anything).
+						Return(func() *bool { b := false; return &b }(), errors.New(""))
+					m.ResourceNameDefault()
+				}),
+				memoryState: scaletest.NewMockState(nil),
+			},
+			wantErrMsg: "unable to determine if current cpu limits matches spec",
+			want:       false,
+		},
+		{
+			name: "True",
+			fields: fields{
+				cpuState:    scaletest.NewMockState(nil),
+				memoryState: scaletest.NewMockState(nil),
+			},
+			wantErrMsg: "",
+			want:       true,
+		},
+		{
+			name: "False1",
+			fields: fields{
+				cpuState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("DoesLimitsCurrentMatchSpec", mock.Anything, mock.Anything).
+						Return(func() *bool { b := false; return &b }(), nil)
+					m.ResourceNameDefault()
+				}),
+				memoryState: scaletest.NewMockState(nil),
+			},
+			wantErrMsg: "",
+			want:       false,
+		},
+		{
+			name: "False2",
+			fields: fields{
+				cpuState: scaletest.NewMockState(nil),
+				memoryState: scaletest.NewMockState(func(m *scaletest.MockState) {
+					m.On("DoesLimitsCurrentMatchSpec", mock.Anything, mock.Anything).
+						Return(func() *bool { b := false; return &b }(), nil)
+					m.ResourceNameDefault()
+				}),
+			},
+			wantErrMsg: "",
+			want:       false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := &states{
+				cpuState:    tt.fields.cpuState,
+				memoryState: tt.fields.memoryState,
+			}
+			got, err := s.DoesLimitsCurrentMatchSpecAll(&v1.Pod{}, &v1.Container{})
+			if tt.wantErrMsg != "" {
+				assert.Contains(t, err.Error(), tt.wantErrMsg)
+			} else {
+				assert.Nil(t, err)
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
 }
 
 func TestStatesStateFor(t *testing.T) {

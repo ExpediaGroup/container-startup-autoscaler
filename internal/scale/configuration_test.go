@@ -31,9 +31,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-func TestNewConfig(t *testing.T) {
+func TestNewConfiguration(t *testing.T) {
 	resourceName := v1.ResourceCPU
-	config := NewConfig(
+	config := NewConfiguration(
 		resourceName,
 		"",
 		"",
@@ -45,13 +45,13 @@ func TestNewConfig(t *testing.T) {
 	assert.Equal(t, resourceName, config.ResourceName())
 }
 
-func TestConfigResourceName(t *testing.T) {
+func TestConfigurationResourceName(t *testing.T) {
 	resourceName := v1.ResourceCPU
-	config := &config{resourceName: resourceName}
+	config := &configuration{resourceName: resourceName}
 	assert.Equal(t, v1.ResourceCPU, config.ResourceName())
 }
 
-func TestConfigIsEnabled(t *testing.T) {
+func TestConfigurationIsEnabled(t *testing.T) {
 	type fields struct {
 		csaEnabled               bool
 		hasStoredFromAnnotations bool
@@ -88,7 +88,7 @@ func TestConfigIsEnabled(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := &config{
+			config := &configuration{
 				csaEnabled:               tt.fields.csaEnabled,
 				hasStoredFromAnnotations: tt.fields.hasStoredFromAnnotations,
 				userEnabled:              true,
@@ -102,7 +102,7 @@ func TestConfigIsEnabled(t *testing.T) {
 	}
 }
 
-func TestConfigResources(t *testing.T) {
+func TestConfigurationResources(t *testing.T) {
 	type fields struct {
 		csaEnabled               bool
 		hasStoredFromAnnotations bool
@@ -125,14 +125,14 @@ func TestConfigResources(t *testing.T) {
 			name: "Ok",
 			fields: fields{
 				hasStoredFromAnnotations: true,
-				resources:                scaletest.ResourcesCpuStartupEnabled,
+				resources:                scaletest.ResourcesCpuEnabled,
 			},
-			want: scaletest.ResourcesCpuStartupEnabled,
+			want: scaletest.ResourcesCpuEnabled,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := &config{
+			config := &configuration{
 				csaEnabled:               true,
 				hasStoredFromAnnotations: tt.fields.hasStoredFromAnnotations,
 				userEnabled:              true,
@@ -147,7 +147,7 @@ func TestConfigResources(t *testing.T) {
 	}
 }
 
-func TestConfigStoreFromAnnotations(t *testing.T) {
+func TestConfigurationStoreFromAnnotations(t *testing.T) {
 	type fields struct {
 		annotationStartupName             string
 		annotationPostStartupRequestsName string
@@ -350,12 +350,12 @@ func TestConfigStoreFromAnnotations(t *testing.T) {
 			wantErrMsg:                   "",
 			wantUserEnabled:              true,
 			wantHasStoredFromAnnotations: true,
-			wantResources:                scaletest.ResourcesCpuStartupEnabled,
+			wantResources:                scaletest.ResourcesCpuEnabled,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := &config{
+			config := &configuration{
 				annotationStartupName:             tt.fields.annotationStartupName,
 				annotationPostStartupRequestsName: tt.fields.annotationPostStartupRequestsName,
 				annotationPostStartupLimitsName:   tt.fields.annotationPostStartupLimitsName,
@@ -375,7 +375,7 @@ func TestConfigStoreFromAnnotations(t *testing.T) {
 	}
 }
 
-func TestConfigValidate(t *testing.T) {
+func TestConfigurationValidate(t *testing.T) {
 	type fields struct {
 		csaEnabled               bool
 		containerHelper          kubecommon.ContainerHelper
@@ -516,7 +516,7 @@ func TestConfigValidate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := &config{
+			config := &configuration{
 				resourceName:             v1.ResourceCPU,
 				csaEnabled:               tt.fields.csaEnabled,
 				containerHelper:          tt.fields.containerHelper,
@@ -538,7 +538,7 @@ func TestConfigValidate(t *testing.T) {
 	}
 }
 
-func TestConfigString(t *testing.T) {
+func TestConfigurationString(t *testing.T) {
 	type fields struct {
 		csaEnabled               bool
 		hasStoredFromAnnotations bool
@@ -570,7 +570,7 @@ func TestConfigString(t *testing.T) {
 			fields: fields{
 				csaEnabled:               true,
 				hasStoredFromAnnotations: true,
-				resources:                scaletest.ResourcesCpuStartupEnabled,
+				resources:                scaletest.ResourcesCpuEnabled,
 			},
 			want: "(cpu) startup: " + kubetest.PodAnnotationCpuStartup +
 				", post-startup requests: " + kubetest.PodAnnotationCpuPostStartupRequests +
@@ -579,7 +579,7 @@ func TestConfigString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := &config{
+			config := &configuration{
 				resourceName:             v1.ResourceCPU,
 				csaEnabled:               tt.fields.csaEnabled,
 				userEnabled:              true,

@@ -39,13 +39,13 @@ func NewMockConfiguration(configFunc func(*MockConfiguration)) *MockConfiguratio
 	return m
 }
 
-func (m *MockConfiguration) Configure(pod *v1.Pod) (scalecommon.Configs, error) {
+func (m *MockConfiguration) Configure(pod *v1.Pod) (scalecommon.Configurations, error) {
 	args := m.Called(pod)
-	return args.Get(0).(scalecommon.Configs), args.Error(1)
+	return args.Get(0).(scalecommon.Configurations), args.Error(1)
 }
 
 func (m *MockConfiguration) ConfigureDefault() {
-	m.On("Configure", mock.Anything).Return(scaletest.NewMockConfigs(nil), nil)
+	m.On("Configure", mock.Anything).Return(scaletest.NewMockConfigurations(nil), nil)
 }
 
 func (m *MockConfiguration) AllDefaults() {

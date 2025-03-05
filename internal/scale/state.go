@@ -23,15 +23,16 @@ import (
 	"k8s.io/api/core/v1"
 )
 
+// state is the default implementation of scalecommon.State.
 type state struct {
 	resourceName    v1.ResourceName
-	config          scalecommon.Config
+	config          scalecommon.Configuration
 	containerHelper kubecommon.ContainerHelper
 }
 
 func NewState(
 	resourceName v1.ResourceName,
-	config scalecommon.Config,
+	config scalecommon.Configuration,
 	containerHelper kubecommon.ContainerHelper,
 ) scalecommon.State {
 	return &state{
@@ -41,11 +42,14 @@ func NewState(
 	}
 }
 
+// ResourceName returns the resource name that the state relates to.
 func (s *state) ResourceName() v1.ResourceName {
 	return s.resourceName
 }
 
-func (s *state) IsStartupConfigApplied(container *v1.Container) *bool {
+// IsStartupConfigurationApplied returns whether the startup configuration is applied to the supplied container.
+// Returns nil if the configuration is not enabled.
+func (s *state) IsStartupConfigurationApplied(container *v1.Container) *bool {
 	if !s.config.IsEnabled() {
 		return nil
 	}
@@ -56,7 +60,9 @@ func (s *state) IsStartupConfigApplied(container *v1.Container) *bool {
 	return &result
 }
 
-func (s *state) IsPostStartupConfigApplied(container *v1.Container) *bool {
+// IsPostStartupConfigurationApplied returns whether the post-startup configuration is applied to the supplied
+// container. Returns nil if the configuration is not enabled.
+func (s *state) IsPostStartupConfigurationApplied(container *v1.Container) *bool {
 	if !s.config.IsEnabled() {
 		return nil
 	}
@@ -67,6 +73,8 @@ func (s *state) IsPostStartupConfigApplied(container *v1.Container) *bool {
 	return &result
 }
 
+// IsAnyCurrentZero returns whether the current requests or limits are zero for the supplied container. Returns nil if
+// the configuration is not enabled.
 func (s *state) IsAnyCurrentZero(pod *v1.Pod, container *v1.Container) (*bool, error) {
 	if !s.config.IsEnabled() {
 		return nil, nil
@@ -75,19 +83,21 @@ func (s *state) IsAnyCurrentZero(pod *v1.Pod, container *v1.Container) (*bool, e
 	currentRequests, err := s.containerHelper.CurrentRequests(pod, container, s.resourceName)
 	if err != nil {
 		result := false
-		return &result, common.WrapErrorf(err, "unable to get status resources %s requests", s.resourceName)
+		return &result, common.WrapErrorf(err, "unable to get %s current requests", s.resourceName)
 	}
 
 	currentLimits, err := s.containerHelper.CurrentLimits(pod, container, s.resourceName)
 	if err != nil {
 		result := false
-		return &result, common.WrapErrorf(err, "unable to get status resources %s limits", s.resourceName)
+		return &result, common.WrapErrorf(err, "unable to get %s current limits", s.resourceName)
 	}
 
 	result := currentRequests.IsZero() || currentLimits.IsZero()
 	return &result, nil
 }
 
+// DoesRequestsCurrentMatchSpec returns whether the current requests match the spec for the supplied container. Returns
+// nil if the configuration is not enabled.
 func (s *state) DoesRequestsCurrentMatchSpec(pod *v1.Pod, container *v1.Container) (*bool, error) {
 	if !s.config.IsEnabled() {
 		return nil, nil
@@ -96,7 +106,7 @@ func (s *state) DoesRequestsCurrentMatchSpec(pod *v1.Pod, container *v1.Containe
 	currentRequests, err := s.containerHelper.CurrentRequests(pod, container, s.resourceName)
 	if err != nil {
 		result := false
-		return &result, common.WrapErrorf(err, "unable to get status resources %s requests", s.resourceName)
+		return &result, common.WrapErrorf(err, "unable to get %s current requests", s.resourceName)
 	}
 
 	requests := s.containerHelper.Requests(container, s.resourceName)
@@ -104,6 +114,8 @@ func (s *state) DoesRequestsCurrentMatchSpec(pod *v1.Pod, container *v1.Containe
 	return &result, nil
 }
 
+// DoesLimitsCurrentMatchSpec returns whether the current limits match the spec for the supplied container. Returns nil
+// if the configuration is not enabled.
 func (s *state) DoesLimitsCurrentMatchSpec(pod *v1.Pod, container *v1.Container) (*bool, error) {
 	if !s.config.IsEnabled() {
 		return nil, nil
@@ -112,7 +124,7 @@ func (s *state) DoesLimitsCurrentMatchSpec(pod *v1.Pod, container *v1.Container)
 	currentLimits, err := s.containerHelper.CurrentLimits(pod, container, s.resourceName)
 	if err != nil {
 		result := false
-		return &result, common.WrapErrorf(err, "unable to get status resources %s limits", s.resourceName)
+		return &result, common.WrapErrorf(err, "unable to get %s current limits", s.resourceName)
 	}
 
 	limits := s.containerHelper.Limits(container, s.resourceName)

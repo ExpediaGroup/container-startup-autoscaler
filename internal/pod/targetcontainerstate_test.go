@@ -261,7 +261,7 @@ func TestTargetContainerStateStates(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := newTargetContainerState(kubetest.NewMockContainerHelper(tt.configMockFunc))
 
-			cpuConfig := scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
+			cpuConfig := scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 				m.On("Resources").Return(scalecommon.Resources{
 					Startup:             kubetest.PodCpuStartupEnabled,
 					PostStartupRequests: kubetest.PodCpuPostStartupRequestsEnabled,
@@ -270,7 +270,7 @@ func TestTargetContainerStateStates(t *testing.T) {
 				m.IsEnabledDefault()
 			})
 
-			memoryConfig := scaletest.NewMockConfig(func(m *scaletest.MockConfig) {
+			memoryConfig := scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 				m.On("Resources").Return(scalecommon.Resources{
 					Startup:             kubetest.PodMemoryStartupEnabled,
 					PostStartupRequests: kubetest.PodMemoryPostStartupRequestsEnabled,
@@ -279,9 +279,9 @@ func TestTargetContainerStateStates(t *testing.T) {
 				m.IsEnabledDefault()
 			})
 
-			configs := scaletest.NewMockConfigs(func(m *scaletest.MockConfigs) {
-				m.On("ConfigFor", v1.ResourceCPU).Return(cpuConfig)
-				m.On("ConfigFor", v1.ResourceMemory).Return(memoryConfig)
+			configs := scaletest.NewMockConfigurations(func(m *scaletest.MockConfigurations) {
+				m.On("ConfigurationFor", v1.ResourceCPU).Return(cpuConfig)
+				m.On("ConfigurationFor", v1.ResourceMemory).Return(memoryConfig)
 			})
 
 			got, err := s.States(

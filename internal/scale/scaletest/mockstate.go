@@ -42,12 +42,12 @@ func (m *MockState) ResourceName() v1.ResourceName {
 	return args.Get(0).(v1.ResourceName)
 }
 
-func (m *MockState) IsStartupConfigApplied(container *v1.Container) *bool {
+func (m *MockState) IsStartupConfigurationApplied(container *v1.Container) *bool {
 	args := m.Called(container)
 	return args.Get(0).(*bool)
 }
 
-func (m *MockState) IsPostStartupConfigApplied(container *v1.Container) *bool {
+func (m *MockState) IsPostStartupConfigurationApplied(container *v1.Container) *bool {
 	args := m.Called(container)
 	return args.Get(0).(*bool)
 }
@@ -73,17 +73,17 @@ func (m *MockState) ResourceNameDefault() {
 
 func (m *MockState) IsStartupConfigAppliedDefault() {
 	ret := true
-	m.On("IsStartupConfigApplied", mock.Anything).Return(&ret)
+	m.On("IsStartupConfigurationApplied", mock.Anything).Return(&ret)
 }
 
 func (m *MockState) IsPostStartupConfigAppliedDefault() {
 	ret := false
-	m.On("IsPostStartupConfigApplied", mock.Anything).Return(&ret)
+	m.On("IsPostStartupConfigurationApplied", mock.Anything).Return(&ret)
 }
 
 func (m *MockState) IsAnyCurrentZeroDefault() {
 	ret := false
-	m.On("IsAnyCurrentZero", mock.Anything, mock.Anything).Return(&ret)
+	m.On("IsAnyCurrentZero", mock.Anything, mock.Anything).Return(&ret, nil)
 }
 
 func (m *MockState) DoesRequestsCurrentMatchSpecDefault() {

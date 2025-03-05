@@ -57,10 +57,10 @@ func (m *MockStatus) Update(
 	pod *v1.Pod,
 	status string,
 	states podcommon.States,
-	scaleState podcommon.StatusScaleState,
-	scaleConfigs scalecommon.Configs,
+	statusScaleState podcommon.StatusScaleState,
+	scaleConfigs scalecommon.Configurations,
 ) (*v1.Pod, error) {
-	args := m.Called(ctx, pod, status, states, scaleState, scaleConfigs)
+	args := m.Called(ctx, pod, status, states, statusScaleState, scaleConfigs)
 	return args.Get(0).(*v1.Pod), args.Error(1)
 }
 
@@ -68,10 +68,10 @@ func (m *MockStatus) PodMutationFunc(
 	ctx context.Context,
 	status string,
 	states podcommon.States,
-	scaleState podcommon.StatusScaleState,
-	scaleConfigs scalecommon.Configs,
+	statusScaleState podcommon.StatusScaleState,
+	scaleConfigs scalecommon.Configurations,
 ) func(pod *v1.Pod) error {
-	args := m.Called(ctx, status, states, scaleState, scaleConfigs)
+	args := m.Called(ctx, status, states, statusScaleState, scaleConfigs)
 	return args.Get(0).(func(pod *v1.Pod) error)
 }
 

@@ -58,7 +58,7 @@ func (v *validation) Validate(
 	ctx context.Context,
 	pod *v1.Pod,
 	targetContainerName string,
-	scaleConfigs scalecommon.Configs,
+	scaleConfigs scalecommon.Configurations,
 ) (*v1.Container, error) {
 	// Double check enabled label (originally filtered for informer cache).
 	enabled, err := v.podHelper.ExpectedLabelValueAs(pod, kubecommon.LabelEnabled, kubecommon.DataTypeBool)
@@ -112,7 +112,7 @@ func (v *validation) updateStatusAndGetError(
 	pod *v1.Pod,
 	errMessage string,
 	cause error,
-	scaleConfigs scalecommon.Configs,
+	scaleConfigs scalecommon.Configurations,
 ) error {
 	ret := NewValidationError(errMessage, cause)
 

@@ -22,13 +22,13 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// MockConfig is a generic mock for scale.Config.
-type MockConfig struct {
+// MockConfiguration is a generic mock for scalecommon.Configuration.
+type MockConfiguration struct {
 	mock.Mock
 }
 
-func NewMockConfig(configFunc func(*MockConfig)) *MockConfig {
-	m := &MockConfig{}
+func NewMockConfiguration(configFunc func(*MockConfiguration)) *MockConfiguration {
+	m := &MockConfiguration{}
 	if configFunc != nil {
 		configFunc(m)
 	} else {
@@ -38,61 +38,61 @@ func NewMockConfig(configFunc func(*MockConfig)) *MockConfig {
 	return m
 }
 
-func (m *MockConfig) ResourceName() v1.ResourceName {
+func (m *MockConfiguration) ResourceName() v1.ResourceName {
 	args := m.Called()
 	return args.Get(0).(v1.ResourceName)
 }
 
-func (m *MockConfig) IsEnabled() bool {
+func (m *MockConfiguration) IsEnabled() bool {
 	args := m.Called()
 	return args.Bool(0)
 }
 
-func (m *MockConfig) Resources() scalecommon.Resources {
+func (m *MockConfiguration) Resources() scalecommon.Resources {
 	args := m.Called()
 	return args.Get(0).(scalecommon.Resources)
 }
 
-func (m *MockConfig) StoreFromAnnotations(pod *v1.Pod) error {
+func (m *MockConfiguration) StoreFromAnnotations(pod *v1.Pod) error {
 	args := m.Called(pod)
 	return args.Error(0)
 }
 
-func (m *MockConfig) Validate(container *v1.Container) error {
+func (m *MockConfiguration) Validate(container *v1.Container) error {
 	args := m.Called(container)
 	return args.Error(0)
 }
 
-func (m *MockConfig) String() string {
+func (m *MockConfiguration) String() string {
 	args := m.Called()
 	return args.String(0)
 }
 
-func (m *MockConfig) ResourceNameDefault() {
+func (m *MockConfiguration) ResourceNameDefault() {
 	m.On("ResourceName").Return(v1.ResourceCPU)
 }
 
-func (m *MockConfig) IsEnabledDefault() {
+func (m *MockConfiguration) IsEnabledDefault() {
 	m.On("IsEnabled").Return(true)
 }
 
-func (m *MockConfig) ResourcesDefault() {
-	m.On("Resources").Return(scalecommon.Resources{})
+func (m *MockConfiguration) ResourcesDefault() {
+	m.On("Resources").Return(ResourcesCpuEnabled)
 }
 
-func (m *MockConfig) StoreFromAnnotationsDefault() {
+func (m *MockConfiguration) StoreFromAnnotationsDefault() {
 	m.On("StoreFromAnnotations", mock.Anything).Return(nil)
 }
 
-func (m *MockConfig) ValidateDefault() {
+func (m *MockConfiguration) ValidateDefault() {
 	m.On("Validate", mock.Anything).Return(nil)
 }
 
-func (m *MockConfig) StringDefault() {
+func (m *MockConfiguration) StringDefault() {
 	m.On("String").Return("")
 }
 
-func (m *MockConfig) AllDefaults() {
+func (m *MockConfiguration) AllDefaults() {
 	m.ResourceNameDefault()
 	m.IsEnabledDefault()
 	m.ResourcesDefault()

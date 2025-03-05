@@ -25,9 +25,17 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-func NewConfigs(podHelper kubecommon.PodHelper, containerHelper kubecommon.ContainerHelper) scalecommon.Configs {
-	return &configs{
-		cpuConfig: NewConfig(
+// configurations is the default implementation of scalecommon.Configurations.
+type configurations struct {
+	cpuConfig    scalecommon.Configuration
+	memoryConfig scalecommon.Configuration
+
+	podHelper kubecommon.PodHelper
+}
+
+func NewConfigurations(podHelper kubecommon.PodHelper, containerHelper kubecommon.ContainerHelper) scalecommon.Configurations {
+	return &configurations{
+		cpuConfig: NewConfiguration(
 			v1.ResourceCPU,
 			scalecommon.AnnotationCpuStartup,
 			scalecommon.AnnotationCpuPostStartupRequests,
@@ -36,7 +44,7 @@ func NewConfigs(podHelper kubecommon.PodHelper, containerHelper kubecommon.Conta
 			podHelper,
 			containerHelper,
 		),
-		memoryConfig: NewConfig(
+		memoryConfig: NewConfiguration(
 			v1.ResourceMemory,
 			scalecommon.AnnotationMemoryStartup,
 			scalecommon.AnnotationMemoryPostStartupRequests,
@@ -49,14 +57,8 @@ func NewConfigs(podHelper kubecommon.PodHelper, containerHelper kubecommon.Conta
 	}
 }
 
-type configs struct {
-	cpuConfig    scalecommon.Config
-	memoryConfig scalecommon.Config
-
-	podHelper kubecommon.PodHelper
-}
-
-func (c *configs) TargetContainerName(pod *v1.Pod) (string, error) {
+// TargetContainerName returns the target container name applicable for this collection of configurations.
+func (c *configurations) TargetContainerName(pod *v1.Pod) (string, error) {
 	value, err := c.podHelper.ExpectedAnnotationValueAs(
 		pod,
 		scalecommon.AnnotationTargetContainerName,
@@ -69,8 +71,9 @@ func (c *configs) TargetContainerName(pod *v1.Pod) (string, error) {
 	return value.(string), nil
 }
 
-func (c *configs) StoreFromAnnotationsAll(pod *v1.Pod) error {
-	for _, config := range c.AllConfigs() {
+// StoreFromAnnotationsAll invokes StoreFromAnnotations on each configuration within this collection.
+func (c *configurations) StoreFromAnnotationsAll(pod *v1.Pod) error {
+	for _, config := range c.AllConfigurations() {
 		if err := config.StoreFromAnnotations(pod); err != nil {
 			return err
 		}
@@ -79,8 +82,9 @@ func (c *configs) StoreFromAnnotationsAll(pod *v1.Pod) error {
 	return nil
 }
 
-func (c *configs) ValidateAll(container *v1.Container) error {
-	for _, config := range c.AllConfigs() {
+// ValidateAll invokes Validate on each configuration within this collection.
+func (c *configurations) ValidateAll(container *v1.Container) error {
+	for _, config := range c.AllConfigurations() {
 		if err := config.Validate(container); err != nil {
 			return err
 		}
@@ -89,10 +93,11 @@ func (c *configs) ValidateAll(container *v1.Container) error {
 	return nil
 }
 
-func (c *configs) ValidateCollection() error {
+// ValidateCollection performs validation on the entire configuration collection.
+func (c *configurations) ValidateCollection() error {
 	atLeastOneEnabled := false
 
-	for _, config := range c.AllConfigs() {
+	for _, config := range c.AllConfigurations() {
 		if config.IsEnabled() {
 			atLeastOneEnabled = true
 			break
@@ -106,7 +111,8 @@ func (c *configs) ValidateCollection() error {
 	return nil
 }
 
-func (c *configs) ConfigFor(resourceName v1.ResourceName) scalecommon.Config {
+// ConfigurationFor returns the configuration for the supplied resource name.
+func (c *configurations) ConfigurationFor(resourceName v1.ResourceName) scalecommon.Configuration {
 	switch resourceName {
 	case v1.ResourceCPU:
 		return c.cpuConfig
@@ -117,14 +123,16 @@ func (c *configs) ConfigFor(resourceName v1.ResourceName) scalecommon.Config {
 	}
 }
 
-func (c *configs) AllConfigs() []scalecommon.Config {
-	return []scalecommon.Config{c.cpuConfig, c.memoryConfig}
+// AllConfigurations returns all configurations within this collection.
+func (c *configurations) AllConfigurations() []scalecommon.Configuration {
+	return []scalecommon.Configuration{c.cpuConfig, c.memoryConfig}
 }
 
-func (c *configs) AllEnabledConfigs() []scalecommon.Config {
-	var enabledConfigs []scalecommon.Config
+// AllEnabledConfigurations returns all enabled configurations within this collection.
+func (c *configurations) AllEnabledConfigurations() []scalecommon.Configuration {
+	var enabledConfigs []scalecommon.Configuration
 
-	for _, config := range c.AllConfigs() {
+	for _, config := range c.AllConfigurations() {
 		if config.IsEnabled() {
 			enabledConfigs = append(enabledConfigs, config)
 		}
@@ -133,10 +141,12 @@ func (c *configs) AllEnabledConfigs() []scalecommon.Config {
 	return enabledConfigs
 }
 
-func (c *configs) AllEnabledConfigsResourceNames() []v1.ResourceName {
+// AllEnabledConfigurationsResourceNames returns the resource names of all enabled configurations within this
+// collection.
+func (c *configurations) AllEnabledConfigurationsResourceNames() []v1.ResourceName {
 	var enabledNames []v1.ResourceName
 
-	for _, config := range c.AllConfigs() {
+	for _, config := range c.AllConfigurations() {
 		if config.IsEnabled() {
 			enabledNames = append(enabledNames, config.ResourceName())
 		}
@@ -145,9 +155,10 @@ func (c *configs) AllEnabledConfigsResourceNames() []v1.ResourceName {
 	return enabledNames
 }
 
-func (c *configs) String() string {
+// String returns a string representation of all configurations within this collection.
+func (c *configurations) String() string {
 	var result string
-	allConfigs := c.AllConfigs()
+	allConfigs := c.AllConfigurations()
 
 	for i, config := range allConfigs {
 		result += config.String()

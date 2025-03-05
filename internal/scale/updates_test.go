@@ -25,7 +25,7 @@ import (
 )
 
 func TestNewUpdates(t *testing.T) {
-	updates := NewUpdates(NewConfigs(nil, nil))
+	updates := NewUpdates(NewConfigurations(nil, nil))
 	allUpdates := updates.AllUpdates()
 	assert.Equal(t, 2, len(allUpdates))
 	assert.Equal(t, v1.ResourceCPU, allUpdates[0].ResourceName())
@@ -33,9 +33,29 @@ func TestNewUpdates(t *testing.T) {
 }
 
 func TestStartupPodMutationFuncAll(t *testing.T) {
+	updates := &updates{
+		cpuUpdate: &update{
+			config: &configuration{hasStoredFromAnnotations: true},
+		},
+		memoryUpdate: &update{
+			config: &configuration{hasStoredFromAnnotations: true},
+		},
+	}
+	allFuncs := updates.StartupPodMutationFuncAll(&v1.Container{})
+	assert.Equal(t, 2, len(allFuncs))
 }
 
 func TestPostStartupPodMutationFuncAll(t *testing.T) {
+	updates := &updates{
+		cpuUpdate: &update{
+			config: &configuration{hasStoredFromAnnotations: true},
+		},
+		memoryUpdate: &update{
+			config: &configuration{hasStoredFromAnnotations: true},
+		},
+	}
+	allFuncs := updates.PostStartupPodMutationFuncAll(&v1.Container{})
+	assert.Equal(t, 2, len(allFuncs))
 }
 
 func TestUpdateFor(t *testing.T) {

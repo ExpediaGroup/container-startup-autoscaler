@@ -46,7 +46,7 @@ func (m *MockTargetContainerAction) Execute(
 	states podcommon.States,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs scalecommon.Configs,
+	scaleConfigs scalecommon.Configurations,
 ) error {
 	args := m.Called(ctx, states, pod, targetContainer, scaleConfigs)
 	return args.Error(0)

@@ -38,12 +38,12 @@ func NewMockStates(configFunc func(*MockStates)) *MockStates {
 	return m
 }
 
-func (m *MockStates) IsStartupConfigAppliedAll(container *v1.Container) bool {
+func (m *MockStates) IsStartupConfigurationAppliedAll(container *v1.Container) bool {
 	args := m.Called(container)
 	return args.Bool(0)
 }
 
-func (m *MockStates) IsPostStartupConfigAppliedAll(container *v1.Container) bool {
+func (m *MockStates) IsPostStartupConfigurationAppliedAll(container *v1.Container) bool {
 	args := m.Called(container)
 	return args.Bool(0)
 }
@@ -74,11 +74,11 @@ func (m *MockStates) AllStates() []scalecommon.State {
 }
 
 func (m *MockStates) IsStartupConfigAppliedAllDefault() {
-	m.On("IsStartupConfigAppliedAll", mock.Anything).Return(true)
+	m.On("IsStartupConfigurationAppliedAll", mock.Anything).Return(true)
 }
 
 func (m *MockStates) IsPostStartupConfigAppliedAllDefault() {
-	m.On("IsPostStartupConfigAppliedAll", mock.Anything).Return(true)
+	m.On("IsPostStartupConfigurationAppliedAll", mock.Anything).Return(true)
 }
 
 func (m *MockStates) IsAnyCurrentZeroAllDefault() {

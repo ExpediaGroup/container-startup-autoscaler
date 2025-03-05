@@ -21,18 +21,20 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-func NewUpdates(configs scalecommon.Configs) scalecommon.Updates {
-	return &updates{
-		cpuUpdate:    NewUpdate(v1.ResourceCPU, configs.ConfigFor(v1.ResourceCPU)),
-		memoryUpdate: NewUpdate(v1.ResourceMemory, configs.ConfigFor(v1.ResourceMemory)),
-	}
-}
-
+// updates is the default implementation of scalecommon.Updates.
 type updates struct {
 	cpuUpdate    scalecommon.Update
 	memoryUpdate scalecommon.Update
 }
 
+func NewUpdates(configs scalecommon.Configurations) scalecommon.Updates {
+	return &updates{
+		cpuUpdate:    NewUpdate(v1.ResourceCPU, configs.ConfigurationFor(v1.ResourceCPU)),
+		memoryUpdate: NewUpdate(v1.ResourceMemory, configs.ConfigurationFor(v1.ResourceMemory)),
+	}
+}
+
+// StartupPodMutationFuncAll invokes StartupPodMutationFunc on each update within this collection and returns them.
 func (u *updates) StartupPodMutationFuncAll(container *v1.Container) []func(pod *v1.Pod) error {
 	var funcs []func(pod *v1.Pod) error
 
@@ -43,6 +45,8 @@ func (u *updates) StartupPodMutationFuncAll(container *v1.Container) []func(pod 
 	return funcs
 }
 
+// PostStartupPodMutationFuncAll invokes PostStartupPodMutationFunc on each update within this collection and returns
+// them.
 func (u *updates) PostStartupPodMutationFuncAll(container *v1.Container) []func(pod *v1.Pod) error {
 	var funcs []func(pod *v1.Pod) error
 
@@ -53,6 +57,7 @@ func (u *updates) PostStartupPodMutationFuncAll(container *v1.Container) []func(
 	return funcs
 }
 
+// UpdateFor returns the update for the supplied resource name.
 func (u *updates) UpdateFor(resourceName v1.ResourceName) scalecommon.Update {
 	switch resourceName {
 	case v1.ResourceCPU:
@@ -64,6 +69,7 @@ func (u *updates) UpdateFor(resourceName v1.ResourceName) scalecommon.Update {
 	}
 }
 
+// AllUpdates returns all updates within this collection.
 func (u *updates) AllUpdates() []scalecommon.Update {
 	return []scalecommon.Update{u.cpuUpdate, u.memoryUpdate}
 }

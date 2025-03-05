@@ -22,25 +22,25 @@ import (
 )
 
 var (
-	ResourcesCpuStartupEnabled = scalecommon.Resources{
+	ResourcesCpuEnabled = scalecommon.Resources{
 		Startup:             kubetest.PodCpuStartupEnabled,
 		PostStartupRequests: kubetest.PodCpuPostStartupRequestsEnabled,
 		PostStartupLimits:   kubetest.PodCpuPostStartupLimitsEnabled,
 	}
 
-	ResourcesCpuStartupDisabled = scalecommon.Resources{
+	ResourcesCpuDisabled = scalecommon.Resources{
 		Startup:             kubetest.PodCpuStartupDisabled,
 		PostStartupRequests: kubetest.PodCpuPostStartupRequestsDisabled,
 		PostStartupLimits:   kubetest.PodCpuPostStartupLimitsDisabled,
 	}
 
-	ResourcesMemoryStartupEnabled = scalecommon.Resources{
+	ResourcesMemoryEnabled = scalecommon.Resources{
 		Startup:             kubetest.PodMemoryStartupEnabled,
 		PostStartupRequests: kubetest.PodMemoryPostStartupRequestsEnabled,
 		PostStartupLimits:   kubetest.PodMemoryPostStartupLimitsEnabled,
 	}
 
-	ResourcesMemoryStartupDisabled = scalecommon.Resources{
+	ResourcesMemoryDisabled = scalecommon.Resources{
 		Startup:             kubetest.PodMemoryStartupDisabled,
 		PostStartupRequests: kubetest.PodMemoryPostStartupRequestsDisabled,
 		PostStartupLimits:   kubetest.PodMemoryPostStartupLimitsDisabled,

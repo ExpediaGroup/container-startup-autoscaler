@@ -44,7 +44,7 @@ func (s targetContainerState) States(
 	ctx context.Context,
 	pod *v1.Pod,
 	targetContainer *v1.Container,
-	scaleConfigs scalecommon.Configs,
+	scaleConfigs scalecommon.Configurations,
 ) (podcommon.States, error) {
 	ret := podcommon.NewStatesAllUnknown()
 	ret.StartupProbe = s.stateStartupProbe(targetContainer)
@@ -77,8 +77,8 @@ func (s targetContainerState) States(
 
 	scaleStates := scale.NewStates(scaleConfigs, s.containerHelper)
 	ret.Resources = s.stateResources(
-		scaleStates.IsStartupConfigAppliedAll(targetContainer),
-		scaleStates.IsPostStartupConfigAppliedAll(targetContainer),
+		scaleStates.IsStartupConfigurationAppliedAll(targetContainer),
+		scaleStates.IsPostStartupConfigurationAppliedAll(targetContainer),
 	)
 
 	ret.StatusResources, err = s.stateStatusResources(pod, targetContainer, scaleStates)
