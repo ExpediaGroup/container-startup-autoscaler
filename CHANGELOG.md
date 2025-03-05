@@ -12,7 +12,7 @@
   scaling.
 - New `failure_configuration` counter metric that shows the number of reconciles where there was a configuration-related
   failure.
-- TODO(wt) integration tests/sandbox scripts for the new features.
+- TODO(wt) sandbox scripts for the new features.
 
 ### Changed
 - Upgrades Go to 1.23.6.

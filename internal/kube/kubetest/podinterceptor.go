@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ var (
 // error with an empty message.
 func InterceptorFuncGetFail(withError ...error) func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
 	if len(withError) > 1 {
-		panic("only 0 or 1 errors can be supplied")
+		panic(errors.New("only 0 or 1 errors can be supplied"))
 	}
 
 	return func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
@@ -56,7 +56,7 @@ func InterceptorFuncGetFail(withError ...error) func(_ context.Context, _ client
 // withError if supplied, otherwise an error with an empty message.
 func InterceptorFuncGetFailFirstOnly(withFirstError ...error) func(_ context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
 	if len(withFirstError) > 1 {
-		panic("only 0 or 1 errors can be supplied")
+		panic(errors.New("only 0 or 1 errors can be supplied"))
 	}
 
 	return func(ctx context.Context, _ client.WithWatch, _ client.ObjectKey, _ client.Object, _ ...client.GetOption) error {
@@ -82,7 +82,7 @@ func InterceptorFuncGetFailFirstOnly(withFirstError ...error) func(_ context.Con
 // an error with an empty message.
 func InterceptorFuncPatchFail(withError ...error) func(_ context.Context, _ client.WithWatch, _ client.Object, _ client.Patch, _ ...client.PatchOption) error {
 	if len(withError) > 1 {
-		panic("only 0 or 1 errors can be supplied")
+		panic(errors.New("only 0 or 1 errors can be supplied"))
 	}
 
 	return func(_ context.Context, _ client.WithWatch, _ client.Object, _ client.Patch, _ ...client.PatchOption) error {
@@ -97,7 +97,7 @@ func InterceptorFuncPatchFail(withError ...error) func(_ context.Context, _ clie
 // Returns withError if supplied, otherwise an error with an empty message.
 func InterceptorFuncPatchFailFirstOnly(withFirstError ...error) func(_ context.Context, _ client.WithWatch, _ client.Object, _ client.Patch, _ ...client.PatchOption) error {
 	if len(withFirstError) > 1 {
-		panic("only 0 or 1 errors can be supplied")
+		panic(errors.New("only 0 or 1 errors can be supplied"))
 	}
 
 	return func(ctx context.Context, _ client.WithWatch, _ client.Object, _ client.Patch, _ ...client.PatchOption) error {
@@ -123,7 +123,7 @@ func InterceptorFuncPatchFailFirstOnly(withFirstError ...error) func(_ context.C
 // if supplied, otherwise an error with an empty message.
 func InterceptorFuncSubResourcePatchFail(withError ...error) func(_ context.Context, _ client.Client, _ string, _ client.Object, _ client.Patch, _ ...client.SubResourcePatchOption) error {
 	if len(withError) > 1 {
-		panic("only 0 or 1 errors can be supplied")
+		panic(errors.New("only 0 or 1 errors can be supplied"))
 	}
 
 	return func(_ context.Context, _ client.Client, _ string, _ client.Object, _ client.Patch, _ ...client.SubResourcePatchOption) error {

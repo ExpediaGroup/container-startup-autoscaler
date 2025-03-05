@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -33,12 +33,15 @@ func echoDeploymentConfigStandardStartup(
 	replicas int32,
 	annotations csaQuantityAnnotations,
 ) deploymentConfig {
+	var cpuRequests, cpuLimits = annotations.CpuStartupRequestsLimits()
+	var memoryRequests, memoryLimits = annotations.MemoryStartupRequestsLimits()
+
 	return echoDeploymentConfigStandard(
 		namespace,
 		replicas,
 		annotations,
-		annotations.cpuStartup, annotations.cpuStartup,
-		annotations.memoryStartup, annotations.memoryStartup,
+		cpuRequests, cpuLimits,
+		memoryRequests, memoryLimits,
 		echoServerDefaultProbeInitialDelaySeconds,
 	)
 }
@@ -48,12 +51,15 @@ func echoDeploymentConfigStandardPostStartup(
 	replicas int32,
 	annotations csaQuantityAnnotations,
 ) deploymentConfig {
+	var cpuRequests, cpuLimits = annotations.CpuPostStartupRequestsLimits()
+	var memoryRequests, memoryLimits = annotations.MemoryPostStartupRequestsLimits()
+
 	return echoDeploymentConfigStandard(
 		namespace,
 		replicas,
 		annotations,
-		annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits,
-		annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits,
+		cpuRequests, cpuLimits,
+		memoryRequests, memoryLimits,
 		echoServerDefaultProbeInitialDelaySeconds,
 	)
 }
@@ -90,12 +96,15 @@ func echoStatefulSetConfigStandardStartup(
 	replicas int32,
 	annotations csaQuantityAnnotations,
 ) statefulSetConfig {
+	var cpuRequests, cpuLimits = annotations.CpuStartupRequestsLimits()
+	var memoryRequests, memoryLimits = annotations.MemoryStartupRequestsLimits()
+
 	return echoStatefulSetConfigStandard(
 		namespace,
 		replicas,
 		annotations,
-		annotations.cpuStartup, annotations.cpuStartup,
-		annotations.memoryStartup, annotations.memoryStartup,
+		cpuRequests, cpuLimits,
+		memoryRequests, memoryLimits,
 		echoServerDefaultProbeInitialDelaySeconds,
 	)
 }
@@ -105,12 +114,15 @@ func echoStatefulSetConfigStandardPostStartup(
 	replicas int32,
 	annotations csaQuantityAnnotations,
 ) statefulSetConfig {
+	var cpuRequests, cpuLimits = annotations.CpuPostStartupRequestsLimits()
+	var memoryRequests, memoryLimits = annotations.MemoryPostStartupRequestsLimits()
+
 	return echoStatefulSetConfigStandard(
 		namespace,
 		replicas,
 		annotations,
-		annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits,
-		annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits,
+		cpuRequests, cpuLimits,
+		memoryRequests, memoryLimits,
 		echoServerDefaultProbeInitialDelaySeconds,
 	)
 }
@@ -146,11 +158,14 @@ func echoDaemonSetConfigStandardStartup(
 	namespace string,
 	annotations csaQuantityAnnotations,
 ) daemonSetConfig {
+	var cpuRequests, cpuLimits = annotations.CpuStartupRequestsLimits()
+	var memoryRequests, memoryLimits = annotations.MemoryStartupRequestsLimits()
+
 	return echoDaemonSetConfigStandard(
 		namespace,
 		annotations,
-		annotations.cpuStartup, annotations.cpuStartup,
-		annotations.memoryStartup, annotations.memoryStartup,
+		cpuRequests, cpuLimits,
+		memoryRequests, memoryLimits,
 		echoServerDefaultProbeInitialDelaySeconds,
 	)
 }
@@ -159,11 +174,14 @@ func echoDaemonSetConfigStandardPostStartup(
 	namespace string,
 	annotations csaQuantityAnnotations,
 ) daemonSetConfig {
+	var cpuRequests, cpuLimits = annotations.CpuPostStartupRequestsLimits()
+	var memoryRequests, memoryLimits = annotations.MemoryPostStartupRequestsLimits()
+
 	return echoDaemonSetConfigStandard(
 		namespace,
 		annotations,
-		annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits,
-		annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits,
+		cpuRequests, cpuLimits,
+		memoryRequests, memoryLimits,
 		echoServerDefaultProbeInitialDelaySeconds,
 	)
 }
@@ -274,15 +292,34 @@ func echoPodLabels() map[string]string {
 }
 
 func echoPodAnnotations(annotations csaQuantityAnnotations) map[string]string {
-	return map[string]string{
-		scalecommon.AnnotationTargetContainerName:       echoServerName,
-		scalecommon.AnnotationCpuStartup:                annotations.cpuStartup,
-		scalecommon.AnnotationCpuPostStartupRequests:    annotations.cpuPostStartupRequests,
-		scalecommon.AnnotationCpuPostStartupLimits:      annotations.cpuPostStartupLimits,
-		scalecommon.AnnotationMemoryStartup:             annotations.memoryStartup,
-		scalecommon.AnnotationMemoryPostStartupRequests: annotations.memoryPostStartupRequests,
-		scalecommon.AnnotationMemoryPostStartupLimits:   annotations.memoryPostStartupLimits,
+	ret := make(map[string]string)
+	ret[scalecommon.AnnotationTargetContainerName] = echoServerName
+
+	if annotations.cpuStartup != "" {
+		ret[scalecommon.AnnotationCpuStartup] = annotations.cpuStartup
 	}
+
+	if annotations.cpuPostStartupRequests != "" {
+		ret[scalecommon.AnnotationCpuPostStartupRequests] = annotations.cpuPostStartupRequests
+	}
+
+	if annotations.cpuPostStartupLimits != "" {
+		ret[scalecommon.AnnotationCpuPostStartupLimits] = annotations.cpuPostStartupLimits
+	}
+
+	if annotations.memoryStartup != "" {
+		ret[scalecommon.AnnotationMemoryStartup] = annotations.memoryStartup
+	}
+
+	if annotations.memoryPostStartupRequests != "" {
+		ret[scalecommon.AnnotationMemoryPostStartupRequests] = annotations.memoryPostStartupRequests
+	}
+
+	if annotations.memoryPostStartupLimits != "" {
+		ret[scalecommon.AnnotationMemoryPostStartupLimits] = annotations.memoryPostStartupLimits
+	}
+
+	return ret
 }
 
 func echoContainerConfigs(

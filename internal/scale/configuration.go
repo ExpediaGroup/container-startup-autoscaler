@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// TODO(wt) ensure integration tests with only one of cpu/memory enabled
+// TODO(wt) ensure sandbox scripts with only one of cpu/memory enabled (add changelog too)
+// TODO(wt) update all dependencies to latest versions (add changelog too)
 // TODO(wt) ensure docs up to date completely - cpu/memory now optional (but at least one required)
 
 package scale

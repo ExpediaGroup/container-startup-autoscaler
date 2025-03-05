@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ limitations under the License.
 package integration
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -37,6 +38,62 @@ type csaQuantityAnnotations struct {
 	memoryStartup             string
 	memoryPostStartupRequests string
 	memoryPostStartupLimits   string
+}
+
+func (c *csaQuantityAnnotations) IsCpuSpecified() bool {
+	if c.cpuStartup != "" && c.cpuPostStartupRequests != "" && c.cpuPostStartupLimits != "" {
+		return true
+	}
+
+	if c.cpuStartup == "" && c.cpuPostStartupRequests == "" && c.cpuPostStartupLimits == "" {
+		return false
+	}
+
+	panic(errors.New("only some of all required cpu annotations are set"))
+}
+
+func (c *csaQuantityAnnotations) IsMemorySpecified() bool {
+	if c.memoryStartup != "" && c.memoryPostStartupRequests != "" && c.memoryPostStartupLimits != "" {
+		return true
+	}
+
+	if c.memoryStartup == "" && c.memoryPostStartupRequests == "" && c.memoryPostStartupLimits == "" {
+		return false
+	}
+
+	panic(errors.New("only some of all required memory annotations are set"))
+}
+
+func (c *csaQuantityAnnotations) CpuStartupRequestsLimits() (string, string) {
+	if c.IsCpuSpecified() {
+		return c.cpuStartup, c.cpuStartup
+	}
+
+	return echoServerCpuDisabledRequests, echoServerCpuDisabledLimits
+}
+
+func (c *csaQuantityAnnotations) CpuPostStartupRequestsLimits() (string, string) {
+	if c.IsCpuSpecified() {
+		return c.cpuPostStartupRequests, c.cpuPostStartupLimits
+	}
+
+	return echoServerCpuDisabledRequests, echoServerCpuDisabledLimits
+}
+
+func (c *csaQuantityAnnotations) MemoryStartupRequestsLimits() (string, string) {
+	if c.IsMemorySpecified() {
+		return c.memoryStartup, c.memoryStartup
+	}
+
+	return echoServerMemoryDisabledRequests, echoServerMemoryDisabledLimits
+}
+
+func (c *csaQuantityAnnotations) MemoryPostStartupRequestsLimits() (string, string) {
+	if c.IsMemorySpecified() {
+		return c.memoryPostStartupRequests, c.memoryPostStartupLimits
+	}
+
+	return echoServerMemoryDisabledRequests, echoServerMemoryDisabledLimits
 }
 
 func csaRun(t *testing.T) error {

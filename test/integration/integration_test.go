@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -204,14 +204,15 @@ func TestMain(m *testing.M) {
 
 // Deployment ----------------------------------------------------------------------------------------------------------
 
-func TestDeploymentNonStartupAdmittedFlowStartupProbe(t *testing.T) {
+func TestDeploymentNonStartupAdmittedFlowStartupProbeAll(t *testing.T) {
 	t.Parallel()
-	namespace := "deployment-non-startup-admitted-flow-startup-probe"
+	namespace := "deployment-non-startup-admitted-flow-startup-probe-all"
 	maybeRegisterCleanup(t, namespace)
 
 	testWorkflow(
 		t,
 		namespace,
+		csaQuantityAnnotationsAllDefault,
 		func(annotations csaQuantityAnnotations) (string, int) {
 			replicas := 2
 			config := echoDeploymentConfigStandardPostStartup(namespace, int32(replicas), annotations)
@@ -233,14 +234,75 @@ func TestDeploymentNonStartupAdmittedFlowStartupProbe(t *testing.T) {
 	)
 }
 
-func TestDeploymentStartupAdmittedFlowStartupProbe(t *testing.T) {
+func TestDeploymentNonStartupAdmittedFlowStartupProbeCpu(t *testing.T) {
 	t.Parallel()
-	namespace := "deployment-startup-admitted-flow-startup-probe"
+	namespace := "deployment-non-startup-admitted-flow-startup-probe-cpu"
 	maybeRegisterCleanup(t, namespace)
 
 	testWorkflow(
 		t,
 		namespace,
+		csaQuantityAnnotationsCpuOnlyDefault,
+		func(annotations csaQuantityAnnotations) (string, int) {
+			replicas := 2
+			config := echoDeploymentConfigStandardPostStartup(namespace, int32(replicas), annotations)
+			config.removeReadinessProbes()
+			return config.deploymentJson(), replicas
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, true, false, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, true, false, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
+		},
+	)
+}
+
+func TestDeploymentNonStartupAdmittedFlowStartupProbeMemory(t *testing.T) {
+	t.Parallel()
+	namespace := "deployment-non-startup-admitted-flow-startup-probe-memory"
+	maybeRegisterCleanup(t, namespace)
+
+	testWorkflow(
+		t,
+		namespace,
+		csaQuantityAnnotationsMemoryOnlyDefault,
+		func(annotations csaQuantityAnnotations) (string, int) {
+			replicas := 2
+			config := echoDeploymentConfigStandardPostStartup(namespace, int32(replicas), annotations)
+			config.removeReadinessProbes()
+			return config.deploymentJson(), replicas
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, true, false, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, true, false, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
+		},
+	)
+}
+
+func TestDeploymentStartupAdmittedFlowStartupProbeAll(t *testing.T) {
+	t.Parallel()
+	namespace := "deployment-startup-admitted-flow-startup-probe-all"
+	maybeRegisterCleanup(t, namespace)
+
+	testWorkflow(
+		t,
+		namespace,
+		csaQuantityAnnotationsAllDefault,
 		func(annotations csaQuantityAnnotations) (string, int) {
 			replicas := 2
 			config := echoDeploymentConfigStandardStartup(namespace, int32(replicas), annotations)
@@ -262,14 +324,75 @@ func TestDeploymentStartupAdmittedFlowStartupProbe(t *testing.T) {
 	)
 }
 
-func TestDeploymentNonStartupAdmittedFlowReadinessProbe(t *testing.T) {
+func TestDeploymentStartupAdmittedFlowStartupProbeCpu(t *testing.T) {
 	t.Parallel()
-	namespace := "deployment-non-startup-admitted-flow-readiness-probe"
+	namespace := "deployment-startup-admitted-flow-startup-probe-cpu"
 	maybeRegisterCleanup(t, namespace)
 
 	testWorkflow(
 		t,
 		namespace,
+		csaQuantityAnnotationsCpuOnlyDefault,
+		func(annotations csaQuantityAnnotations) (string, int) {
+			replicas := 2
+			config := echoDeploymentConfigStandardStartup(namespace, int32(replicas), annotations)
+			config.removeReadinessProbes()
+			return config.deploymentJson(), replicas
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, true, false, true)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, true, false, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
+		},
+	)
+}
+
+func TestDeploymentStartupAdmittedFlowStartupProbeMemory(t *testing.T) {
+	t.Parallel()
+	namespace := "deployment-startup-admitted-flow-startup-probe-memory"
+	maybeRegisterCleanup(t, namespace)
+
+	testWorkflow(
+		t,
+		namespace,
+		csaQuantityAnnotationsMemoryOnlyDefault,
+		func(annotations csaQuantityAnnotations) (string, int) {
+			replicas := 2
+			config := echoDeploymentConfigStandardStartup(namespace, int32(replicas), annotations)
+			config.removeReadinessProbes()
+			return config.deploymentJson(), replicas
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, true, false, true)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, true, false, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
+		},
+	)
+}
+
+func TestDeploymentNonStartupAdmittedFlowReadinessProbeAll(t *testing.T) {
+	t.Parallel()
+	namespace := "deployment-non-startup-admitted-flow-readiness-probe-all"
+	maybeRegisterCleanup(t, namespace)
+
+	testWorkflow(
+		t,
+		namespace,
+		csaQuantityAnnotationsAllDefault,
 		func(annotations csaQuantityAnnotations) (string, int) {
 			replicas := 2
 			config := echoDeploymentConfigStandardPostStartup(namespace, int32(replicas), annotations)
@@ -291,14 +414,75 @@ func TestDeploymentNonStartupAdmittedFlowReadinessProbe(t *testing.T) {
 	)
 }
 
-func TestDeploymentStartupAdmittedFlowReadinessProbe(t *testing.T) {
+func TestDeploymentNonStartupAdmittedFlowReadinessProbeCpu(t *testing.T) {
 	t.Parallel()
-	namespace := "deployment-startup-admitted-flow-readiness-probe"
+	namespace := "deployment-non-startup-admitted-flow-readiness-probe-cpu"
 	maybeRegisterCleanup(t, namespace)
 
 	testWorkflow(
 		t,
 		namespace,
+		csaQuantityAnnotationsCpuOnlyDefault,
+		func(annotations csaQuantityAnnotations) (string, int) {
+			replicas := 2
+			config := echoDeploymentConfigStandardPostStartup(namespace, int32(replicas), annotations)
+			config.removeStartupProbes()
+			return config.deploymentJson(), replicas
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, false, true, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, false, true, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
+		},
+	)
+}
+
+func TestDeploymentNonStartupAdmittedFlowReadinessProbeMemory(t *testing.T) {
+	t.Parallel()
+	namespace := "deployment-non-startup-admitted-flow-readiness-probe-memory"
+	maybeRegisterCleanup(t, namespace)
+
+	testWorkflow(
+		t,
+		namespace,
+		csaQuantityAnnotationsMemoryOnlyDefault,
+		func(annotations csaQuantityAnnotations) (string, int) {
+			replicas := 2
+			config := echoDeploymentConfigStandardPostStartup(namespace, int32(replicas), annotations)
+			config.removeStartupProbes()
+			return config.deploymentJson(), replicas
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, false, true, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, false, true, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
+		},
+	)
+}
+
+func TestDeploymentStartupAdmittedFlowReadinessProbeAll(t *testing.T) {
+	t.Parallel()
+	namespace := "deployment-startup-admitted-flow-readiness-probe-all"
+	maybeRegisterCleanup(t, namespace)
+
+	testWorkflow(
+		t,
+		namespace,
+		csaQuantityAnnotationsAllDefault,
 		func(annotations csaQuantityAnnotations) (string, int) {
 			replicas := 2
 			config := echoDeploymentConfigStandardStartup(namespace, int32(replicas), annotations)
@@ -320,9 +504,69 @@ func TestDeploymentStartupAdmittedFlowReadinessProbe(t *testing.T) {
 	)
 }
 
-func TestDeploymentScaleWhenUnknownResources(t *testing.T) {
+func TestDeploymentStartupAdmittedFlowReadinessProbeCpu(t *testing.T) {
 	t.Parallel()
-	namespace := "deployment-scale-when-unknown-resources"
+	namespace := "deployment-startup-admitted-flow-readiness-probe-cpu"
+	maybeRegisterCleanup(t, namespace)
+
+	testWorkflow(
+		t,
+		namespace,
+		csaQuantityAnnotationsCpuOnlyDefault,
+		func(annotations csaQuantityAnnotations) (string, int) {
+			replicas := 2
+			config := echoDeploymentConfigStandardStartup(namespace, int32(replicas), annotations)
+			config.removeStartupProbes()
+			return config.deploymentJson(), replicas
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, false, true, true)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, false, true, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
+		},
+	)
+}
+
+func TestDeploymentStartupAdmittedFlowReadinessProbeMemory(t *testing.T) {
+	t.Parallel()
+	namespace := "deployment-startup-admitted-flow-readiness-probe-memory"
+	maybeRegisterCleanup(t, namespace)
+
+	testWorkflow(
+		t,
+		namespace,
+		csaQuantityAnnotationsMemoryOnlyDefault,
+		func(annotations csaQuantityAnnotations) (string, int) {
+			replicas := 2
+			config := echoDeploymentConfigStandardStartup(namespace, int32(replicas), annotations)
+			config.removeStartupProbes()
+			return config.deploymentJson(), replicas
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, false, true, true)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertStartupEnacted(t, annotations, podStatusAnn, false, true, false)
+		},
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
+		},
+	)
+}
+
+func TestDeploymentScaleWhenUnknownResourcesAll(t *testing.T) {
+	t.Parallel()
+	namespace := "deployment-scale-when-unknown-resources-all"
 	maybeRegisterCleanup(t, namespace)
 
 	_ = kubeDeleteNamespace(t, namespace)
@@ -377,16 +621,125 @@ func TestDeploymentScaleWhenUnknownResources(t *testing.T) {
 	)
 }
 
+func TestDeploymentScaleWhenUnknownResourcesCpu(t *testing.T) {
+	t.Parallel()
+	namespace := "deployment-scale-when-unknown-resources-cpu"
+	maybeRegisterCleanup(t, namespace)
+
+	_ = kubeDeleteNamespace(t, namespace)
+	maybeLogErrAndFailNow(t, kubeCreateNamespace(t, namespace))
+
+	annotations := csaQuantityAnnotations{
+		cpuStartup:             "200m",
+		cpuPostStartupRequests: "50m",
+		cpuPostStartupLimits:   "50m",
+	}
+
+	config := echoDeploymentConfigStandard(
+		namespace,
+		2,
+		annotations,
+		"175m", "175m",
+		echoServerMemoryDisabledRequests, echoServerMemoryDisabledLimits,
+		echoServerDefaultProbeInitialDelaySeconds,
+	)
+	config.removeReadinessProbes()
+	maybeLogErrAndFailNow(t, kubeApplyYamlOrJsonResources(t, config.deploymentJson()))
+
+	names, err := kubeGetPodNames(t, namespace, echoServerName)
+	maybeLogErrAndFailNow(t, err)
+
+	podStatusAnn, errs := csaWaitStatusAll(t, namespace, names, csaStatusMessageStartupEnacted, testsDefaultWaitStatusTimeoutSecs)
+	if len(errs) > 0 {
+		maybeLogErrAndFailNow(t, errs[len(errs)-1])
+	}
+
+	assertStartupEnacted(t, annotations, podStatusAnn, true, false, false)
+
+	podStatusAnn, errs = csaWaitStatusAll(t, namespace, names, csaStatusMessagePostStartupEnacted, testsDefaultWaitStatusTimeoutSecs)
+	if len(errs) > 0 {
+		maybeLogErrAndFailNow(t, errs[len(errs)-1])
+	}
+
+	assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
+
+	ensureEvents(
+		t,
+		csaEventReasonScaling,
+		[]string{
+			csaStatusMessageStartupCommandedUnknownRes, csaStatusMessageStartupEnacted,
+			csaStatusMessagePostStartupCommanded, csaStatusMessagePostStartupEnacted,
+		},
+		namespace,
+		names,
+	)
+}
+
+func TestDeploymentScaleWhenUnknownResourcesMemory(t *testing.T) {
+	t.Parallel()
+	namespace := "deployment-scale-when-unknown-resources-memory"
+	maybeRegisterCleanup(t, namespace)
+
+	_ = kubeDeleteNamespace(t, namespace)
+	maybeLogErrAndFailNow(t, kubeCreateNamespace(t, namespace))
+
+	annotations := csaQuantityAnnotations{
+		memoryStartup:             "200M",
+		memoryPostStartupRequests: "150M",
+		memoryPostStartupLimits:   "150M",
+	}
+
+	config := echoDeploymentConfigStandard(
+		namespace,
+		2,
+		annotations,
+		echoServerCpuDisabledRequests, echoServerCpuDisabledLimits,
+		"175M", "175M",
+		echoServerDefaultProbeInitialDelaySeconds,
+	)
+	config.removeReadinessProbes()
+	maybeLogErrAndFailNow(t, kubeApplyYamlOrJsonResources(t, config.deploymentJson()))
+
+	names, err := kubeGetPodNames(t, namespace, echoServerName)
+	maybeLogErrAndFailNow(t, err)
+
+	podStatusAnn, errs := csaWaitStatusAll(t, namespace, names, csaStatusMessageStartupEnacted, testsDefaultWaitStatusTimeoutSecs)
+	if len(errs) > 0 {
+		maybeLogErrAndFailNow(t, errs[len(errs)-1])
+	}
+
+	assertStartupEnacted(t, annotations, podStatusAnn, true, false, false)
+
+	podStatusAnn, errs = csaWaitStatusAll(t, namespace, names, csaStatusMessagePostStartupEnacted, testsDefaultWaitStatusTimeoutSecs)
+	if len(errs) > 0 {
+		maybeLogErrAndFailNow(t, errs[len(errs)-1])
+	}
+
+	assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
+
+	ensureEvents(
+		t,
+		csaEventReasonScaling,
+		[]string{
+			csaStatusMessageStartupCommandedUnknownRes, csaStatusMessageStartupEnacted,
+			csaStatusMessagePostStartupCommanded, csaStatusMessagePostStartupEnacted,
+		},
+		namespace,
+		names,
+	)
+}
+
 // StatefulSet ---------------------------------------------------------------------------------------------------------
 
-func TestStatefulSetFlowStartupProbe(t *testing.T) {
+func TestStatefulSetFlowStartupProbeAll(t *testing.T) {
 	t.Parallel()
-	namespace := "statefulset-flow-startup-probe"
+	namespace := "statefulset-flow-startup-probe-all"
 	maybeRegisterCleanup(t, namespace)
 
 	testWorkflow(
 		t,
 		namespace,
+		csaQuantityAnnotationsAllDefault,
 		func(annotations csaQuantityAnnotations) (string, int) {
 			replicas := 1 // Can only test with 1 replica since pods are started sequentially (after become ready).
 			config := echoStatefulSetConfigStandardPostStartup(namespace, int32(replicas), annotations)
@@ -408,14 +761,15 @@ func TestStatefulSetFlowStartupProbe(t *testing.T) {
 	)
 }
 
-func TestStatefulSetFlowReadinessProbe(t *testing.T) {
+func TestStatefulSetFlowReadinessProbeAll(t *testing.T) {
 	t.Parallel()
-	namespace := "statefulset-flow-readiness-probe"
+	namespace := "statefulset-flow-readiness-probe-all"
 	maybeRegisterCleanup(t, namespace)
 
 	testWorkflow(
 		t,
 		namespace,
+		csaQuantityAnnotationsAllDefault,
 		func(annotations csaQuantityAnnotations) (string, int) {
 			replicas := 1
 			config := echoStatefulSetConfigStandardPostStartup(namespace, int32(replicas), annotations)
@@ -439,14 +793,15 @@ func TestStatefulSetFlowReadinessProbe(t *testing.T) {
 
 // DaemonSet -----------------------------------------------------------------------------------------------------------
 
-func TestDaemonSetFlowStartupProbe(t *testing.T) {
+func TestDaemonSetFlowStartupProbeAll(t *testing.T) {
 	t.Parallel()
-	namespace := "daemonset-flow-startup-probe"
+	namespace := "daemonset-flow-startup-probe-all"
 	maybeRegisterCleanup(t, namespace)
 
 	testWorkflow(
 		t,
 		namespace,
+		csaQuantityAnnotationsAllDefault,
 		func(annotations csaQuantityAnnotations) (string, int) {
 			config := echoDaemonSetConfigStandardPostStartup(namespace, annotations)
 			config.removeReadinessProbes()
@@ -467,14 +822,15 @@ func TestDaemonSetFlowStartupProbe(t *testing.T) {
 	)
 }
 
-func TestDaemonSetFlowReadinessProbe(t *testing.T) {
+func TestDaemonSetFlowReadinessProbeAll(t *testing.T) {
 	t.Parallel()
-	namespace := "daemonset-flow-readiness-probe"
+	namespace := "daemonset-flow-readiness-probe-all"
 	maybeRegisterCleanup(t, namespace)
 
 	testWorkflow(
 		t,
 		namespace,
+		csaQuantityAnnotationsAllDefault,
 		func(annotations csaQuantityAnnotations) (string, int) {
 			config := echoDaemonSetConfigStandardPostStartup(namespace, annotations)
 			config.removeStartupProbes()
@@ -554,6 +910,7 @@ func TestValidationFailure(t *testing.T) {
 func testWorkflow(
 	t *testing.T,
 	namespace string,
+	annotations csaQuantityAnnotations,
 	workloadJsonReplicasFunc func(csaQuantityAnnotations) (string, int),
 	assertStartupEnactedFunc func(*testing.T, csaQuantityAnnotations, map[*v1.Pod]pod.StatusAnnotation),
 	assertPostStartupEnactedFunc func(*testing.T, csaQuantityAnnotations, map[*v1.Pod]pod.StatusAnnotation),
@@ -562,15 +919,6 @@ func testWorkflow(
 ) {
 	_ = kubeDeleteNamespace(t, namespace)
 	maybeLogErrAndFailNow(t, kubeCreateNamespace(t, namespace))
-
-	annotations := csaQuantityAnnotations{
-		cpuStartup:                "200m",
-		cpuPostStartupRequests:    "50m",
-		cpuPostStartupLimits:      "50m",
-		memoryStartup:             "200M",
-		memoryPostStartupRequests: "150M",
-		memoryPostStartupLimits:   "150M",
-	}
 
 	workloadJson, replicas := workloadJsonReplicasFunc(annotations)
 	maybeLogErrAndFailNow(t, kubeApplyYamlOrJsonResources(t, workloadJson))
@@ -641,12 +989,16 @@ func assertStartupEnacted(
 
 	for kubePod, statusAnn := range podStatusAnn {
 		for _, c := range kubePod.Spec.Containers {
-			expectCpuR, expectCpuL := annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits
-			expectMemoryR, expectMemoryL := annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits
+			var expectCpuR, expectCpuL, expectMemoryR, expectMemoryL string
 
 			if c.Name == echoServerName {
-				expectCpuR, expectCpuL = annotations.cpuStartup, annotations.cpuStartup
-				expectMemoryR, expectMemoryL = annotations.memoryStartup, annotations.memoryStartup
+				expectCpuR, expectCpuL = annotations.CpuStartupRequestsLimits()
+				expectMemoryR, expectMemoryL = annotations.MemoryStartupRequestsLimits()
+			} else if c.Name == echoServerNonTargetContainerName {
+				expectCpuR, expectCpuL = echoServerNonTargetContainerCpuRequests, echoServerNonTargetContainerCpuLimits
+				expectMemoryR, expectMemoryL = echoServerNonTargetContainerMemoryRequests, echoServerNonTargetContainerMemoryLimits
+			} else {
+				panic(errors.New("container name unrecognized"))
 			}
 
 			if expectStartupProbe {
@@ -670,12 +1022,11 @@ func assertStartupEnacted(
 		}
 
 		for _, s := range kubePod.Status.ContainerStatuses {
-			expectCpuR, expectCpuL := annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits
-			expectMemoryR, expectMemoryL := annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits
+			var expectCpuR, expectCpuL, expectMemoryR, expectMemoryL string
 
 			if s.Name == echoServerName {
-				expectCpuR, expectCpuL = annotations.cpuStartup, annotations.cpuStartup
-				expectMemoryR, expectMemoryL = annotations.memoryStartup, annotations.memoryStartup
+				expectCpuR, expectCpuL = annotations.CpuStartupRequestsLimits()
+				expectMemoryR, expectMemoryL = annotations.MemoryStartupRequestsLimits()
 
 				// See comment in targetcontaineraction.go
 				if expectStartupProbe {
@@ -684,6 +1035,11 @@ func assertStartupEnacted(
 					require.True(t, *s.Started)
 				}
 				require.False(t, s.Ready)
+			} else if s.Name == echoServerNonTargetContainerName {
+				expectCpuR, expectCpuL = echoServerNonTargetContainerCpuRequests, echoServerNonTargetContainerCpuLimits
+				expectMemoryR, expectMemoryL = echoServerNonTargetContainerMemoryRequests, echoServerNonTargetContainerMemoryLimits
+			} else {
+				panic(errors.New("container name unrecognized"))
 			}
 
 			require.NotNil(t, s.State.Running)
@@ -732,8 +1088,17 @@ func assertPostStartupEnacted(
 ) {
 	for kubePod, statusAnn := range podStatusAnn {
 		for _, c := range kubePod.Spec.Containers {
-			expectCpuR, expectCpuL := annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits
-			expectMemoryR, expectMemoryL := annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits
+			var expectCpuR, expectCpuL, expectMemoryR, expectMemoryL string
+
+			if c.Name == echoServerName {
+				expectCpuR, expectCpuL = annotations.CpuPostStartupRequestsLimits()
+				expectMemoryR, expectMemoryL = annotations.MemoryPostStartupRequestsLimits()
+			} else if c.Name == echoServerNonTargetContainerName {
+				expectCpuR, expectCpuL = echoServerNonTargetContainerCpuRequests, echoServerNonTargetContainerCpuLimits
+				expectMemoryR, expectMemoryL = echoServerNonTargetContainerMemoryRequests, echoServerNonTargetContainerMemoryLimits
+			} else {
+				panic(errors.New("container name unrecognized"))
+			}
 
 			if expectStartupProbe {
 				require.NotNil(t, c.StartupProbe)
@@ -756,13 +1121,20 @@ func assertPostStartupEnacted(
 		}
 
 		for _, s := range kubePod.Status.ContainerStatuses {
-			expectCpuR, expectCpuL := annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits
-			expectMemoryR, expectMemoryL := annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits
+			var expectCpuR, expectCpuL, expectMemoryR, expectMemoryL string
 
 			if s.Name == echoServerName {
+				expectCpuR, expectCpuL = annotations.CpuPostStartupRequestsLimits()
+				expectMemoryR, expectMemoryL = annotations.MemoryPostStartupRequestsLimits()
+
 				// See comment in targetcontaineraction.go
 				require.True(t, *s.Started)
 				require.True(t, s.Ready)
+			} else if s.Name == echoServerNonTargetContainerName {
+				expectCpuR, expectCpuL = echoServerNonTargetContainerCpuRequests, echoServerNonTargetContainerCpuLimits
+				expectMemoryR, expectMemoryL = echoServerNonTargetContainerMemoryRequests, echoServerNonTargetContainerMemoryLimits
+			} else {
+				panic(errors.New("container name unrecognized"))
 			}
 
 			require.NotNil(t, s.State.Running)

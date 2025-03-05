@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -88,9 +88,40 @@ const (
 )
 
 const (
+	echoServerCpuDisabledRequests    = "50m"
+	echoServerCpuDisabledLimits      = "50m"
+	echoServerMemoryDisabledRequests = "150M"
+	echoServerMemoryDisabledLimits   = "150M"
+)
+
+const (
 	echoServerDefaultProbeInitialDelaySeconds = 15
 	echoServerProbePeriodSeconds              = 1
 	echoServerProbeFailureThreshold           = echoServerDefaultProbeInitialDelaySeconds
+)
+
+// Quantity Annotations ------------------------------------------------------------------------------------------------
+var (
+	csaQuantityAnnotationsCpuOnlyDefault = csaQuantityAnnotations{
+		cpuStartup:             "200m",
+		cpuPostStartupRequests: "50m",
+		cpuPostStartupLimits:   "50m",
+	}
+
+	csaQuantityAnnotationsMemoryOnlyDefault = csaQuantityAnnotations{
+		memoryStartup:             "200M",
+		memoryPostStartupRequests: "150M",
+		memoryPostStartupLimits:   "150M",
+	}
+
+	csaQuantityAnnotationsAllDefault = csaQuantityAnnotations{
+		cpuStartup:                "200m",
+		cpuPostStartupRequests:    "50m",
+		cpuPostStartupLimits:      "50m",
+		memoryStartup:             "200M",
+		memoryPostStartupRequests: "150M",
+		memoryPostStartupLimits:   "150M",
+	}
 )
 
 // Tests ---------------------------------------------------------------------------------------------------------------
