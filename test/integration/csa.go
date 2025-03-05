@@ -26,7 +26,7 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
+	csapod "github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
 	"k8s.io/api/core/v1"
 )
 
@@ -114,11 +114,11 @@ func csaWaitStatus(
 	podName string,
 	waitMsgContains string,
 	timeoutSecs int,
-) (*v1.Pod, pod.StatusAnnotation, error) {
+) (*v1.Pod, csapod.StatusAnnotation, error) {
 	logMessage(t, fmt.Sprintf("waiting for csa status '%s' for pod '%s/%s'", waitMsgContains, podNamespace, podName))
 
 	var retPod *v1.Pod
-	retStatusAnn := pod.StatusAnnotation{}
+	retStatusAnn := csapod.StatusAnnotation{}
 	started := time.Now()
 	lastStatusAnnJson := ""
 	getAgain := true
@@ -145,7 +145,7 @@ func csaWaitStatus(
 			continue
 		}
 
-		statusAnn, err := pod.StatusAnnotationFromString(statusAnnStr)
+		statusAnn, err := csapod.StatusAnnotationFromString(statusAnnStr)
 		if err != nil {
 			return retPod,
 				retStatusAnn,
@@ -183,8 +183,8 @@ func csaWaitStatusAll(
 	podNames []string,
 	waitMsgContains string,
 	timeoutSecs int,
-) (map[*v1.Pod]pod.StatusAnnotation, []error) {
-	retMap := make(map[*v1.Pod]pod.StatusAnnotation)
+) (map[*v1.Pod]csapod.StatusAnnotation, []error) {
+	retMap := make(map[*v1.Pod]csapod.StatusAnnotation)
 	var retErrs []error
 	var wg sync.WaitGroup
 	var mutex sync.Mutex

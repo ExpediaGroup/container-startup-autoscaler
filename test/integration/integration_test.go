@@ -595,8 +595,8 @@ func testWorkflow(
 	assertPostStartupEnactedFunc(t, annotations, podStatusAnn)
 
 	// Container restart startup and post-startup resources enacted ----------------------------------------------------
-	for pod := range podStatusAnn {
-		for _, status := range pod.Status.ContainerStatuses {
+	for kubePod := range podStatusAnn {
+		for _, status := range kubePod.Status.ContainerStatuses {
 			if status.Name == echoServerName {
 				maybeLogErrAndFailNow(t, kubeCauseContainerRestart(t, status.ContainerID))
 			}
@@ -639,8 +639,8 @@ func assertStartupEnacted(
 		panic(errors.New("only one of expectStartupProbe/expectReadinessProbe must be true"))
 	}
 
-	for pod, statusAnn := range podStatusAnn {
-		for _, c := range pod.Spec.Containers {
+	for kubePod, statusAnn := range podStatusAnn {
+		for _, c := range kubePod.Spec.Containers {
 			expectCpuR, expectCpuL := annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits
 			expectMemoryR, expectMemoryL := annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits
 
@@ -669,7 +669,7 @@ func assertStartupEnacted(
 			require.Equal(t, expectMemoryL, memoryL.String())
 		}
 
-		for _, s := range pod.Status.ContainerStatuses {
+		for _, s := range kubePod.Status.ContainerStatuses {
 			expectCpuR, expectCpuL := annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits
 			expectMemoryR, expectMemoryL := annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits
 
@@ -702,15 +702,15 @@ func assertStartupEnacted(
 
 		require.Equal(t, expectStartupProbe, statusAnn.States.StartupProbe.Bool())
 		require.Equal(t, expectReadinessProbe, statusAnn.States.ReadinessProbe.Bool())
-		require.Equal(t, pod.StateContainerRunning, statusAnn.States.Container)
+		require.Equal(t, podcommon.StateContainerRunning, statusAnn.States.Container)
 		if expectStartupProbe {
-			require.Equal(t, pod.StateBoolFalse, statusAnn.States.Started)
+			require.Equal(t, podcommon.StateBoolFalse, statusAnn.States.Started)
 		} else {
-			require.Equal(t, pod.StateBoolTrue, statusAnn.States.Started)
+			require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.Started)
 		}
-		require.Equal(t, pod.StateBoolFalse, statusAnn.States.Ready)
-		require.Equal(t, pod.StateResourcesStartup, statusAnn.States.Resources)
-		require.Equal(t, pod.StateStatusResourcesContainerResourcesMatch, statusAnn.States.StatusResources)
+		require.Equal(t, podcommon.StateBoolFalse, statusAnn.States.Ready)
+		require.Equal(t, podcommon.StateResourcesStartup, statusAnn.States.Resources)
+		require.Equal(t, podcommon.StateStatusResourcesContainerResourcesMatch, statusAnn.States.StatusResources)
 
 		if expectStatusCommandedEnactedEmpty {
 			require.Empty(t, statusAnn.Scale.LastCommanded)
@@ -730,8 +730,8 @@ func assertPostStartupEnacted(
 	expectStartupProbe bool,
 	expectReadinessProbe bool,
 ) {
-	for pod, statusAnn := range podStatusAnn {
-		for _, c := range pod.Spec.Containers {
+	for kubePod, statusAnn := range podStatusAnn {
+		for _, c := range kubePod.Spec.Containers {
 			expectCpuR, expectCpuL := annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits
 			expectMemoryR, expectMemoryL := annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits
 
@@ -755,7 +755,7 @@ func assertPostStartupEnacted(
 			require.Equal(t, expectMemoryL, memoryL.String())
 		}
 
-		for _, s := range pod.Status.ContainerStatuses {
+		for _, s := range kubePod.Status.ContainerStatuses {
 			expectCpuR, expectCpuL := annotations.cpuPostStartupRequests, annotations.cpuPostStartupLimits
 			expectMemoryR, expectMemoryL := annotations.memoryPostStartupRequests, annotations.memoryPostStartupLimits
 
@@ -781,11 +781,11 @@ func assertPostStartupEnacted(
 
 		require.Equal(t, expectStartupProbe, statusAnn.States.StartupProbe.Bool())
 		require.Equal(t, expectReadinessProbe, statusAnn.States.ReadinessProbe.Bool())
-		require.Equal(t, pod.StateContainerRunning, statusAnn.States.Container)
-		require.Equal(t, pod.StateBoolTrue, statusAnn.States.Started)
-		require.Equal(t, pod.StateBoolTrue, statusAnn.States.Ready)
-		require.Equal(t, pod.StateResourcesPostStartup, statusAnn.States.Resources)
-		require.Equal(t, pod.StateStatusResourcesContainerResourcesMatch, statusAnn.States.StatusResources)
+		require.Equal(t, podcommon.StateContainerRunning, statusAnn.States.Container)
+		require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.Started)
+		require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.Ready)
+		require.Equal(t, podcommon.StateResourcesPostStartup, statusAnn.States.Resources)
+		require.Equal(t, podcommon.StateStatusResourcesContainerResourcesMatch, statusAnn.States.StatusResources)
 
 		require.NotEmpty(t, statusAnn.Scale.LastCommanded)
 		require.NotEmpty(t, statusAnn.Scale.LastEnacted)

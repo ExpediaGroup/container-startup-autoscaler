@@ -20,7 +20,7 @@ import (
 	"strconv"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -275,13 +275,13 @@ func echoPodLabels() map[string]string {
 
 func echoPodAnnotations(annotations csaQuantityAnnotations) map[string]string {
 	return map[string]string{
-		podcommon.AnnotationTargetContainerName:       echoServerName,
-		podcommon.AnnotationCpuStartup:                annotations.cpuStartup,
-		podcommon.AnnotationCpuPostStartupRequests:    annotations.cpuPostStartupRequests,
-		podcommon.AnnotationCpuPostStartupLimits:      annotations.cpuPostStartupLimits,
-		podcommon.AnnotationMemoryStartup:             annotations.memoryStartup,
-		podcommon.AnnotationMemoryPostStartupRequests: annotations.memoryPostStartupRequests,
-		podcommon.AnnotationMemoryPostStartupLimits:   annotations.memoryPostStartupLimits,
+		scalecommon.AnnotationTargetContainerName:       echoServerName,
+		scalecommon.AnnotationCpuStartup:                annotations.cpuStartup,
+		scalecommon.AnnotationCpuPostStartupRequests:    annotations.cpuPostStartupRequests,
+		scalecommon.AnnotationCpuPostStartupLimits:      annotations.cpuPostStartupLimits,
+		scalecommon.AnnotationMemoryStartup:             annotations.memoryStartup,
+		scalecommon.AnnotationMemoryPostStartupRequests: annotations.memoryPostStartupRequests,
+		scalecommon.AnnotationMemoryPostStartupLimits:   annotations.memoryPostStartupLimits,
 	}
 }
 
