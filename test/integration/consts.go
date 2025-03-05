@@ -88,10 +88,10 @@ const (
 )
 
 const (
-	echoServerCpuDisabledRequests    = "50m"
-	echoServerCpuDisabledLimits      = "50m"
-	echoServerMemoryDisabledRequests = "150M"
-	echoServerMemoryDisabledLimits   = "150M"
+	echoServerCpuDisabledRequests    = echoServerNonTargetContainerCpuRequests
+	echoServerCpuDisabledLimits      = echoServerNonTargetContainerCpuLimits
+	echoServerMemoryDisabledRequests = echoServerNonTargetContainerMemoryRequests
+	echoServerMemoryDisabledLimits   = echoServerNonTargetContainerMemoryLimits
 )
 
 const (
@@ -100,7 +100,7 @@ const (
 	echoServerProbeFailureThreshold           = echoServerDefaultProbeInitialDelaySeconds
 )
 
-// Quantity Annotations ------------------------------------------------------------------------------------------------
+// Annotations ---------------------------------------------------------------------------------------------------------
 var (
 	csaQuantityAnnotationsCpuOnlyDefault = csaQuantityAnnotations{
 		cpuStartup:             "200m",

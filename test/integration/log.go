@@ -37,3 +37,10 @@ func logMessage(t *testing.T, log any) {
 
 	fmt.Println(prefix, log)
 }
+
+func maybeLogErrAndFailNow(t *testing.T, err error) {
+	if err != nil {
+		logMessage(t, err)
+		t.FailNow()
+	}
+}
