@@ -62,6 +62,11 @@ func (m *MockConfiguration) Validate(container *v1.Container) error {
 	return args.Error(0)
 }
 
+func (m *MockConfiguration) ValidateRequestsLimits(container *v1.Container) error {
+	args := m.Called(container)
+	return args.Error(0)
+}
+
 func (m *MockConfiguration) String() string {
 	args := m.Called()
 	return args.String(0)
@@ -87,6 +92,10 @@ func (m *MockConfiguration) ValidateDefault() {
 	m.On("Validate", mock.Anything).Return(nil)
 }
 
+func (m *MockConfiguration) ValidateRequestsLimitsDefault() {
+	m.On("ValidateRequestsLimits", mock.Anything).Return(nil)
+}
+
 func (m *MockConfiguration) StringDefault() {
 	m.On("String").Return("")
 }
@@ -97,5 +106,6 @@ func (m *MockConfiguration) AllDefaults() {
 	m.ResourcesDefault()
 	m.StoreFromAnnotationsDefault()
 	m.ValidateDefault()
+	m.ValidateRequestsLimitsDefault()
 	m.StringDefault()
 }

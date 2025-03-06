@@ -12,7 +12,7 @@
   scaling.
 - New `failure_configuration` counter metric that shows the number of reconciles where there was a configuration-related
   failure.
-- TODO(wt) sandbox scripts for the new features.
+- Added additional sandbox scripts to scale upon either one or both of CPU and memory resources.
 
 ### Changed
 - Upgrades Go to 1.23.6.

@@ -94,7 +94,7 @@ func (c *configurations) ValidateAll(container *v1.Container) error {
 }
 
 // ValidateCollection performs validation on the entire configuration collection.
-func (c *configurations) ValidateCollection() error {
+func (c *configurations) ValidateCollection(container *v1.Container) error {
 	atLeastOneEnabled := false
 
 	for _, config := range c.AllConfigurations() {
@@ -106,6 +106,13 @@ func (c *configurations) ValidateCollection() error {
 
 	if !atLeastOneEnabled {
 		return errors.New("no resources are configured for scaling")
+	}
+
+	// All resources must be guaranteed in nature to avoid change in pod QoS class.
+	for _, config := range c.AllConfigurations() {
+		if err := config.ValidateRequestsLimits(container); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// TODO(wt) ensure sandbox scripts with only one of cpu/memory enabled (add changelog too)
+// TODO(wt) test all sandbox scripts
 // TODO(wt) ensure docs up to date completely - cpu/memory now optional (but at least one required)
 
 package scale
@@ -168,17 +168,8 @@ func (c *configuration) Validate(container *v1.Container) error {
 		)
 	}
 
-	requests := c.containerHelper.Requests(container, c.resourceName)
-	if requests.IsZero() {
-		return fmt.Errorf("target container does not specify %s requests", c.resourceName)
-	}
-
-	limits := c.containerHelper.Limits(container, c.resourceName)
-	if !requests.Equal(limits) {
-		return fmt.Errorf(
-			"target container %s requests (%s) must equal limits (%s)",
-			c.resourceName, requests.String(), limits.String(),
-		)
+	if err := c.ValidateRequestsLimits(container); err != nil {
+		return err
 	}
 
 	resizePolicy, err := c.containerHelper.ResizePolicy(container, c.resourceName)
@@ -189,6 +180,24 @@ func (c *configuration) Validate(container *v1.Container) error {
 		return fmt.Errorf(
 			"target container %s resize policy is not '%s' ('%s')",
 			c.resourceName, v1.NotRequired, resizePolicy,
+		)
+	}
+
+	return nil
+}
+
+// ValidateRequestsLimits performs requests/limits-specific validation against the supplied container.
+func (c *configuration) ValidateRequestsLimits(container *v1.Container) error {
+	requests := c.containerHelper.Requests(container, c.resourceName)
+	if requests.IsZero() {
+		return fmt.Errorf("target container does not specify %s requests", c.resourceName)
+	}
+
+	limits := c.containerHelper.Limits(container, c.resourceName)
+	if !requests.Equal(limits) {
+		return fmt.Errorf(
+			"target container %s requests (%s) must equal limits (%s)",
+			c.resourceName, requests.String(), limits.String(),
 		)
 	}
 

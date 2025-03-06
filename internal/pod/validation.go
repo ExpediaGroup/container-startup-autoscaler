@@ -98,7 +98,7 @@ func (v *validation) Validate(
 		return nil, v.updateStatusAndGetError(ctx, pod, "unable to validate configuration", err, scaleConfigs)
 	}
 
-	if err = scaleConfigs.ValidateCollection(); err != nil {
+	if err = scaleConfigs.ValidateCollection(ctr); err != nil {
 		return nil, v.updateStatusAndGetError(ctx, pod, "unable to validate configuration collection", err, scaleConfigs)
 	}
 

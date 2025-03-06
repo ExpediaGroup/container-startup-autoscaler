@@ -79,10 +79,11 @@ const (
 	echoServerName           = "echo-server"
 )
 
+// TODO(wt) set per sandbox scripts? 150/100
 const (
 	echoServerNonTargetContainerName           = echoServerName + "-non-target"
-	echoServerNonTargetContainerCpuRequests    = "50m"
-	echoServerNonTargetContainerCpuLimits      = "50m"
+	echoServerNonTargetContainerCpuRequests    = "150m"
+	echoServerNonTargetContainerCpuLimits      = "150m"
 	echoServerNonTargetContainerMemoryRequests = "150M"
 	echoServerNonTargetContainerMemoryLimits   = "150M"
 )
@@ -102,25 +103,25 @@ const (
 
 // Annotations ---------------------------------------------------------------------------------------------------------
 var (
+	csaQuantityAnnotationsAllDefault = csaQuantityAnnotations{
+		cpuStartup:                "150m",
+		cpuPostStartupRequests:    "100m",
+		cpuPostStartupLimits:      "100m",
+		memoryStartup:             "150M",
+		memoryPostStartupRequests: "100M",
+		memoryPostStartupLimits:   "100M",
+	}
+
 	csaQuantityAnnotationsCpuOnlyDefault = csaQuantityAnnotations{
-		cpuStartup:             "200m",
-		cpuPostStartupRequests: "50m",
-		cpuPostStartupLimits:   "50m",
+		cpuStartup:             "150m",
+		cpuPostStartupRequests: "100m",
+		cpuPostStartupLimits:   "100m",
 	}
 
 	csaQuantityAnnotationsMemoryOnlyDefault = csaQuantityAnnotations{
-		memoryStartup:             "200M",
-		memoryPostStartupRequests: "150M",
-		memoryPostStartupLimits:   "150M",
-	}
-
-	csaQuantityAnnotationsAllDefault = csaQuantityAnnotations{
-		cpuStartup:                "200m",
-		cpuPostStartupRequests:    "50m",
-		cpuPostStartupLimits:      "50m",
-		memoryStartup:             "200M",
-		memoryPostStartupRequests: "150M",
-		memoryPostStartupLimits:   "150M",
+		memoryStartup:             "150M",
+		memoryPostStartupRequests: "100M",
+		memoryPostStartupLimits:   "100M",
 	}
 )
 

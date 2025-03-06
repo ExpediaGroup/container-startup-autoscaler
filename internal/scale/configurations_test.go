@@ -196,6 +196,20 @@ func TestConfigurationsValidateCollection(t *testing.T) {
 			wantErrMsg: "no resources are configured for scaling",
 		},
 		{
+			name: "RequestsLimitsValidationFailed",
+			fields: fields{
+				cpuConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
+					m.On("IsEnabled").Return(true)
+					m.ValidateRequestsLimitsDefault()
+				}),
+				memoryConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
+					m.On("IsEnabled").Return(false)
+					m.On("ValidateRequestsLimits", mock.Anything).Return(errors.New("validaterequestslimits"))
+				}),
+			},
+			wantErrMsg: "validaterequestslimits",
+		},
+		{
 			name: "Ok",
 			fields: fields{
 				cpuConfig:    scaletest.NewMockConfiguration(nil),
@@ -210,7 +224,7 @@ func TestConfigurationsValidateCollection(t *testing.T) {
 				cpuConfig:    tt.fields.cpuConfig,
 				memoryConfig: tt.fields.memoryConfig,
 			}
-			err := configs.ValidateCollection()
+			err := configs.ValidateCollection(&v1.Container{})
 			if tt.wantErrMsg != "" {
 				assert.Contains(t, err.Error(), tt.wantErrMsg)
 			} else {
