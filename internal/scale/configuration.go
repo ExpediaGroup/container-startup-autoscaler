@@ -14,8 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// TODO(wt) test all sandbox scripts
-// TODO(wt) ensure docs up to date completely - cpu/memory now optional (but at least one required)
+// TODO(wt) update echo server version to latest
 
 package scale
 

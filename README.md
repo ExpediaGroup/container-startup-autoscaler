@@ -621,31 +621,31 @@ directory structure.
 
 Admit with post-startup resources ([initial upscale required](#pod-admission-considerations)):
 
-| Command                                                                             | Scale Configuration | Probes                |
-|-------------------------------------------------------------------------------------|---------------------|-----------------------|
-| `echo-reinstall.sh echo/post-startup-resources/cpu-and-memory/startup-probe.yaml`   | CPU and memory      | Startup               |
-| `echo-reinstall.sh echo/post-startup-resources/cpu-and-memory/readiness-probe.yaml` | CPU and memory      | Readiness             |
-| `echo-reinstall.sh echo/post-startup-resources/cpu-and-memory/both-probes.yaml`     | CPU and memory      | Startup and readiness |
-| `echo-reinstall.sh echo/post-startup-resources/cpu-only/startup-probe.yaml`         | CPU only            | Startup               |
-| `echo-reinstall.sh echo/post-startup-resources/cpu-only/readiness-probe.yaml`       | CPU only            | Readiness             |
-| `echo-reinstall.sh echo/post-startup-resources/cpu-only/both-probes.yaml`           | CPU only            | Startup and readiness |
-| `echo-reinstall.sh echo/post-startup-resources/memory-only/startup-probe.yaml`      | Memory only         | Startup               |
-| `echo-reinstall.sh echo/post-startup-resources/memory-only/readiness-probe.yaml`    | Memory only         | Readiness             |
-| `echo-reinstall.sh echo/post-startup-resources/memory-only/both-probes.yaml`        | Memory only         | Startup and readiness |
+| Command                                                                               | Scale Configuration | Probes                |
+|---------------------------------------------------------------------------------------|---------------------|-----------------------|
+| `./echo-reinstall.sh echo/post-startup-resources/cpu-and-memory/startup-probe.yaml`   | CPU and memory      | Startup               |
+| `./echo-reinstall.sh echo/post-startup-resources/cpu-and-memory/readiness-probe.yaml` | CPU and memory      | Readiness             |
+| `./echo-reinstall.sh echo/post-startup-resources/cpu-and-memory/both-probes.yaml`     | CPU and memory      | Startup and readiness |
+| `./echo-reinstall.sh echo/post-startup-resources/cpu-only/startup-probe.yaml`         | CPU only            | Startup               |
+| `./echo-reinstall.sh echo/post-startup-resources/cpu-only/readiness-probe.yaml`       | CPU only            | Readiness             |
+| `./echo-reinstall.sh echo/post-startup-resources/cpu-only/both-probes.yaml`           | CPU only            | Startup and readiness |
+| `./echo-reinstall.sh echo/post-startup-resources/memory-only/startup-probe.yaml`      | Memory only         | Startup               |
+| `./echo-reinstall.sh echo/post-startup-resources/memory-only/readiness-probe.yaml`    | Memory only         | Readiness             |
+| `./echo-reinstall.sh echo/post-startup-resources/memory-only/both-probes.yaml`        | Memory only         | Startup and readiness |
 
 Admit with startup resources ([initial upscale not required](#pod-admission-considerations)):
 
-| Command                                                                        | Scale Configuration | Probes                |
-|--------------------------------------------------------------------------------|---------------------|-----------------------|
-| `echo-reinstall.sh echo/startup-resources/cpu-and-memory/startup-probe.yaml`   | CPU and memory      | Startup               |
-| `echo-reinstall.sh echo/startup-resources/cpu-and-memory/readiness-probe.yaml` | CPU and memory      | Readiness             |
-| `echo-reinstall.sh echo/startup-resources/cpu-and-memory/both-probes.yaml`     | CPU and memory      | Startup and readiness |
-| `echo-reinstall.sh echo/startup-resources/cpu-only/startup-probe.yaml`         | CPU only            | Startup               |
-| `echo-reinstall.sh echo/startup-resources/cpu-only/readiness-probe.yaml`       | CPU only            | Readiness             |
-| `echo-reinstall.sh echo/startup-resources/cpu-only/both-probes.yaml`           | CPU only            | Startup and readiness |
-| `echo-reinstall.sh echo/startup-resources/memory-only/startup-probe.yaml`      | Memory only         | Startup               |
-| `echo-reinstall.sh echo/startup-resources/memory-only/readiness-probe.yaml`    | Memory only         | Readiness             |
-| `echo-reinstall.sh echo/startup-resources/memory-only/both-probes.yaml`        | Memory only         | Startup and readiness |
+| Command                                                                          | Scale Configuration | Probes                |
+|----------------------------------------------------------------------------------|---------------------|-----------------------|
+| `./echo-reinstall.sh echo/startup-resources/cpu-and-memory/startup-probe.yaml`   | CPU and memory      | Startup               |
+| `./echo-reinstall.sh echo/startup-resources/cpu-and-memory/readiness-probe.yaml` | CPU and memory      | Readiness             |
+| `./echo-reinstall.sh echo/startup-resources/cpu-and-memory/both-probes.yaml`     | CPU and memory      | Startup and readiness |
+| `./echo-reinstall.sh echo/startup-resources/cpu-only/startup-probe.yaml`         | CPU only            | Startup               |
+| `./echo-reinstall.sh echo/startup-resources/cpu-only/readiness-probe.yaml`       | CPU only            | Readiness             |
+| `./echo-reinstall.sh echo/startup-resources/cpu-only/both-probes.yaml`           | CPU only            | Startup and readiness |
+| `./echo-reinstall.sh echo/startup-resources/memory-only/startup-probe.yaml`      | Memory only         | Startup               |
+| `./echo-reinstall.sh echo/startup-resources/memory-only/readiness-probe.yaml`    | Memory only         | Readiness             |
+| `./echo-reinstall.sh echo/startup-resources/memory-only/both-probes.yaml`        | Memory only         | Startup and readiness |
 
 To simulate workload startup/readiness, `initialDelaySeconds` is set as follows in all configurations:
 
