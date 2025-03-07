@@ -89,14 +89,14 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	podExists, kubePod, err := r.pod.PodHelper.Get(ctx, request.NamespacedName)
 	if err != nil {
 		logging.Errorf(ctx, err, "unable to get pod (will requeue)")
-		reconciler.FailureUnableToGetPod().Inc()
+		reconciler.Failure(reconciler.FailureReasonUnableToGetPod).Inc()
 		return reconcile.Result{RequeueAfter: r.controllerConfig.RequeueDurationSecsDuration()}, nil
 	}
 
 	if !podExists {
 		err = errors.New("pod doesn't exist (won't requeue)")
 		logging.Errorf(ctx, err, err.Error())
-		reconciler.FailurePodDoesntExist().Inc()
+		reconciler.Failure(reconciler.FailureReasonPodDoesNotExist).Inc()
 		return reconcile.Result{}, reconcile.TerminalError(err)
 	}
 
@@ -115,7 +115,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	if err != nil {
 		msg := "unable to configure pod (won't requeue)"
 		logging.Errorf(ctx, err, msg)
-		reconciler.FailureConfiguration().Inc()
+		reconciler.Failure(reconciler.FailureReasonConfiguration).Inc()
 		return reconcile.Result{}, reconcile.TerminalError(common.WrapErrorf(err, msg))
 	}
 
@@ -123,7 +123,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	if err != nil {
 		msg := "unable to get target container name (won't requeue)"
 		logging.Errorf(ctx, err, msg)
-		reconciler.FailureConfiguration().Inc()
+		reconciler.Failure(reconciler.FailureReasonConfiguration).Inc()
 		return reconcile.Result{}, reconcile.TerminalError(common.WrapErrorf(err, msg))
 	}
 
@@ -137,7 +137,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	if err != nil {
 		msg := "unable to validate pod (won't requeue)"
 		logging.Errorf(ctx, err, msg)
-		reconciler.FailureValidation().Inc()
+		reconciler.Failure(reconciler.FailureReasonValidation).Inc()
 		return reconcile.Result{}, reconcile.TerminalError(common.WrapErrorf(err, msg))
 	}
 
@@ -146,7 +146,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	if err != nil {
 		msg := "unable to determine target container states (won't requeue)"
 		logging.Errorf(ctx, err, msg)
-		reconciler.FailureStatesDetermination().Inc()
+		reconciler.Failure(reconciler.FailureReasonStatesDetermination).Inc()
 		return reconcile.Result{}, reconcile.TerminalError(common.WrapErrorf(err, msg))
 	}
 	ctx = ccontext.WithTargetContainerStates(ctx, states)
@@ -156,7 +156,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	if err != nil {
 		msg := "unable to action target container states (won't requeue)"
 		logging.Errorf(ctx, err, msg)
-		reconciler.FailureStatesAction().Inc()
+		reconciler.Failure(reconciler.FailureReasonStatesAction).Inc()
 		return reconcile.Result{}, reconcile.TerminalError(common.WrapErrorf(err, msg))
 	}
 

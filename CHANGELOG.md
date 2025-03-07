@@ -15,6 +15,7 @@
 - Added additional sandbox scripts to scale upon either one or both of CPU and memory resources.
 
 ### Changed
+- Multiple reconciler failure metrics collapsed into a single metric with `reason` label.
 - Upgrades Go to 1.23.6.
 - Upgrades all dependencies.
 

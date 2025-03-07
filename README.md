@@ -359,16 +359,22 @@ values.
 ### Reconciler
 Prefixed with `csa_reconciler_`:
 
-| Metric Name                    | Type    | Labels | Description                                                                                                          |
-|--------------------------------|---------|--------|----------------------------------------------------------------------------------------------------------------------|
-| `skipped_only_status_change`   | Counter | None   | Number of reconciles that were skipped because only the scaler controller status changed.                            |
-| `existing_in_progress`         | Counter | None   | Number of attempted reconciles where one was already in progress for the same namespace/name (results in a requeue). |
-| `failure_unable_to_get_pod`    | Counter | None   | Number of reconciles where there was a failure to get the pod (results in a requeue).                                |
-| `failure_pod_doesnt_exist`     | Counter | None   | Number of reconciles where the pod was found not to exist (results in failure).                                      |
-| `failure_configuration`        | Counter | None   | Number of reconciles where there was a failure to configure (results in failure).                                    |
-| `failure_validation`           | Counter | None   | Number of reconciles where there was a failure to validate (results in failure).                                     |
-| `failure_states_determination` | Counter | None   | Number of reconciles where there was a failure to determine states (results in failure).                             |
-| `failure_states_action`        | Counter | None   | Number of reconciles where there was a failure to action the determined states (results in failure).                 |
+| Metric Name                  | Type    | Labels    | Description                                                                                                          |
+|------------------------------|---------|-----------|----------------------------------------------------------------------------------------------------------------------|
+| `skipped_only_status_change` | Counter | None      | Number of reconciles that were skipped because only the scaler controller status changed.                            |
+| `existing_in_progress`       | Counter | None      | Number of attempted reconciles where one was already in progress for the same namespace/name (results in a requeue). |
+| `failure`                    | Counter | `reason`* | Number of reconciles where there was a failure.                                                                      |
+
+&ast; `reason` values:
+
+| Reason                 | Description                                                   |
+|------------------------|---------------------------------------------------------------|
+| `unable_to_get_pod`    | Failure to get the pod (results in a requeue).                |
+| `pod_does_not_exist`   | Pod was found not to exist (results in failure).              |
+| `configuration`        | Failure to configure (results in failure).                    |
+| `validation`           | Failure to validate (results in failure).                     |
+| `states_determination` | Failure to determine states (results in failure).             |
+| `states_action`        | Failure to action the determined states (results in failure). |
 
 ### Scale
 Prefixed with `csa_scale_`:

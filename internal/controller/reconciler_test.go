@@ -92,7 +92,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 		{
 			name: "UnableToGetPod",
 			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailureUnableToGetPod())
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonUnableToGetPod))
 				assert.Equal(t, float64(1), metricVal)
 			},
 			fields: fields{controllercommon.ControllerConfig{RequeueDurationSecs: 10}},
@@ -110,7 +110,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 		{
 			name: "PodDoesntExist",
 			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailurePodDoesntExist())
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonPodDoesNotExist))
 				assert.Equal(t, float64(1), metricVal)
 			},
 			fields: fields{},
@@ -129,7 +129,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 		{
 			name: "UnableToConfigurePod",
 			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailureConfiguration())
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonConfiguration))
 				assert.Equal(t, float64(1), metricVal)
 			},
 			fields: fields{},
@@ -149,7 +149,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 		{
 			name: "UnableToGetTargetContainerName",
 			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailureConfiguration())
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonConfiguration))
 				assert.Equal(t, float64(2), metricVal)
 			},
 			fields: fields{},
@@ -174,7 +174,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 		{
 			name: "UnableToValidatePod",
 			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailureValidation())
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonValidation))
 				assert.Equal(t, float64(1), metricVal)
 			},
 			fields: fields{},
@@ -196,7 +196,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 		{
 			name: "UnableToDetermineTargetContainerStates",
 			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailureStatesDetermination())
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonStatesDetermination))
 				assert.Equal(t, float64(1), metricVal)
 			},
 			fields: fields{},
@@ -219,7 +219,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 		{
 			name: "UnableToActionTargetContainerStates",
 			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.FailureStatesAction())
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonStatesAction))
 				assert.Equal(t, float64(1), metricVal)
 			},
 			fields: fields{},
