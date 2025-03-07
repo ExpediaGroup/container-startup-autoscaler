@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -81,16 +81,47 @@ const (
 
 const (
 	echoServerNonTargetContainerName           = echoServerName + "-non-target"
-	echoServerNonTargetContainerCpuRequests    = "50m"
-	echoServerNonTargetContainerCpuLimits      = "50m"
+	echoServerNonTargetContainerCpuRequests    = "150m"
+	echoServerNonTargetContainerCpuLimits      = "150m"
 	echoServerNonTargetContainerMemoryRequests = "150M"
 	echoServerNonTargetContainerMemoryLimits   = "150M"
+)
+
+const (
+	echoServerCpuDisabledRequests    = echoServerNonTargetContainerCpuRequests
+	echoServerCpuDisabledLimits      = echoServerNonTargetContainerCpuLimits
+	echoServerMemoryDisabledRequests = echoServerNonTargetContainerMemoryRequests
+	echoServerMemoryDisabledLimits   = echoServerNonTargetContainerMemoryLimits
 )
 
 const (
 	echoServerDefaultProbeInitialDelaySeconds = 15
 	echoServerProbePeriodSeconds              = 1
 	echoServerProbeFailureThreshold           = echoServerDefaultProbeInitialDelaySeconds
+)
+
+// Annotations ---------------------------------------------------------------------------------------------------------
+var (
+	csaQuantityAnnotationsAllDefault = csaQuantityAnnotations{
+		cpuStartup:                "150m",
+		cpuPostStartupRequests:    "100m",
+		cpuPostStartupLimits:      "100m",
+		memoryStartup:             "150M",
+		memoryPostStartupRequests: "100M",
+		memoryPostStartupLimits:   "100M",
+	}
+
+	csaQuantityAnnotationsCpuOnlyDefault = csaQuantityAnnotations{
+		cpuStartup:             "150m",
+		cpuPostStartupRequests: "100m",
+		cpuPostStartupLimits:   "100m",
+	}
+
+	csaQuantityAnnotationsMemoryOnlyDefault = csaQuantityAnnotations{
+		memoryStartup:             "150M",
+		memoryPostStartupRequests: "100M",
+		memoryPostStartupLimits:   "100M",
+	}
 )
 
 // Tests ---------------------------------------------------------------------------------------------------------------

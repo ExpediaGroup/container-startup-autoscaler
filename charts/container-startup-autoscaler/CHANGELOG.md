@@ -2,6 +2,15 @@
 - Based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 1.5.0
+2025-03-07
+
+### Changed
+- CSA version only.
+
+### CSA Version
+[0.6.0](../../CHANGELOG.md#060)
+
 ## 1.4.0
 2024-12-12
 

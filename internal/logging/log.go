@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ func buildMessage(format string, args []any, isFatal bool) string {
 	return msg
 }
 
-// buildMessage returns a logger that's been configured with additional values.
+// configuredLogger returns a logger that's been configured with additional values.
 func configuredLogger(ctx context.Context) logr.Logger {
 	logger := Logger
 

@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,25 +20,35 @@ import (
 	"context"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"
 )
 
-// MockStatus is a generic mock for pod.Status.
 type MockStatus struct {
 	mock.Mock
 }
 
 func NewMockStatus(configFunc func(*MockStatus)) *MockStatus {
-	mockStatus := &MockStatus{}
-	configFunc(mockStatus)
-	return mockStatus
+	m := &MockStatus{}
+	if configFunc != nil {
+		configFunc(m)
+	} else {
+		m.AllDefaults()
+	}
+
+	return m
 }
 
 func NewMockStatusWithRun(configFunc func(*MockStatus, func()), run func()) *MockStatus {
-	mockStatus := &MockStatus{}
-	configFunc(mockStatus, run)
-	return mockStatus
+	m := &MockStatus{}
+	if configFunc != nil {
+		configFunc(m, run)
+	} else {
+		m.AllDefaults()
+	}
+
+	return m
 }
 
 func (m *MockStatus) Update(
@@ -46,9 +56,10 @@ func (m *MockStatus) Update(
 	pod *v1.Pod,
 	status string,
 	states podcommon.States,
-	scaleState podcommon.StatusScaleState,
+	statusScaleState podcommon.StatusScaleState,
+	scaleConfigs scalecommon.Configurations,
 ) (*v1.Pod, error) {
-	args := m.Called(ctx, pod, status, states, scaleState)
+	args := m.Called(ctx, pod, status, states, statusScaleState, scaleConfigs)
 	return args.Get(0).(*v1.Pod), args.Error(1)
 }
 
@@ -56,35 +67,37 @@ func (m *MockStatus) PodMutationFunc(
 	ctx context.Context,
 	status string,
 	states podcommon.States,
-	scaleState podcommon.StatusScaleState,
-) func(pod *v1.Pod) (bool, *v1.Pod, error) {
-	args := m.Called(ctx, status, states, scaleState)
-	return args.Get(0).(func(pod *v1.Pod) (bool, *v1.Pod, error))
+	statusScaleState podcommon.StatusScaleState,
+	scaleConfigs scalecommon.Configurations,
+) func(pod *v1.Pod) error {
+	args := m.Called(ctx, status, states, statusScaleState, scaleConfigs)
+	return args.Get(0).(func(pod *v1.Pod) error)
 }
 
 func (m *MockStatus) UpdateDefault() {
-	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(&v1.Pod{}, nil)
 }
 
 func (m *MockStatus) UpdateDefaultAndRun(run func()) {
-	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(&v1.Pod{}, nil).
 		Run(func(args mock.Arguments) { run() })
 }
 
 func (m *MockStatus) PodMutationFuncDefault() {
-	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
-		func(pod *v1.Pod) (bool, *v1.Pod, error) {
-			return true, &v1.Pod{}, nil
-		},
+	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		func(pod *v1.Pod) error { return nil },
 	)
 }
 
 func (m *MockStatus) PodMutationFuncDefaultAndRun(run func()) {
-	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
-		func(pod *v1.Pod) (bool, *v1.Pod, error) {
-			return true, &v1.Pod{}, nil
-		},
+	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		func(pod *v1.Pod) error { return nil },
 	).Run(func(args mock.Arguments) { run() })
+}
+
+func (m *MockStatus) AllDefaults() {
+	m.UpdateDefault()
+	m.PodMutationFuncDefault()
 }

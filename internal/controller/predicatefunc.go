@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package controller
 
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/reconciler"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
@@ -52,19 +52,19 @@ import (
 	  predicates.
 */
 
-// PredicateCreateFunc reports whether create events should be reconciled.
+// PredicateCreateFunc returns whether create events should be reconciled.
 func PredicateCreateFunc(_ event.TypedCreateEvent[*v1.Pod]) bool {
 	// Never filter.
 	return true
 }
 
-// PredicateDeleteFunc reports whether delete events should be reconciled.
+// PredicateDeleteFunc returns whether delete events should be reconciled.
 func PredicateDeleteFunc(_ event.TypedDeleteEvent[*v1.Pod]) bool {
 	// Don't need to reconcile deletes.
 	return false
 }
 
-// PredicateUpdateFunc reports whether update events should be reconciled.
+// PredicateUpdateFunc returns whether update events should be reconciled.
 func PredicateUpdateFunc(event event.TypedUpdateEvent[*v1.Pod]) bool {
 	oldPod := event.ObjectOld
 	newPod := event.ObjectNew
@@ -79,8 +79,8 @@ func PredicateUpdateFunc(event event.TypedUpdateEvent[*v1.Pod]) bool {
 		return false
 	}
 
-	_, hasOldAnnStatusString := oldPod.Annotations[podcommon.AnnotationStatus]
-	_, hasNewAnnStatusString := newPod.Annotations[podcommon.AnnotationStatus]
+	_, hasOldAnnStatusString := oldPod.Annotations[kubecommon.AnnotationStatus]
+	_, hasNewAnnStatusString := newPod.Annotations[kubecommon.AnnotationStatus]
 
 	// Reconcile if controller status not present in old and new (something non-status has changed).
 	if !hasOldAnnStatusString && !hasNewAnnStatusString {
@@ -103,8 +103,8 @@ func PredicateUpdateFunc(event event.TypedUpdateEvent[*v1.Pod]) bool {
 				oldPodCopy, newPodCopy := oldPod.DeepCopy(), newPod.DeepCopy()
 				oldPodCopy.ResourceVersion, newPodCopy.ResourceVersion = "", ""
 				oldPodCopy.ManagedFields, newPodCopy.ManagedFields = nil, nil
-				delete(oldPodCopy.Annotations, podcommon.AnnotationStatus)
-				delete(newPodCopy.Annotations, podcommon.AnnotationStatus)
+				delete(oldPodCopy.Annotations, kubecommon.AnnotationStatus)
+				delete(newPodCopy.Annotations, kubecommon.AnnotationStatus)
 
 				if common.AreStructsEqual(oldPodCopy.ObjectMeta, newPodCopy.ObjectMeta) {
 					reconciler.SkippedOnlyStatusChange().Inc()
@@ -117,7 +117,7 @@ func PredicateUpdateFunc(event event.TypedUpdateEvent[*v1.Pod]) bool {
 	return true
 }
 
-// PredicateGenericFunc reports whether generic events should be reconciled.
+// PredicateGenericFunc returns whether generic events should be reconciled.
 func PredicateGenericFunc(_ event.TypedGenericEvent[*v1.Pod]) bool {
 	return false
 }

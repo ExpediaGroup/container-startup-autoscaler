@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,10 +27,11 @@ import (
 
 func TestNewPod(t *testing.T) {
 	pod := NewPod(controllercommon.ControllerConfig{}, fake.NewClientBuilder().Build(), &record.FakeRecorder{})
+	assert.NotNil(t, pod.Configuration)
 	assert.NotNil(t, pod.Validation)
 	assert.NotNil(t, pod.TargetContainerState)
 	assert.NotNil(t, pod.TargetContainerAction)
 	assert.NotNil(t, pod.Status)
-	assert.NotNil(t, pod.KubeHelper)
-	assert.NotNil(t, pod.ContainerKubeHelper)
+	assert.NotNil(t, pod.PodHelper)
+	assert.NotNil(t, pod.ContainerHelper)
 }

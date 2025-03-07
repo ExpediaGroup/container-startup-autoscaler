@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ type suppliedConfigStruct struct {
 
 var suppliedConfig = suppliedConfigStruct{
 	kubeVersion:          "",
-	maxParallelism:       "4",
+	maxParallelism:       "5",
 	extraCaCertPath:      "",
 	reuseCluster:         false,
 	installMetricsServer: false,

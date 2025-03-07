@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,42 +23,37 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
+	metricsscale "github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 )
 
 const eventReasonScaling = "Scaling"
 
-// TargetContainerAction performs actions based on target container state.
-type TargetContainerAction interface {
-	Execute(context.Context, podcommon.States, *v1.Pod, podcommon.ScaleConfig) error
-}
-
-// targetContainerAction is the default implementation of TargetContainerAction.
+// targetContainerAction is the default implementation of podcommon.TargetContainerAction.
 type targetContainerAction struct {
-	controllerConfig    controllercommon.ControllerConfig
-	recorder            record.EventRecorder
-	status              Status
-	kubeHelper          KubeHelper
-	containerKubeHelper ContainerKubeHelper
+	controllerConfig controllercommon.ControllerConfig
+	recorder         record.EventRecorder
+	status           podcommon.Status
+	podHelper        kubecommon.PodHelper
 }
 
 func newTargetContainerAction(
 	controllerConfig controllercommon.ControllerConfig,
 	recorder record.EventRecorder,
-	status Status,
-	kubeHelper KubeHelper,
-	containerKubeHelper ContainerKubeHelper,
+	status podcommon.Status,
+	podHelper kubecommon.PodHelper,
 ) *targetContainerAction {
 	return &targetContainerAction{
-		controllerConfig:    controllerConfig,
-		recorder:            recorder,
-		status:              status,
-		kubeHelper:          kubeHelper,
-		containerKubeHelper: containerKubeHelper,
+		controllerConfig: controllerConfig,
+		recorder:         recorder,
+		status:           status,
+		podHelper:        podHelper,
 	}
 }
 
@@ -67,7 +62,8 @@ func (a *targetContainerAction) Execute(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	config podcommon.ScaleConfig,
+	targetContainer *v1.Container,
+	scaleConfigs scalecommon.Configurations,
 ) error {
 	if states.StartupProbe != podcommon.StateBoolTrue && states.StartupProbe != podcommon.StateBoolFalse {
 		panic(fmt.Errorf("unsupported startup probe state '%s'", states.StartupProbe))
@@ -78,19 +74,19 @@ func (a *targetContainerAction) Execute(
 	}
 
 	if states.Container != podcommon.StateContainerRunning {
-		return a.containerNotRunningAction(ctx, states, pod)
+		return a.containerNotRunningAction(ctx, states, pod, scaleConfigs)
 	}
 
 	if states.Started == podcommon.StateBoolUnknown {
-		return a.startedUnknownAction(ctx, states, pod)
+		return a.startedUnknownAction(ctx, states, pod, scaleConfigs)
 	}
 
 	if states.Ready == podcommon.StateBoolUnknown {
-		return a.readyUnknownAction(ctx, states, pod)
+		return a.readyUnknownAction(ctx, states, pod, scaleConfigs)
 	}
 
 	if states.Resources == podcommon.StateResourcesUnknown && !a.controllerConfig.ScaleWhenUnknownResources {
-		return a.resUnknownAction(ctx, states, pod, config)
+		return a.resUnknownAction(ctx, states, pod, targetContainer, scaleConfigs)
 	}
 
 	/*
@@ -125,58 +121,76 @@ func (a *targetContainerAction) Execute(
 	switch states.Resources {
 	case podcommon.StateResourcesStartup:
 		if !isStarted {
-			return a.notStartedWithStartupResAction(ctx, states, pod, config)
+			return a.notStartedWithStartupResAction(ctx, states, pod, targetContainer, scaleConfigs)
 		}
-		return a.startedWithStartupResAction(ctx, states, pod, config)
+		return a.startedWithStartupResAction(ctx, states, pod, targetContainer, scaleConfigs)
 
 	case podcommon.StateResourcesPostStartup:
 		if !isStarted {
-			return a.notStartedWithPostStartupResAction(ctx, states, pod, config)
+			return a.notStartedWithPostStartupResAction(ctx, states, pod, targetContainer, scaleConfigs)
 		}
-		return a.startedWithPostStartupResAction(ctx, states, pod, config)
+		return a.startedWithPostStartupResAction(ctx, states, pod, targetContainer, scaleConfigs)
 
 	case podcommon.StateResourcesUnknown:
 		if !isStarted {
-			return a.notStartedWithUnknownResAction(ctx, states, pod, config)
+			return a.notStartedWithUnknownResAction(ctx, states, pod, targetContainer, scaleConfigs)
 		}
-		return a.startedWithUnknownResAction(ctx, states, pod, config)
+		return a.startedWithUnknownResAction(ctx, states, pod, targetContainer, scaleConfigs)
 	}
 
 	panic(errors.New("no action to invoke"))
 }
 
 // containerNotRunningAction only logs and updates status since the target container isn't currently running.
-func (a *targetContainerAction) containerNotRunningAction(ctx context.Context, states podcommon.States, pod *v1.Pod) error {
+func (a *targetContainerAction) containerNotRunningAction(
+	ctx context.Context,
+	states podcommon.States,
+	pod *v1.Pod,
+	scaleConfigs scalecommon.Configurations,
+) error {
 	a.logInfoAndUpdateStatus(
 		ctx,
 		logging.VDebug,
 		states, podcommon.StatusScaleStateNotApplicable,
 		pod,
 		"target container currently not running",
+		scaleConfigs,
 	)
 	return nil
 }
 
 // startedUnknownAction only logs and updates status since the target container's started status is currently unknown.
-func (a *targetContainerAction) startedUnknownAction(ctx context.Context, states podcommon.States, pod *v1.Pod) error {
+func (a *targetContainerAction) startedUnknownAction(
+	ctx context.Context,
+	states podcommon.States,
+	pod *v1.Pod,
+	scaleConfigs scalecommon.Configurations,
+) error {
 	a.logInfoAndUpdateStatus(
 		ctx,
 		logging.VDebug,
 		states, podcommon.StatusScaleStateNotApplicable,
 		pod,
 		"target container started status currently unknown",
+		scaleConfigs,
 	)
 	return nil
 }
 
 // readyUnknownAction only logs and updates status since the target container's ready status is currently unknown.
-func (a *targetContainerAction) readyUnknownAction(ctx context.Context, states podcommon.States, pod *v1.Pod) error {
+func (a *targetContainerAction) readyUnknownAction(
+	ctx context.Context,
+	states podcommon.States,
+	pod *v1.Pod,
+	scaleConfigs scalecommon.Configurations,
+) error {
 	a.logInfoAndUpdateStatus(
 		ctx,
 		logging.VDebug,
 		states, podcommon.StatusScaleStateNotApplicable,
 		pod,
 		"target container ready status currently unknown",
+		scaleConfigs,
 	)
 	return nil
 }
@@ -187,11 +201,12 @@ func (a *targetContainerAction) resUnknownAction(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	config podcommon.ScaleConfig,
+	targetContainer *v1.Container,
+	scaleConfigs scalecommon.Configurations,
 ) error {
 	msg := "unknown resources applied"
-	a.updateStatus(ctx, states, podcommon.StatusScaleStateNotApplicable, pod, msg)
-	return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(ctx, pod, config))
+	a.updateStatus(ctx, states, podcommon.StatusScaleStateNotApplicable, pod, msg, scaleConfigs)
+	return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
 }
 
 // notStartedWithStartupResAction examines conditions and provides relevant feedback since the container is not ready
@@ -200,9 +215,10 @@ func (a *targetContainerAction) notStartedWithStartupResAction(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	config podcommon.ScaleConfig,
+	targetContainer *v1.Container,
+	scaleConfigs scalecommon.Configurations,
 ) error {
-	return a.processConfigEnacted(ctx, states, pod, config)
+	return a.processConfigEnacted(ctx, states, pod, targetContainer, scaleConfigs)
 }
 
 // notStartedWithPostStartupResAction commands startup resources since the container is not ready but with post-startup
@@ -212,19 +228,23 @@ func (a *targetContainerAction) notStartedWithPostStartupResAction(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	config podcommon.ScaleConfig,
+	targetContainer *v1.Container,
+	scaleConfigs scalecommon.Configurations,
 ) error {
-	msg := "startup resources commanded"
-	_, err := a.kubeHelper.UpdateContainerResources(
-		ctx,
-		pod, config.GetTargetContainerName(),
-		config.GetCpuConfig().Startup, config.GetCpuConfig().Startup,
-		config.GetMemoryConfig().Startup, config.GetMemoryConfig().Startup,
-		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUpCommanded),
-		true,
-	)
+	resizeFuncs := scale.NewUpdates(scaleConfigs).StartupPodMutationFuncAll(targetContainer)
+	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
+	}
+
+	msg := "startup resources commanded"
+
+	statusFuncs := []func(pod *v1.Pod) error{
+		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUpCommanded, scaleConfigs),
+	}
+	_, err = a.podHelper.Patch(ctx, pod, statusFuncs, false, true)
+	if err != nil {
+		return common.WrapErrorf(err, "unable to patch status")
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
@@ -238,19 +258,23 @@ func (a *targetContainerAction) startedWithStartupResAction(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	config podcommon.ScaleConfig,
+	targetContainer *v1.Container,
+	scaleConfigs scalecommon.Configurations,
 ) error {
-	msg := "post-startup resources commanded"
-	_, err := a.kubeHelper.UpdateContainerResources(
-		ctx,
-		pod, config.GetTargetContainerName(),
-		config.GetCpuConfig().PostStartupRequests, config.GetCpuConfig().PostStartupLimits,
-		config.GetMemoryConfig().PostStartupRequests, config.GetMemoryConfig().PostStartupLimits,
-		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateDownCommanded),
-		true,
-	)
+	resizeFuncs := scale.NewUpdates(scaleConfigs).PostStartupPodMutationFuncAll(targetContainer)
+	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
+	}
+
+	msg := "post-startup resources commanded"
+
+	statusFuncs := []func(pod *v1.Pod) error{
+		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateDownCommanded, scaleConfigs),
+	}
+	_, err = a.podHelper.Patch(ctx, pod, statusFuncs, false, true)
+	if err != nil {
+		return common.WrapErrorf(err, "unable to patch status")
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
@@ -264,9 +288,10 @@ func (a *targetContainerAction) startedWithPostStartupResAction(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	config podcommon.ScaleConfig,
+	targetContainer *v1.Container,
+	scaleConfigs scalecommon.Configurations,
 ) error {
-	return a.processConfigEnacted(ctx, states, pod, config)
+	return a.processConfigEnacted(ctx, states, pod, targetContainer, scaleConfigs)
 }
 
 // notStartedWithUnknownResAction commands startup resources since the container is not ready but with unknown
@@ -276,19 +301,23 @@ func (a *targetContainerAction) notStartedWithUnknownResAction(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	config podcommon.ScaleConfig,
+	targetContainer *v1.Container,
+	scaleConfigs scalecommon.Configurations,
 ) error {
-	msg := "startup resources commanded (unknown resources applied)"
-	_, err := a.kubeHelper.UpdateContainerResources(
-		ctx,
-		pod, config.GetTargetContainerName(),
-		config.GetCpuConfig().Startup, config.GetCpuConfig().Startup,
-		config.GetMemoryConfig().Startup, config.GetMemoryConfig().Startup,
-		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded),
-		true,
-	)
+	resizeFuncs := scale.NewUpdates(scaleConfigs).StartupPodMutationFuncAll(targetContainer)
+	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
+	}
+
+	msg := "startup resources commanded (unknown resources applied)"
+
+	statusFuncs := []func(pod *v1.Pod) error{
+		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded, scaleConfigs),
+	}
+	_, err = a.podHelper.Patch(ctx, pod, statusFuncs, false, true)
+	if err != nil {
+		return common.WrapErrorf(err, "unable to patch status")
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
@@ -303,19 +332,23 @@ func (a *targetContainerAction) startedWithUnknownResAction(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	config podcommon.ScaleConfig,
+	targetContainer *v1.Container,
+	scaleConfigs scalecommon.Configurations,
 ) error {
-	msg := "post-startup resources commanded (unknown resources applied)"
-	_, err := a.kubeHelper.UpdateContainerResources(
-		ctx,
-		pod, config.GetTargetContainerName(),
-		config.GetCpuConfig().PostStartupRequests, config.GetCpuConfig().PostStartupLimits,
-		config.GetMemoryConfig().PostStartupRequests, config.GetMemoryConfig().PostStartupLimits,
-		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded),
-		true,
-	)
+	resizeFuncs := scale.NewUpdates(scaleConfigs).PostStartupPodMutationFuncAll(targetContainer)
+	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
+	}
+
+	msg := "post-startup resources commanded (unknown resources applied)"
+
+	statusFuncs := []func(pod *v1.Pod) error{
+		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded, scaleConfigs),
+	}
+	_, err = a.podHelper.Patch(ctx, pod, statusFuncs, false, true)
+	if err != nil {
+		return common.WrapErrorf(err, "unable to patch status")
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
@@ -329,10 +362,11 @@ func (a *targetContainerAction) processConfigEnacted(
 	ctx context.Context,
 	states podcommon.States,
 	pod *v1.Pod,
-	config podcommon.ScaleConfig,
+	targetContainer *v1.Container,
+	scaleConfigs scalecommon.Configurations,
 ) error {
 	// Examine resize status.
-	switch a.kubeHelper.ResizeStatus(pod) {
+	switch a.podHelper.ResizeStatus(pod) {
 	case "":
 		// Empty means 'no pending resize' - assume it's completed and examine additional status later that will
 		// confirm this.
@@ -344,6 +378,7 @@ func (a *targetContainerAction) processConfigEnacted(
 			states, podcommon.StatusScaleStateNotApplicable,
 			pod,
 			states.Resources.HumanReadable()+" scale not yet completed - has been proposed",
+			scaleConfigs,
 		)
 		return nil
 
@@ -354,6 +389,7 @@ func (a *targetContainerAction) processConfigEnacted(
 			states, podcommon.StatusScaleStateNotApplicable,
 			pod,
 			states.Resources.HumanReadable()+" scale not yet completed - in progress",
+			scaleConfigs,
 		)
 		return nil
 
@@ -364,6 +400,7 @@ func (a *targetContainerAction) processConfigEnacted(
 			states, podcommon.StatusScaleStateNotApplicable,
 			pod,
 			states.Resources.HumanReadable()+" scale not yet completed - deferred",
+			scaleConfigs,
 		)
 		return nil
 
@@ -378,10 +415,10 @@ func (a *targetContainerAction) processConfigEnacted(
 		}
 
 		msg := states.Resources.HumanReadable() + " scale failed - infeasible"
-		a.updateStatus(ctx, states, scaleState, pod, msg)
-		scale.Failure(states.Resources.Direction(), "infeasible").Inc()
+		a.updateStatus(ctx, states, scaleState, pod, msg, scaleConfigs)
+		metricsscale.Failure(states.Resources.Direction(), "infeasible").Inc()
 		a.warningEvent(pod, eventReasonScaling, msg)
-		return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(ctx, pod, config))
+		return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
 
 	default:
 		var scaleState podcommon.StatusScaleState
@@ -394,10 +431,10 @@ func (a *targetContainerAction) processConfigEnacted(
 		}
 
 		msg := states.Resources.HumanReadable() + " scale: unknown status"
-		a.updateStatus(ctx, states, scaleState, pod, msg)
-		scale.Failure(states.Resources.Direction(), "unknownstatus").Inc()
+		a.updateStatus(ctx, states, scaleState, pod, msg, scaleConfigs)
+		metricsscale.Failure(states.Resources.Direction(), "unknownstatus").Inc()
 		a.warningEvent(pod, eventReasonScaling, msg)
-		return fmt.Errorf("%s '%s'", msg, a.kubeHelper.ResizeStatus(pod))
+		return fmt.Errorf("%s '%s'", msg, a.podHelper.ResizeStatus(pod))
 	}
 
 	// Resize is not pending, so examine StatusResources.
@@ -411,6 +448,7 @@ func (a *targetContainerAction) processConfigEnacted(
 			states, podcommon.StatusScaleStateNotApplicable,
 			pod,
 			"target container current cpu and/or memory resources currently missing",
+			scaleConfigs,
 		)
 		return nil
 
@@ -425,6 +463,7 @@ func (a *targetContainerAction) processConfigEnacted(
 			states, podcommon.StatusScaleStateNotApplicable,
 			pod,
 			"target container current cpu and/or memory resources currently don't match target container's 'requests'",
+			scaleConfigs,
 		)
 		return nil
 
@@ -437,6 +476,7 @@ func (a *targetContainerAction) processConfigEnacted(
 			states, podcommon.StatusScaleStateNotApplicable,
 			pod,
 			"target container current cpu and/or memory resources currently unknown",
+			scaleConfigs,
 		)
 		return nil
 
@@ -455,7 +495,7 @@ func (a *targetContainerAction) processConfigEnacted(
 	}
 
 	msg := states.Resources.HumanReadable() + " resources enacted"
-	a.logInfoAndUpdateStatus(ctx, logging.VInfo, states, scaleState, pod, msg)
+	a.logInfoAndUpdateStatus(ctx, logging.VInfo, states, scaleState, pod, msg, scaleConfigs)
 	a.normalEvent(pod, eventReasonScaling, msg)
 	return nil
 }
@@ -463,27 +503,13 @@ func (a *targetContainerAction) processConfigEnacted(
 // containerResourceConfig returns a human-readable string representing current container resource configuration, for
 // information purposes.
 func (a *targetContainerAction) containerResourceConfig(
-	ctx context.Context,
-	pod *v1.Pod,
-	config podcommon.ScaleConfig,
+	targetContainer *v1.Container,
+	scaleConfigs scalecommon.Configurations,
 ) string {
-	ctr, err := a.containerKubeHelper.Get(pod, config.GetTargetContainerName())
-	if err != nil {
-		logging.Errorf(ctx, err, "unable to get container to generate container resource config (will continue)")
-		return "[unable to generate container resource config]"
-	}
-
-	cpuRequests := a.containerKubeHelper.Requests(ctr, v1.ResourceCPU)
-	cpuLimits := a.containerKubeHelper.Limits(ctr, v1.ResourceCPU)
-	memoryRequests := a.containerKubeHelper.Requests(ctr, v1.ResourceMemory)
-	memoryLimits := a.containerKubeHelper.Limits(ctr, v1.ResourceMemory)
-
 	return fmt.Sprintf(
-		"container cpu requests/limits: %s/%s, "+
-			"container memory requests/limits: %s/%s, "+
-			"configuration values: [%s]",
-		cpuRequests.String(), cpuLimits.String(), memoryRequests.String(), memoryLimits.String(),
-		config.String(),
+		"target container resources: [%s], configurations: [%s]",
+		targetContainer.Resources.String(),
+		scaleConfigs.String(),
 	)
 }
 
@@ -494,8 +520,9 @@ func (a *targetContainerAction) updateStatus(
 	scaleState podcommon.StatusScaleState,
 	pod *v1.Pod,
 	status string,
+	scaleConfigs scalecommon.Configurations,
 ) {
-	_, err := a.status.Update(ctx, pod, status, states, scaleState)
+	_, err := a.status.Update(ctx, pod, status, states, scaleState, scaleConfigs)
 	if err != nil {
 		logging.Errorf(ctx, err, "unable to update status (will continue)")
 	}
@@ -509,9 +536,10 @@ func (a *targetContainerAction) logInfoAndUpdateStatus(
 	scaleState podcommon.StatusScaleState,
 	pod *v1.Pod,
 	message string,
+	scaleConfigs scalecommon.Configurations,
 ) {
 	logging.Infof(ctx, v, message)
-	a.updateStatus(ctx, states, scaleState, pod, message)
+	a.updateStatus(ctx, states, scaleState, pod, message, scaleConfigs)
 }
 
 // normalEvent yields a 'normal' Kube event for the supplied pod with the supplied reason and message.

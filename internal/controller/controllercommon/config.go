@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -73,6 +73,7 @@ const (
 	FlagLogAddCallerDefault = false
 )
 
+// ControllerConfig represents the configuration of the CSA controller.
 type ControllerConfig struct {
 	KubeConfig                      string
 	LeaderElectionEnabled           bool
@@ -101,6 +102,7 @@ func NewControllerConfig() ControllerConfig {
 	}
 }
 
+// InitFlags defines Cobra flags for the CSA controller.
 func (c *ControllerConfig) InitFlags(command *cobra.Command) {
 	command.Flags().StringVar(
 		&c.KubeConfig,
@@ -163,6 +165,7 @@ func (c *ControllerConfig) InitFlags(command *cobra.Command) {
 	)
 }
 
+// Log logs the configuration of the CSA controller.
 func (c *ControllerConfig) Log() {
 	logging.Infof(nil, logging.VInfo, "(config) %s: %s", FlagKubeConfigName, c.KubeConfig)
 	logging.Infof(nil, logging.VInfo, "(config) %s: %t", FlagLeaderElectionEnabledName, c.LeaderElectionEnabled)
@@ -178,14 +181,17 @@ func (c *ControllerConfig) Log() {
 	logging.Infof(nil, logging.VInfo, "(config) %s: %t", FlagLogAddCallerName, c.LogAddCaller)
 }
 
+// CacheSyncPeriodMinsDuration returns the cache sync period in minutes as a time.Duration.
 func (c *ControllerConfig) CacheSyncPeriodMinsDuration() time.Duration {
 	return time.Duration(c.CacheSyncPeriodMins) * time.Minute
 }
 
+// GracefulShutdownTimeoutSecsDuration returns the graceful shutdown timeout in seconds as a time.Duration.
 func (c *ControllerConfig) GracefulShutdownTimeoutSecsDuration() time.Duration {
 	return time.Duration(c.GracefulShutdownTimeoutSecs) * time.Second
 }
 
+// RequeueDurationSecsDuration returns the requeue duration in seconds as a time.Duration.
 func (c *ControllerConfig) RequeueDurationSecsDuration() time.Duration {
 	return time.Duration(c.RequeueDurationSecs) * time.Second
 }

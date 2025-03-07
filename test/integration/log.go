@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -36,4 +36,11 @@ func logMessage(t *testing.T, log any) {
 	}
 
 	fmt.Println(prefix, log)
+}
+
+func maybeLogErrAndFailNow(t *testing.T, err error) {
+	if err != nil {
+		logMessage(t, err)
+		t.FailNow()
+	}
 }

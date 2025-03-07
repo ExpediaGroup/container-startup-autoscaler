@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,32 +19,40 @@ package podtest
 import (
 	"context"
 
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
 )
 
-// MockValidation is a generic mock for pod.Validation.
 type MockValidation struct {
 	mock.Mock
 }
 
 func NewMockValidation(configFunc func(*MockValidation)) *MockValidation {
-	mockValidation := &MockValidation{}
-	configFunc(mockValidation)
-	return mockValidation
+	m := &MockValidation{}
+	if configFunc != nil {
+		configFunc(m)
+	} else {
+		m.AllDefaults()
+	}
+
+	return m
 }
 
 func (m *MockValidation) Validate(
 	ctx context.Context,
 	pod *v1.Pod,
-	scaleConfigToPopulate podcommon.ScaleConfig,
-	afterScaleConfigPopulatedFunc func(podcommon.ScaleConfig),
-) error {
-	args := m.Called(ctx, pod, scaleConfigToPopulate, afterScaleConfigPopulatedFunc)
-	return args.Error(0)
+	targetContainerName string,
+	scaleConfigs scalecommon.Configurations,
+) (*v1.Container, error) {
+	args := m.Called(ctx, pod, targetContainerName, scaleConfigs)
+	return args.Get(0).(*v1.Container), args.Error(1)
 }
 
 func (m *MockValidation) ValidateDefault() {
-	m.On("Validate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	m.On("Validate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&v1.Container{}, nil)
+}
+
+func (m *MockValidation) AllDefaults() {
+	m.ValidateDefault()
 }

@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,10 +22,12 @@ import (
 	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/metricscommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
+	metricsscale "github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
 )
 
@@ -34,33 +36,28 @@ const (
 	timeFormatMilli = "2006-01-02T15:04:05.000-0700"
 )
 
-// Status performs operations relating to controller status.
-type Status interface {
-	Update(context.Context, *v1.Pod, string, podcommon.States, podcommon.StatusScaleState) (*v1.Pod, error)
-	PodMutationFunc(context.Context, string, podcommon.States, podcommon.StatusScaleState) func(pod *v1.Pod) (bool, *v1.Pod, error)
-}
-
-// status is the default implementation of Status.
+// status is the default implementation of podcommon.Status.
 type status struct {
-	kubeHelper KubeHelper
+	podHelper kubecommon.PodHelper
 }
 
-func newStatus(kubeHelper KubeHelper) *status {
-	return &status{kubeHelper: kubeHelper}
+func newStatus(podHelper kubecommon.PodHelper) *status {
+	return &status{podHelper: podHelper}
 }
 
-// Update updates controller status by applying mutations to the supplied pod using the supplied status, states and
-// scaleState. The supplied pod is never mutated. Returns the new server representation of the pod.
+// Update updates controller status by applying mutations to the supplied pod. The supplied pod is never mutated.
+// Returns the new server representation of the pod.
 func (s *status) Update(
 	ctx context.Context,
 	pod *v1.Pod,
 	status string,
 	states podcommon.States,
-	scaleState podcommon.StatusScaleState,
+	statusScaleState podcommon.StatusScaleState,
+	scaleConfigs scalecommon.Configurations,
 ) (*v1.Pod, error) {
-	mutatePodFunc := s.PodMutationFunc(ctx, status, states, scaleState)
+	mutatePodFunc := s.PodMutationFunc(ctx, status, states, statusScaleState, scaleConfigs)
 
-	newPod, err := s.kubeHelper.Patch(ctx, pod, mutatePodFunc, false, true)
+	newPod, err := s.podHelper.Patch(ctx, pod, []func(*v1.Pod) error{mutatePodFunc}, false, true)
 	if err != nil {
 		return nil, common.WrapErrorf(err, "unable to patch pod")
 	}
@@ -68,28 +65,28 @@ func (s *status) Update(
 	return newPod, nil
 }
 
-// PodMutationFunc returns a function that performs the actual work of updating controller status. This is used both by
-// Update and elsewhere (package-externally) as additional mutations when patching for something else.
+// PodMutationFunc returns a function that performs the actual work of updating controller status.
 func (s *status) PodMutationFunc(
 	ctx context.Context,
 	status string,
 	states podcommon.States,
-	scaleState podcommon.StatusScaleState,
-) func(pod *v1.Pod) (bool, *v1.Pod, error) {
-	return func(pod *v1.Pod) (bool, *v1.Pod, error) {
-		var currentStat podcommon.StatusAnnotation
-		currentStatAnn, gotStatAnn := pod.Annotations[podcommon.AnnotationStatus]
+	statusScaleState podcommon.StatusScaleState,
+	scaleConfigs scalecommon.Configurations,
+) func(pod *v1.Pod) error {
+	return func(pod *v1.Pod) error {
+		var currentStat StatusAnnotation
+		currentStatAnn, gotStatAnn := pod.Annotations[kubecommon.AnnotationStatus]
 		if gotStatAnn {
 			var err error
-			currentStat, err = podcommon.StatusAnnotationFromString(currentStatAnn)
+			currentStat, err = StatusAnnotationFromString(currentStatAnn)
 			if err != nil {
-				return false, pod, common.WrapErrorf(err, "unable to get status annotation from string")
+				return common.WrapErrorf(err, "unable to get status annotation from string")
 			}
 		}
 
-		statScale := podcommon.NewEmptyStatusAnnotationScale()
+		statScale := NewEmptyStatusAnnotationScale(scaleConfigs.AllEnabledConfigurationsResourceNames())
 
-		switch scaleState {
+		switch statusScaleState {
 		case podcommon.StatusScaleStateNotApplicable: // Preserve current status.
 			if gotStatAnn {
 				statScale.LastCommanded = currentStat.Scale.LastCommanded
@@ -100,7 +97,7 @@ func (s *status) PodMutationFunc(
 			statScale.LastCommanded = s.formattedNow(timeFormatMilli) // i.e. others ""
 		case podcommon.StatusScaleStateUnknownCommanded:
 			statScale.LastCommanded = s.formattedNow(timeFormatMilli) // i.e. others ""
-			scale.CommandedUnknownRes().Inc()
+			metricsscale.CommandedUnknownRes().Inc()
 		case podcommon.StatusScaleStateDownEnacted, podcommon.StatusScaleStateUpEnacted:
 			statScale.LastCommanded = currentStat.Scale.LastCommanded
 			statScale.LastEnacted = currentStat.Scale.LastEnacted
@@ -111,7 +108,7 @@ func (s *status) PodMutationFunc(
 				statScale.LastEnacted = now
 				s.updateDurationMetric(
 					ctx,
-					scaleState.Direction(), metricscommon.OutcomeSuccess,
+					statusScaleState.Direction(), metricscommon.OutcomeSuccess,
 					statScale.LastCommanded, now,
 				)
 			}
@@ -125,22 +122,21 @@ func (s *status) PodMutationFunc(
 				statScale.LastFailed = now
 				s.updateDurationMetric(
 					ctx,
-					scaleState.Direction(), metricscommon.OutcomeFailure,
+					statusScaleState.Direction(), metricscommon.OutcomeFailure,
 					statScale.LastCommanded, now,
 				)
 			}
 		default:
-			panic(fmt.Errorf("scaleState '%s' not supported", scaleState))
+			panic(fmt.Errorf("statusScaleState '%s' not supported", statusScaleState))
 		}
 
-		newStat := podcommon.NewStatusAnnotation(common.CapitalizeFirstChar(status), states, statScale, s.formattedNow(timeFormatSecs))
+		newStat := NewStatusAnnotation(common.CapitalizeFirstChar(status), states, statScale, s.formattedNow(timeFormatSecs))
 		if gotStatAnn && newStat.Equal(currentStat) {
-			// Statuses same, indicate no patch.
-			return false, pod, nil
+			return nil
 		}
 
-		pod.Annotations[podcommon.AnnotationStatus] = newStat.Json()
-		return true, pod, nil
+		pod.Annotations[kubecommon.AnnotationStatus] = newStat.Json()
+		return nil
 	}
 }
 
@@ -179,5 +175,5 @@ func (s *status) updateDurationMetric(
 		return
 	}
 
-	scale.Duration(direction, outcome).Observe(diffSecs)
+	metricsscale.Duration(direction, outcome).Observe(diffSecs)
 }

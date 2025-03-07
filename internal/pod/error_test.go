@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -41,22 +41,4 @@ func TestValidationErrorError(t *testing.T) {
 		e := NewValidationError("test", nil)
 		assert.Equal(t, "validation error: test", e.Error())
 	})
-}
-
-func TestNewContainerStatusNotPresentError(t *testing.T) {
-	assert.True(t, errors.As(NewContainerStatusNotPresentError(), &ContainerStatusNotPresentError{}))
-}
-
-func TestContainerStatusNotPresentErrorError(t *testing.T) {
-	e := NewContainerStatusNotPresentError()
-	assert.Equal(t, "container status not present", e.Error())
-}
-
-func TestNewContainerStatusResourcesNotPresentError(t *testing.T) {
-	assert.True(t, errors.As(NewContainerStatusResourcesNotPresentError(), &ContainerStatusResourcesNotPresentError{}))
-}
-
-func TestContainerStatusResourcesNotPresentErrorError(t *testing.T) {
-	e := NewContainerStatusResourcesNotPresentError()
-	assert.Equal(t, "container status resources not present", e.Error())
 }

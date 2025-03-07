@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ limitations under the License.
 package integration
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -25,7 +26,8 @@ import (
 	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
+	csapod "github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
 	"k8s.io/api/core/v1"
 )
 
@@ -36,6 +38,62 @@ type csaQuantityAnnotations struct {
 	memoryStartup             string
 	memoryPostStartupRequests string
 	memoryPostStartupLimits   string
+}
+
+func (c *csaQuantityAnnotations) IsCpuSpecified() bool {
+	if c.cpuStartup != "" && c.cpuPostStartupRequests != "" && c.cpuPostStartupLimits != "" {
+		return true
+	}
+
+	if c.cpuStartup == "" && c.cpuPostStartupRequests == "" && c.cpuPostStartupLimits == "" {
+		return false
+	}
+
+	panic(errors.New("only some of all required cpu annotations are set"))
+}
+
+func (c *csaQuantityAnnotations) IsMemorySpecified() bool {
+	if c.memoryStartup != "" && c.memoryPostStartupRequests != "" && c.memoryPostStartupLimits != "" {
+		return true
+	}
+
+	if c.memoryStartup == "" && c.memoryPostStartupRequests == "" && c.memoryPostStartupLimits == "" {
+		return false
+	}
+
+	panic(errors.New("only some of all required memory annotations are set"))
+}
+
+func (c *csaQuantityAnnotations) CpuStartupRequestsLimits() (string, string) {
+	if c.IsCpuSpecified() {
+		return c.cpuStartup, c.cpuStartup
+	}
+
+	return echoServerCpuDisabledRequests, echoServerCpuDisabledLimits
+}
+
+func (c *csaQuantityAnnotations) CpuPostStartupRequestsLimits() (string, string) {
+	if c.IsCpuSpecified() {
+		return c.cpuPostStartupRequests, c.cpuPostStartupLimits
+	}
+
+	return echoServerCpuDisabledRequests, echoServerCpuDisabledLimits
+}
+
+func (c *csaQuantityAnnotations) MemoryStartupRequestsLimits() (string, string) {
+	if c.IsMemorySpecified() {
+		return c.memoryStartup, c.memoryStartup
+	}
+
+	return echoServerMemoryDisabledRequests, echoServerMemoryDisabledLimits
+}
+
+func (c *csaQuantityAnnotations) MemoryPostStartupRequestsLimits() (string, string) {
+	if c.IsMemorySpecified() {
+		return c.memoryPostStartupRequests, c.memoryPostStartupLimits
+	}
+
+	return echoServerMemoryDisabledRequests, echoServerMemoryDisabledLimits
 }
 
 func csaRun(t *testing.T) error {
@@ -113,11 +171,11 @@ func csaWaitStatus(
 	podName string,
 	waitMsgContains string,
 	timeoutSecs int,
-) (*v1.Pod, podcommon.StatusAnnotation, error) {
+) (*v1.Pod, csapod.StatusAnnotation, error) {
 	logMessage(t, fmt.Sprintf("waiting for csa status '%s' for pod '%s/%s'", waitMsgContains, podNamespace, podName))
 
 	var retPod *v1.Pod
-	retStatusAnn := podcommon.StatusAnnotation{}
+	retStatusAnn := csapod.StatusAnnotation{}
 	started := time.Now()
 	lastStatusAnnJson := ""
 	getAgain := true
@@ -137,14 +195,14 @@ func csaWaitStatus(
 			return retPod, retStatusAnn, err
 		}
 
-		statusAnnStr, exists := pod.Annotations[podcommon.AnnotationStatus]
+		statusAnnStr, exists := pod.Annotations[kubecommon.AnnotationStatus]
 		if !exists {
 			logMessage(t, fmt.Sprintf("csa status for pod '%s/%s' doesn't yet exist", podNamespace, podName))
 			time.Sleep(csaStatusWaitMillis * time.Millisecond)
 			continue
 		}
 
-		statusAnn, err := podcommon.StatusAnnotationFromString(statusAnnStr)
+		statusAnn, err := csapod.StatusAnnotationFromString(statusAnnStr)
 		if err != nil {
 			return retPod,
 				retStatusAnn,
@@ -182,8 +240,8 @@ func csaWaitStatusAll(
 	podNames []string,
 	waitMsgContains string,
 	timeoutSecs int,
-) (map[*v1.Pod]podcommon.StatusAnnotation, []error) {
-	retMap := make(map[*v1.Pod]podcommon.StatusAnnotation)
+) (map[*v1.Pod]csapod.StatusAnnotation, []error) {
+	retMap := make(map[*v1.Pod]csapod.StatusAnnotation)
 	var retErrs []error
 	var wg sync.WaitGroup
 	var mutex sync.Mutex

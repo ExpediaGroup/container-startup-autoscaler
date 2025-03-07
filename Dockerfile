@@ -1,4 +1,4 @@
-# Copyright 2024 Expedia Group, Inc.
+# Copyright 2025 Expedia Group, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=$BUILDPLATFORM golang:1.23.3 AS build
+FROM --platform=$BUILDPLATFORM golang:1.23.6 AS build
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 ARG TARGETOS

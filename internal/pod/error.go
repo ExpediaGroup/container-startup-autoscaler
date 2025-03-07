@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -47,26 +47,4 @@ func (e ValidationError) Error() string {
 
 func (e ValidationError) Unwrap() error {
 	return e.wrapped
-}
-
-// ContainerStatusNotPresentError is an error that indicates container status is not present.
-type ContainerStatusNotPresentError struct{}
-
-func NewContainerStatusNotPresentError() error {
-	return ContainerStatusNotPresentError{}
-}
-
-func (e ContainerStatusNotPresentError) Error() string {
-	return "container status not present"
-}
-
-// ContainerStatusResourcesNotPresentError is an error that indicates container status resources is not present.
-type ContainerStatusResourcesNotPresentError struct{}
-
-func NewContainerStatusResourcesNotPresentError() error {
-	return ContainerStatusResourcesNotPresentError{}
-}
-
-func (e ContainerStatusResourcesNotPresentError) Error() string {
-	return "container status resources not present"
 }

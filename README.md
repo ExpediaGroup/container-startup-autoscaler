@@ -155,11 +155,12 @@ scaled pod.
 ## Limitations
 The following limitations are currently in place:
 
-- Originally admitted target container resources must be guaranteed (`requests` == `limits`) because CSA only allows
-  guaranteed resources for its startup settings and the `In-place Update of Pod Resources` feature
-  [does not currently allow](https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/1287-in-place-update-pod-resources#qos-class)
-  changing QoS class.
-- Post-startup resources must also currently be guaranteed (`requests` == `limits`) to avoid a changing QoS class.
+- Regardless of which resources are configured to scale (CPU and/or memory), all originally admitted target container
+  resources must be guaranteed (`requests` == `limits`) because:
+  - CSA only allows guaranteed resources for its startup settings.
+  - The `In-place Update of Pod Resources` feature [does not currently allow](https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/1287-in-place-update-pod-resources#qos-class)
+    changing pod QoS class.
+- Post-startup resources must also currently be guaranteed (`requests` == `limits`) to avoid changing QoS class.
 - Failed target container scales are not re-attempted.
 
 ## Restrictions
@@ -167,7 +168,8 @@ The following restrictions are currently in place and enforced where applicable:
 
 - Only a single container of a pod can be targeted for scaling.
 - The target pod must not be controlled by a [VPA](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler).
-- The target container post-startup `requests` must be lower than startup resources.
+- For each configured scaling resource (cpu and/or memory), the target container post-startup `requests` must be lower
+  than startup resources.
 - The target container must specify `requests` for both CPU and memory.
 - The target container must specify the `NotRequired` resize policy for both CPU and memory.
 - The target container must specify a startup or readiness probe (or both).
@@ -181,17 +183,29 @@ The following labels must be present in the pod that includes your target contai
 | `csa.expediagroup.com/enabled` | `"true"` | Indicates a container in the pod is eligible for scaling - must be `"true"`. |
 
 ### Annotations
-The following annotations must be present in the pod that includes your target container:
+The following annotation must always be present in the pod that includes your target container:
 
 | Name                                                | Example Value   | Description                                               |
 |-----------------------------------------------------|-----------------|-----------------------------------------------------------|
 | `csa.expediagroup.com/target-container-name`        | `"mycontainer"` | The name of the container to target.                      |
+
+To enable CPU scaling, all the following annotations must be present:
+
+| Name                                                | Example Value   | Description                                               |
+|-----------------------------------------------------|-----------------|-----------------------------------------------------------|
 | `csa.expediagroup.com/cpu-startup`                  | `"500m"`*       | Startup CPU (applied to both `requests` and `limits`).    |
 | `csa.expediagroup.com/cpu-post-startup-requests`    | `"250m"`*       | Post-startup CPU `requests`.                              |
 | `csa.expediagroup.com/cpu-post-startup-limits`      | `"250m"`*       | Post-startup CPU `limits`.                                |
+
+To enable memory scaling, all the following annotations must be present:
+
+| Name                                                | Example Value   | Description                                               |
+|-----------------------------------------------------|-----------------|-----------------------------------------------------------|
 | `csa.expediagroup.com/memory-startup`               | `"500M"`*       | Startup memory (applied to both `requests` and `limits`). |
 | `csa.expediagroup.com/memory-post-startup-requests` | `"250M"`*       | Post-startup memory `requests`.                           |
 | `csa.expediagroup.com/memory-post-startup-limits`   | `"250M"`*       | Post-startup memory `limits`.                             |
+
+At least one of CPU or memory scaling must be configured.
 
 &ast; Any CPU/memory form listed [here](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-units-in-kubernetes)
 can be used. 
@@ -248,6 +262,10 @@ Example output:
     "statusResources": "containerresourcesmatch"
   },
   "scale": {
+    "enabledForResources": [
+      "cpu",
+      "memory"
+    ],
     "lastCommanded": "2023-09-14T08:18:44.174+0000",
     "lastEnacted": "2023-09-14T08:18:45.382+0000",
     "lastFailed": ""
@@ -258,22 +276,23 @@ Example output:
 
 Explanation of status items:
 
-| Item          | Sub Item             | Description                                                                                            |
-|---------------|----------------------|--------------------------------------------------------------------------------------------------------|
-| `status`      | -                    | Human-readable status. Any validation errors are indicated here.                                       |
-| `states`      | -                    | The states of the target container.                                                                    |
-| `states`      | `startupProbe`       | Whether a startup probe exists.                                                                        |
-| `states`      | `readinessProbe`     | Whether a readiness probe exists.                                                                      |
-| `states`      | `container`          | The container status e.g. `waiting`, `running`.                                                        |
-| `states`      | `started`            | Whether the container is signalled as started by Kube.                                                 |
-| `states`      | `ready`              | Whether the container is signalled as ready by Kube.                                                   |
-| `states`      | `resources`          | The type of resources (startup/post-startup) that are currently applied (but not necessarily enacted). |
-| `states`      | `statusResources`    | How the reported current enacted resources relate to container resources.                              |
-| `scale`       | -                    | Information around scaling activity.                                                                   |
-| `scale`       | `lastCommanded`      | The last time a scale was commanded (UTC).                                                             |
-| `scale`       | `lastEnacted`        | The last time a scale was enacted (UTC; empty if failed).                                              |
-| `scale`       | `lastFailed`         | The last time a scale failed (UTC; empty if enacted).                                                  |
-| `lastUpdated` | -                    | The last time this status was updated.                                                                 |
+| Item          | Sub-Item              | Description                                                                                                |
+|---------------|-----------------------|------------------------------------------------------------------------------------------------------------|
+| `status`      | -                     | Human-readable status. Any validation errors are indicated here.                                           |
+| `states`      | -                     | The states of the target container.                                                                        |
+| `states`      | `startupProbe`        | Whether a startup probe exists.                                                                            |
+| `states`      | `readinessProbe`      | Whether a readiness probe exists.                                                                          |
+| `states`      | `container`           | The container status e.g. `waiting`, `running`.                                                            |
+| `states`      | `started`             | Whether the container is signalled as started by Kube.                                                     |
+| `states`      | `ready`               | Whether the container is signalled as ready by Kube.                                                       |
+| `states`      | `resources`           | The type of resources (startup/post-startup) that are currently applied (but not necessarily enacted).     |
+| `states`      | `statusResources`     | How the reported current enacted resources relate to container resources.                                  |
+| `scale`       | -                     | Information around scaling activity.                                                                       |
+| `scale`       | `enabledForResources` | A list of resources that are enabled for scaling (determined by supplied pod [annotations](#annotations)). |
+| `scale`       | `lastCommanded`       | The last time a scale was commanded (UTC).                                                                 |
+| `scale`       | `lastEnacted`         | The last time a scale was enacted (UTC; empty if failed).                                                  |
+| `scale`       | `lastFailed`          | The last time a scale failed (UTC; empty if enacted).                                                      |
+| `lastUpdated` | -                     | The last time this status was updated.                                                                     |
 
 ## Events
 The following Kube events for the pod that houses the target container are generated:
@@ -340,15 +359,22 @@ values.
 ### Reconciler
 Prefixed with `csa_reconciler_`:
 
-| Metric Name                    | Type    | Labels | Description                                                                                                          |
-|--------------------------------|---------|--------|----------------------------------------------------------------------------------------------------------------------|
-| `skipped_only_status_change`   | Counter | None   | Number of reconciles that were skipped because only the scaler controller status changed.                            |
-| `existing_in_progress`         | Counter | None   | Number of attempted reconciles where one was already in progress for the same namespace/name (results in a requeue). |
-| `failure_unable_to_get_pod`    | Counter | None   | Number of reconciles where there was a failure to get the pod (results in a requeue).                                |
-| `failure_pod_doesnt_exist`     | Counter | None   | Number of reconciles where the pod was found not to exist (results in failure).                                      |
-| `failure_validation`           | Counter | None   | Number of reconciles where there was a failure to validate (results in failure).                                     |
-| `failure_states_determination` | Counter | None   | Number of reconciles where there was a failure to determine states (results in failure).                             |
-| `failure_states_action`        | Counter | None   | Number of reconciles where there was a failure to action the determined states (results in failure).                 |
+| Metric Name                  | Type    | Labels    | Description                                                                                                          |
+|------------------------------|---------|-----------|----------------------------------------------------------------------------------------------------------------------|
+| `skipped_only_status_change` | Counter | None      | Number of reconciles that were skipped because only the scaler controller status changed.                            |
+| `existing_in_progress`       | Counter | None      | Number of attempted reconciles where one was already in progress for the same namespace/name (results in a requeue). |
+| `failure`                    | Counter | `reason`* | Number of reconciles where there was a failure.                                                                      |
+
+&ast; `reason` values:
+
+| Reason                 | Description                                                   |
+|------------------------|---------------------------------------------------------------|
+| `unable_to_get_pod`    | Failure to get the pod (results in a requeue).                |
+| `pod_does_not_exist`   | Pod was found not to exist (results in failure).              |
+| `configuration`        | Failure to configure (results in failure).                    |
+| `validation`           | Failure to validate (results in failure).                     |
+| `states_determination` | Failure to determine states (results in failure).             |
+| `states_action`        | Failure to action the determined states (results in failure). |
 
 ### Scale
 Prefixed with `csa_scale_`:
@@ -408,10 +434,10 @@ The informer cache metrics described [above](#informer-cache) provide insight in
 updated (synced) after status is updated, and whether any timeouts occur:
 
 - `patch_sync_poll`: the number of cache polls that were required to confirm the cache was populated with the updated
-  pod. The cache is polled periodically per the `waitForCacheUpdatePollMillis` configuration [here](internal/pod/kubehelper.go).
+  pod. The cache is polled periodically per the `waitForCacheUpdatePollMillis` configuration [here](internal/kube/podhelper.go).
   Higher values indicate longer cache sync times.
 - `patch_sync_timeout`: the number of times the cache sync timed out per the`waitForCacheUpdateTimeoutMillis`
-  configuration [here](internal/pod/kubehelper.go). Timeouts do not result in an error or termination of the reconcile,
+  configuration [here](internal/kube/podhelper.go). Timeouts do not result in an error or termination of the reconcile,
   but may result in inconsistent CSA status updates.  
 
 ## Encountering Unknown Resources
@@ -542,9 +568,9 @@ A number of environment variable-based configuration items are available:
 
 | Name                     | Default | Description                                                                                                                          |
 |--------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------|
-| `KUBE_VERSION`           | -       | The _major.minor_ version of Kube to run tests against e.g. `1.31`.                                                                  |
-| `MAX_PARALLELISM`        | `4`     | The maximum number of tests that can run in parallel.                                                                                |
-| `EXTRA_CA_CERT_PATH`     | -       | See below.                                                                                                                              |
+| `KUBE_VERSION`           | -       | The _major.minor_ version of Kube to run tests against e.g. `1.32`.                                                                  |
+| `MAX_PARALLELISM`        | `5`     | The maximum number of tests that can run in parallel.                                                                                |
+| `EXTRA_CA_CERT_PATH`     | -       | See below.                                                                                                                           |
 | `REUSE_CLUSTER`          | `false` | Whether to reuse an existing CSA kind cluster (if it already exists). `KUBE_VERSION` has no effect if an existing cluster is reused. |
 | `INSTALL_METRICS_SERVER` | `false` | Whether to install metrics-server.                                                                                                   |
 | `KEEP_CSA`               | `false` | Whether to keep the CSA installation after tests finish.                                                                             |
@@ -596,31 +622,44 @@ Executing `echo-watch.sh` `watch`es the CSA [status](#status) for the pod create
 container's enacted resources.
 
 ### (Re)installing echo-service
-Execute `echo-reinstall.sh` to (re)install echo-service with a specific [probe](#probes) configuration contained within
-the `echo` directory structure:
+Execute `echo-reinstall.sh` to (re)install echo-service with a specific configuration contained within the `echo`
+directory structure.
 
 Admit with post-startup resources ([initial upscale required](#pod-admission-considerations)):
-- `echo-reinstall.sh echo/post-startup-resources/startup-probe.yaml`: single replica/container deployment with startup
-  probe only. 
-- `echo-reinstall.sh echo/post-startup-resources/readiness-probe.yaml`: single replica/container deployment with readiness
-  probe only.
-- `echo-reinstall.sh echo/post-startup-resources/both-probes.yaml`: single replica/container deployment with both startup
-  and readiness probes.
+
+| Command                                                                               | Scale Configuration | Probes                |
+|---------------------------------------------------------------------------------------|---------------------|-----------------------|
+| `./echo-reinstall.sh echo/post-startup-resources/cpu-and-memory/startup-probe.yaml`   | CPU and memory      | Startup               |
+| `./echo-reinstall.sh echo/post-startup-resources/cpu-and-memory/readiness-probe.yaml` | CPU and memory      | Readiness             |
+| `./echo-reinstall.sh echo/post-startup-resources/cpu-and-memory/both-probes.yaml`     | CPU and memory      | Startup and readiness |
+| `./echo-reinstall.sh echo/post-startup-resources/cpu-only/startup-probe.yaml`         | CPU only            | Startup               |
+| `./echo-reinstall.sh echo/post-startup-resources/cpu-only/readiness-probe.yaml`       | CPU only            | Readiness             |
+| `./echo-reinstall.sh echo/post-startup-resources/cpu-only/both-probes.yaml`           | CPU only            | Startup and readiness |
+| `./echo-reinstall.sh echo/post-startup-resources/memory-only/startup-probe.yaml`      | Memory only         | Startup               |
+| `./echo-reinstall.sh echo/post-startup-resources/memory-only/readiness-probe.yaml`    | Memory only         | Readiness             |
+| `./echo-reinstall.sh echo/post-startup-resources/memory-only/both-probes.yaml`        | Memory only         | Startup and readiness |
 
 Admit with startup resources ([initial upscale not required](#pod-admission-considerations)):
-- `echo-reinstall.sh echo/startup-resources/startup-probe.yaml`: single replica/container deployment with startup probe only.
-- `echo-reinstall.sh echo/startup-resources/readiness-probe.yaml`: single replica/container deployment with readiness probe
-  only.
-- `echo-reinstall.sh echo/startup-resources/both-probes.yaml`: single replica/container deployment with both startup and
-  readiness probes.
+
+| Command                                                                          | Scale Configuration | Probes                |
+|----------------------------------------------------------------------------------|---------------------|-----------------------|
+| `./echo-reinstall.sh echo/startup-resources/cpu-and-memory/startup-probe.yaml`   | CPU and memory      | Startup               |
+| `./echo-reinstall.sh echo/startup-resources/cpu-and-memory/readiness-probe.yaml` | CPU and memory      | Readiness             |
+| `./echo-reinstall.sh echo/startup-resources/cpu-and-memory/both-probes.yaml`     | CPU and memory      | Startup and readiness |
+| `./echo-reinstall.sh echo/startup-resources/cpu-only/startup-probe.yaml`         | CPU only            | Startup               |
+| `./echo-reinstall.sh echo/startup-resources/cpu-only/readiness-probe.yaml`       | CPU only            | Readiness             |
+| `./echo-reinstall.sh echo/startup-resources/cpu-only/both-probes.yaml`           | CPU only            | Startup and readiness |
+| `./echo-reinstall.sh echo/startup-resources/memory-only/startup-probe.yaml`      | Memory only         | Startup               |
+| `./echo-reinstall.sh echo/startup-resources/memory-only/readiness-probe.yaml`    | Memory only         | Readiness             |
+| `./echo-reinstall.sh echo/startup-resources/memory-only/both-probes.yaml`        | Memory only         | Startup and readiness |
 
 To simulate workload startup/readiness, `initialDelaySeconds` is set as follows in all configurations:
 
-| Configuration        | Startup Probe | Readiness Probe |
-|----------------------|---------------|-----------------|
-| startup-probe.yaml   | `15`          | N/A             |
-| readiness-probe.yaml | N/A           | `15`            |
-| both-probes.yaml     | `15`          | `30`            |
+| Configuration                 | Startup Probe | Readiness Probe |
+|-------------------------------|---------------|-----------------|
+| `echo/*/startup-probe.yaml`   | `15`          | N/A             |
+| `echo/*/readiness-probe.yaml` | N/A           | `15`            |
+| `echo/*/both-probes.yaml`     | `15`          | `30`            |
 
 You can also cause a validation failure by executing `echo-reinstall.sh echo/validation-failure/cpu-config.yaml`. This
 will yield the `cpu post-startup requests (...) is greater than startup value (...)` status message.
@@ -639,10 +678,11 @@ Executing `csa-uninstall.sh` uninstalls the CSA kind cluster.
 First [establish a watch on CSA status and enacted container resources](#watching-csa-status-and-enacted-container-resources)
 and optionally [tail CSA logs](#tailing-csa-logs). You may also want to observe [CSA metrics](#getting-csa-metrics).
 
-1. [Install](#reinstalling-echo-service) echo-server with `echo/post-startup-resources/startup-probe.yaml` and watch as
+1. [Install](#reinstalling-echo-service) echo-server with `echo/post-startup-resources/cpu-and-memory/startup-probe.yaml` and watch as
    CSA upscales the container for startup, then downscales once the container is started.
-2. Install echo-server with `echo/startup-resources/startup-probe.yaml` and watch as CSA only downscales once the
-   container is started - note the CSA `lastCommanded` and `lastEnacted` status is not populated until downscale.
+2. Install echo-server with `echo/startup-resources/cpu-and-memory/startup-probe.yaml` and watch as CSA only downscales
+   once the container is started - note the CSA `lastCommanded` and `lastEnacted` status is not populated until
+   downscale.
 3. Repeat 1) and 2) above with a readiness probe only (`echo/*/readiness-probe.yaml`) and watch as CSA only reacts to
    the container's `ready` status i.e. not `started`.
 4. Repeat 1) and 2) above with both probes (`echo/*/both-probes.yaml`) and watch as CSA only reacts to the container's

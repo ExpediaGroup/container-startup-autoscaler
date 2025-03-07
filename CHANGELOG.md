@@ -2,6 +2,35 @@
 - Based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.6.0
+2025-03-07
+
+### Added
+- Ability to supply _either_ CPU or memory scaling configuration through pod annotations (rather than always requiring
+  both).
+- New `enabledForResources` sub-item within the `scale` status item that indicates which resources are enabled for
+  scaling.
+- New `failure_configuration` counter metric that shows the number of reconciles where there was a configuration-related
+  failure.
+- Added additional sandbox scripts to scale upon either one or both of CPU and memory resources.
+
+### Changed
+- Multiple reconciler failure metrics collapsed into a single metric with `reason` label.
+- Upgrades Go to 1.23.6.
+- Upgrades all dependencies.
+
+### Helm Chart
+[1.5.0](charts/container-startup-autoscaler/CHANGELOG.md#150)
+
+| Kube Version | Compatible? | `In-place Update of Pod Resources` Maturity |
+|:------------:|:-----------:|:-------------------------------------------:|
+|     1.32     |     ✔️      |                    Alpha                    |
+|     1.31     |      ❌      |                    Alpha                    |
+|     1.30     |      ❌      |                    Alpha                    |
+|     1.29     |      ❌      |                    Alpha                    |
+|     1.28     |      ❌      |                    Alpha                    |
+|     1.27     |      ❌      |                    Alpha                    |
+
 ## 0.5.0
 2024-12-12
 

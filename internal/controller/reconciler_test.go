@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,10 +24,13 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/reconciler"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podtest"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scaletest"
 	cmap "github.com/orcaman/concurrent-map/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -40,7 +43,7 @@ import (
 func TestNewContainerStartupAutoscalerReconciler(t *testing.T) {
 	p := &pod.Pod{}
 	c := controllercommon.NewControllerConfig()
-	r := NewContainerStartupAutoscalerReconciler(p, c)
+	r := newContainerStartupAutoscalerReconciler(p, c)
 	assert.Equal(t, p, r.pod)
 	assert.Equal(t, c, r.controllerConfig)
 	assert.NotNil(t, r.reconcilingPods)
@@ -51,10 +54,11 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 		controllerConfig controllercommon.ControllerConfig
 	}
 	type mocks struct {
-		validation            pod.Validation
-		targetContainerState  pod.TargetContainerState
-		targetContainerAction pod.TargetContainerAction
-		kubeHelper            pod.KubeHelper
+		configuration         podcommon.Configuration
+		validation            podcommon.Validation
+		targetContainerState  podcommon.TargetContainerState
+		targetContainerAction podcommon.TargetContainerAction
+		podHelper             kubecommon.PodHelper
 	}
 	tests := []struct {
 		name                    string
@@ -86,10 +90,14 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: false,
 		},
 		{
-			name:   "UnableToGetPod",
+			name: "UnableToGetPod",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonUnableToGetPod))
+				assert.Equal(t, float64(1), metricVal)
+			},
 			fields: fields{controllercommon.ControllerConfig{RequeueDurationSecs: 10}},
 			mocks: mocks{
-				kubeHelper: podtest.NewMockKubeHelper(func(m *podtest.MockKubeHelper) {
+				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
 					m.On("Get", mock.Anything, mock.Anything).Return(false, &v1.Pod{}, errors.New(""))
 				}),
 			},
@@ -100,10 +108,14 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: true,
 		},
 		{
-			name:   "PodDoesntExist",
+			name: "PodDoesntExist",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonPodDoesNotExist))
+				assert.Equal(t, float64(1), metricVal)
+			},
 			fields: fields{},
 			mocks: mocks{
-				kubeHelper: podtest.NewMockKubeHelper(func(m *podtest.MockKubeHelper) {
+				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
 					m.On("Get", mock.Anything, mock.Anything).Return(false, &v1.Pod{}, nil)
 				}),
 			},
@@ -115,14 +127,64 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: true,
 		},
 		{
-			name:   "UnableToValidatePod",
+			name: "UnableToConfigurePod",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonConfiguration))
+				assert.Equal(t, float64(1), metricVal)
+			},
 			fields: fields{},
 			mocks: mocks{
+				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
+					m.On("Configure", mock.Anything).Return(scaletest.NewMockConfigurations(nil), errors.New(""))
+				}),
+				podHelper: kubetest.NewMockPodHelper(nil),
+			},
+			podNamespace: "namespace",
+			podName:      "name",
+			want:         reconcile.Result{},
+			wantErrMsg:   "unable to configure pod (won't requeue)",
+			wantLogMsg:   "unable to configure pod (won't requeue)",
+			wantEmptyMap: true,
+		},
+		{
+			name: "UnableToGetTargetContainerName",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonConfiguration))
+				assert.Equal(t, float64(2), metricVal)
+			},
+			fields: fields{},
+			mocks: mocks{
+				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
+					m.On("Configure", mock.Anything).Return(
+						scaletest.NewMockConfigurations(func(m *scaletest.MockConfigurations) {
+							m.On("TargetContainerName", mock.Anything).Return("", errors.New(""))
+						}),
+						nil,
+					)
+				}),
+				podHelper: kubetest.NewMockPodHelper(nil),
+			},
+			podNamespace: "namespace",
+			podName:      "name",
+			want:         reconcile.Result{},
+			wantErrMsg:   "unable to get target container name (won't requeue)",
+			wantLogMsg:   "unable to get target container name (won't requeue)",
+			wantEmptyMap: true,
+		},
+		{
+			name: "UnableToValidatePod",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonValidation))
+				assert.Equal(t, float64(1), metricVal)
+			},
+			fields: fields{},
+			mocks: mocks{
+				configuration: podtest.NewMockConfiguration(nil),
 				validation: podtest.NewMockValidation(func(m *podtest.MockValidation) {
 					m.On("Validate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
-						Return(errors.New(""))
+						Return(&v1.Container{}, errors.New(""))
 				}),
-				kubeHelper: podtest.NewMockKubeHelper(func(m *podtest.MockKubeHelper) { m.GetDefault() }),
+				podHelper: kubetest.NewMockPodHelper(nil),
 			},
 			podNamespace: "namespace",
 			podName:      "name",
@@ -132,15 +194,20 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: true,
 		},
 		{
-			name:   "UnableToDetermineTargetContainerStates",
+			name: "UnableToDetermineTargetContainerStates",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonStatesDetermination))
+				assert.Equal(t, float64(1), metricVal)
+			},
 			fields: fields{},
 			mocks: mocks{
-				validation: podtest.NewMockValidation(func(m *podtest.MockValidation) { m.ValidateDefault() }),
+				configuration: podtest.NewMockConfiguration(nil),
+				validation:    podtest.NewMockValidation(nil),
 				targetContainerState: podtest.NewMockTargetContainerState(func(m *podtest.MockTargetContainerState) {
-					m.On("States", mock.Anything, mock.Anything, mock.Anything).
+					m.On("States", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 						Return(podcommon.States{}, errors.New(""))
 				}),
-				kubeHelper: podtest.NewMockKubeHelper(func(m *podtest.MockKubeHelper) { m.GetDefault() }),
+				podHelper: kubetest.NewMockPodHelper(nil),
 			},
 			podNamespace: "namespace",
 			podName:      "name",
@@ -150,18 +217,21 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			wantEmptyMap: true,
 		},
 		{
-			name:   "UnableToActionTargetContainerStates",
+			name: "UnableToActionTargetContainerStates",
+			configMetricAssertsFunc: func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonStatesAction))
+				assert.Equal(t, float64(1), metricVal)
+			},
 			fields: fields{},
 			mocks: mocks{
-				validation: podtest.NewMockValidation(func(m *podtest.MockValidation) { m.ValidateDefault() }),
-				targetContainerState: podtest.NewMockTargetContainerState(func(m *podtest.MockTargetContainerState) {
-					m.StatesDefault()
-				}),
+				configuration:        podtest.NewMockConfiguration(nil),
+				validation:           podtest.NewMockValidation(nil),
+				targetContainerState: podtest.NewMockTargetContainerState(nil),
 				targetContainerAction: podtest.NewMockTargetContainerAction(func(m *podtest.MockTargetContainerAction) {
-					m.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+					m.On("Execute", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 						Return(errors.New(""))
 				}),
-				kubeHelper: podtest.NewMockKubeHelper(func(m *podtest.MockKubeHelper) { m.GetDefault() }),
+				podHelper: kubetest.NewMockPodHelper(nil),
 			},
 			podNamespace: "namespace",
 			podName:      "name",
@@ -174,14 +244,11 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			name:   "Ok",
 			fields: fields{},
 			mocks: mocks{
-				validation: podtest.NewMockValidation(func(m *podtest.MockValidation) { m.ValidateDefault() }),
-				targetContainerState: podtest.NewMockTargetContainerState(func(m *podtest.MockTargetContainerState) {
-					m.StatesDefault()
-				}),
-				targetContainerAction: podtest.NewMockTargetContainerAction(func(m *podtest.MockTargetContainerAction) {
-					m.ExecuteDefault()
-				}),
-				kubeHelper: podtest.NewMockKubeHelper(func(m *podtest.MockKubeHelper) { m.GetDefault() }),
+				configuration:         podtest.NewMockConfiguration(nil),
+				validation:            podtest.NewMockValidation(nil),
+				targetContainerState:  podtest.NewMockTargetContainerState(nil),
+				targetContainerAction: podtest.NewMockTargetContainerAction(nil),
+				podHelper:             kubetest.NewMockPodHelper(nil),
 			},
 			podNamespace: "namespace",
 			podName:      "name",
@@ -201,10 +268,11 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			}
 
 			p := &pod.Pod{
+				Configuration:         tt.mocks.configuration,
 				Validation:            tt.mocks.validation,
 				TargetContainerState:  tt.mocks.targetContainerState,
 				TargetContainerAction: tt.mocks.targetContainerAction,
-				KubeHelper:            tt.mocks.kubeHelper,
+				PodHelper:             tt.mocks.podHelper,
 			}
 			r := &containerStartupAutoscalerReconciler{
 				pod:              p,

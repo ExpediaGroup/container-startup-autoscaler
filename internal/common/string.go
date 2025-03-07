@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import (
 	"unicode"
 )
 
-// IsStringEmpty reports whether s is empty. All-spaces are reported empty.
+// IsStringEmpty returns whether s is empty. All-spaces are reported empty.
 func IsStringEmpty(s string) bool {
 	return strings.ReplaceAll(s, " ", "") == ""
 }

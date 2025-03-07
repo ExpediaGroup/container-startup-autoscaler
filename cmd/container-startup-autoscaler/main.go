@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/spf13/cobra"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -76,7 +76,7 @@ func run(_ *cobra.Command, _ []string) {
 			ByObject: map[client.Object]cache.ByObject{
 				&v1.Pod{}: {
 					// Restrict caching to pods that have enabled label to avoid caching everything.
-					Label: labels.SelectorFromSet(labels.Set{podcommon.LabelEnabled: "true"}),
+					Label: labels.SelectorFromSet(labels.Set{kubecommon.LabelEnabled: "true"}),
 				},
 			},
 		},

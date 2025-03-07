@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ package controller
 import (
 	"testing"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/reconciler"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,8 +72,8 @@ func TestPredicateUpdateFunc(t *testing.T) {
 	t.Run("OnlyStatusChanged", func(t *testing.T) {
 		oldPod, newPod := &v1.Pod{}, &v1.Pod{}
 		oldPod.ResourceVersion, newPod.ResourceVersion = "1", "2"
-		oldPod.Annotations = map[string]string{podcommon.AnnotationStatus: "test1"}
-		newPod.Annotations = map[string]string{podcommon.AnnotationStatus: "test2"}
+		oldPod.Annotations = map[string]string{kubecommon.AnnotationStatus: "test1"}
+		newPod.Annotations = map[string]string{kubecommon.AnnotationStatus: "test2"}
 		evt := event.TypedUpdateEvent[*v1.Pod]{
 			ObjectOld: oldPod,
 			ObjectNew: newPod,
@@ -86,8 +86,8 @@ func TestPredicateUpdateFunc(t *testing.T) {
 	t.Run("NonStatusChanged", func(t *testing.T) {
 		oldPod, newPod := &v1.Pod{}, &v1.Pod{}
 		oldPod.ResourceVersion, newPod.ResourceVersion = "1", "2"
-		oldPod.Annotations = map[string]string{podcommon.AnnotationStatus: "test1"}
-		newPod.Annotations = map[string]string{podcommon.AnnotationStatus: "test1"}
+		oldPod.Annotations = map[string]string{kubecommon.AnnotationStatus: "test1"}
+		newPod.Annotations = map[string]string{kubecommon.AnnotationStatus: "test1"}
 		oldPod.ObjectMeta.Name, oldPod.ObjectMeta.Name = "test1", "test2"
 		evt := event.TypedUpdateEvent[*v1.Pod]{
 			ObjectOld: oldPod,

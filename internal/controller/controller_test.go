@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -45,9 +45,9 @@ type mockController struct {
 }
 
 func newMockController(configFunc func(*mockController)) *mockController {
-	mockC := &mockController{}
-	configFunc(mockC)
-	return mockC
+	m := &mockController{}
+	configFunc(m)
+	return m
 }
 
 func (m *mockController) Reconcile(_ context.Context, _ reconcile.Request) (reconcile.Result, error) {
@@ -74,9 +74,9 @@ type mockRuntimeManager struct {
 }
 
 func newMockRuntimeManager(configFunc func(*mockRuntimeManager)) *mockRuntimeManager {
-	mockManager := &mockRuntimeManager{}
-	configFunc(mockManager)
-	return mockManager
+	m := &mockRuntimeManager{}
+	configFunc(m)
+	return m
 }
 
 func (m *mockRuntimeManager) GetHTTPClient() *http.Client {

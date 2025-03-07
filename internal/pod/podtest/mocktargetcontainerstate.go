@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,32 +20,38 @@ import (
 	"context"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/stretchr/testify/mock"
 	"k8s.io/api/core/v1"
 )
 
-// MockTargetContainerState is a generic mock for pod.TargetContainerState.
 type MockTargetContainerState struct {
 	mock.Mock
 }
 
 func NewMockTargetContainerState(configFunc func(*MockTargetContainerState)) *MockTargetContainerState {
-	mockTargetContainerState := &MockTargetContainerState{}
-	configFunc(mockTargetContainerState)
-	return mockTargetContainerState
+	m := &MockTargetContainerState{}
+	if configFunc != nil {
+		configFunc(m)
+	} else {
+		m.AllDefaults()
+	}
+
+	return m
 }
 
 func (m *MockTargetContainerState) States(
 	ctx context.Context,
 	pod *v1.Pod,
-	config podcommon.ScaleConfig,
+	targetContainer *v1.Container,
+	scaleConfigs scalecommon.Configurations,
 ) (podcommon.States, error) {
-	args := m.Called(ctx, pod, config)
+	args := m.Called(ctx, pod, targetContainer, scaleConfigs)
 	return args.Get(0).(podcommon.States), args.Error(1)
 }
 
 func (m *MockTargetContainerState) StatesDefault() {
-	m.On("States", mock.Anything, mock.Anything, mock.Anything).Return(
+	m.On("States", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 		podcommon.NewStates(
 			podcommon.StateBoolTrue,
 			podcommon.StateBoolTrue,
@@ -57,4 +63,8 @@ func (m *MockTargetContainerState) StatesDefault() {
 		),
 		nil,
 	)
+}
+
+func (m *MockTargetContainerState) AllDefaults() {
+	m.StatesDefault()
 }

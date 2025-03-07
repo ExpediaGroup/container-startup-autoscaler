@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -62,47 +62,11 @@ func TestExistingInProgress(t *testing.T) {
 }
 
 func TestFailureUnableToGetPod(t *testing.T) {
-	m := FailureUnableToGetPod()
+	m := Failure("")
 	assert.Contains(
 		t,
 		m.Desc().String(),
-		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, failureUnableToGetPodName),
-	)
-}
-
-func TestFailurePodDoesntExist(t *testing.T) {
-	m := FailurePodDoesntExist()
-	assert.Contains(
-		t,
-		m.Desc().String(),
-		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, failurePodDoesntExistName),
-	)
-}
-
-func TestFailureValidation(t *testing.T) {
-	m := FailureValidation()
-	assert.Contains(
-		t,
-		m.Desc().String(),
-		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, failureValidationName),
-	)
-}
-
-func TestFailureStatesDetermination(t *testing.T) {
-	m := FailureStatesDetermination()
-	assert.Contains(
-		t,
-		m.Desc().String(),
-		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, failureStatesDeterminationName),
-	)
-}
-
-func TestFailureStatesAction(t *testing.T) {
-	m := FailureStatesAction()
-	assert.Contains(
-		t,
-		m.Desc().String(),
-		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, failureStatesActionName),
+		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, failureName),
 	)
 }
 

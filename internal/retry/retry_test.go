@@ -1,5 +1,5 @@
 /*
-Copyright 2024 Expedia Group, Inc.
+Copyright 2025 Expedia Group, Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,7 +34,12 @@ func TestStandardRetryConfig(t *testing.T) {
 }
 
 func TestDoStandardRetry(t *testing.T) {
-	ctx := contexttest.NewCtxBuilder(contexttest.NewRetryCtxConfig(nil, 3, 1)).Build()
+	ctx := contexttest.NewCtxBuilder(contexttest.NewCtxConfig()).
+		LogBuffer(nil).
+		StandardRetryAttempts(3).
+		StandardRetryDelaySecs(1).
+		Build()
+
 	start := time.Now()
 	err := DoStandardRetry(ctx, func() error { return errors.New("") })
 	assert.NotNil(t, err)
@@ -43,7 +48,11 @@ func TestDoStandardRetry(t *testing.T) {
 
 func TestDoStandardRetryWithMoreOpts(t *testing.T) {
 	buffer := &bytes.Buffer{}
-	ctx := contexttest.NewCtxBuilder(contexttest.NewRetryCtxConfig(buffer, 3, 1)).Build()
+	ctx := contexttest.NewCtxBuilder(contexttest.NewCtxConfig()).
+		LogBuffer(buffer).
+		StandardRetryAttempts(3).
+		StandardRetryDelaySecs(1).
+		Build()
 	opt := retry.OnRetry(func(n uint, err error) {
 		logging.Errorf(ctx, err, "test")
 	})
