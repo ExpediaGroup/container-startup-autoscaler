@@ -3,7 +3,7 @@
 - This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.6.0
-2025-??-?? TODO(wt)
+2025-03-07
 
 ### Added
 - Ability to supply _either_ CPU or memory scaling configuration through pod annotations (rather than always requiring

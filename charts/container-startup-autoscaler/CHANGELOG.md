@@ -3,7 +3,7 @@
 - This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 1.5.0
-2025-??-?? TODO(wt)
+2025-03-07
 
 ### Changed
 - CSA version only.

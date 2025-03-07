@@ -79,7 +79,6 @@ const (
 	echoServerName           = "echo-server"
 )
 
-// TODO(wt) set per sandbox scripts? 150/100
 const (
 	echoServerNonTargetContainerName           = echoServerName + "-non-target"
 	echoServerNonTargetContainerCpuRequests    = "150m"
