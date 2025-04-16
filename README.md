@@ -9,7 +9,7 @@ works with deployments, statefulsets, daemonsets and other workload management A
 CSA is implemented using [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime).
 
 CSA is built around Kube's [In-place Update of Pod Resources](https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/1287-in-place-update-pod-resources)
-feature, which is currently in alpha state as of Kubernetes 1.32 and therefore requires the `InPlacePodVerticalScaling`
+feature, which is currently in alpha state as of Kubernetes 1.33 (TODO(wt) is it?) and therefore requires the `InPlacePodVerticalScaling`
 feature gate to be enabled. Beta/stable targets are indicated [here](https://github.com/kubernetes/enhancements/issues/1287).
 The feature implementation (along with the corresponding implementation of CSA) is likely to change until it reaches
 stable status. See [CHANGELOG.md](CHANGELOG.md) for details of CSA versions and Kubernetes version compatibility.
@@ -568,7 +568,7 @@ A number of environment variable-based configuration items are available:
 
 | Name                     | Default | Description                                                                                                                          |
 |--------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------|
-| `KUBE_VERSION`           | -       | The _major.minor_ version of Kube to run tests against e.g. `1.32`.                                                                  |
+| `KUBE_VERSION`           | -       | The _major.minor_ version of Kube to run tests against e.g. `1.33`.                                                                  |
 | `MAX_PARALLELISM`        | `5`     | The maximum number of tests that can run in parallel.                                                                                |
 | `EXTRA_CA_CERT_PATH`     | -       | See below.                                                                                                                           |
 | `REUSE_CLUSTER`          | `false` | Whether to reuse an existing CSA kind cluster (if it already exists). `KUBE_VERSION` has no effect if an existing cluster is reused. |
