@@ -8,8 +8,10 @@ works with deployments, statefulsets, daemonsets and other workload management A
 
 CSA is implemented using [controller-runtime](https://github.com/kubernetes-sigs/controller-runtime).
 
+!!! TODO(wt) NOW BETA for 1.33 per https://github.com/kubernetes/kubernetes/blob/master/CHANGELOG/CHANGELOG-1.33.md.
+
 CSA is built around Kube's [In-place Update of Pod Resources](https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/1287-in-place-update-pod-resources)
-feature, which is currently in alpha state as of Kubernetes 1.33 (TODO(wt) is it?) and therefore requires the `InPlacePodVerticalScaling`
+feature, which is currently in alpha state as of Kubernetes 1.33 and therefore requires the `InPlacePodVerticalScaling`
 feature gate to be enabled. Beta/stable targets are indicated [here](https://github.com/kubernetes/enhancements/issues/1287).
 The feature implementation (along with the corresponding implementation of CSA) is likely to change until it reaches
 stable status. See [CHANGELOG.md](CHANGELOG.md) for details of CSA versions and Kubernetes version compatibility.

@@ -79,24 +79,6 @@ Example logs of such an event (restart marked with '<-- HERE'):
 	"level": "debug",
 	"namespace": "deployment-non-startup-admitted-flow-startup-probe",
 	"name": "echo-server-69cdc45777-69648",
-	"reconcileID": "d6056528-c1f1-459c-a00c-4fd37699e0e9",
-	"targetname": "echo-server",
-	"targetstates": {
-		"startupProbe": "true",
-		"readinessProbe": "false",
-		"container": "running",
-		"started": "false",
-		"ready": "false",
-		"resources": "startup",
-		"statusResources": "containerresourcesmismatch"
-	},
-	"time": 1698695786101,
-	"message": "startup scale not yet completed - has been proposed"
-}
-{
-	"level": "debug",
-	"namespace": "deployment-non-startup-admitted-flow-startup-probe",
-	"name": "echo-server-69cdc45777-69648",
 	"reconcileID": "45721bfe-7503-4067-a32c-74fbfea2866e",
 	"targetname": "echo-server",
 	"targetstates": {

@@ -371,17 +371,6 @@ func (a *targetContainerAction) processConfigEnacted(
 		// Empty means 'no pending resize' - assume it's completed and examine additional status later that will
 		// confirm this.
 
-	case v1.PodResizeStatusProposed:
-		a.logInfoAndUpdateStatus(
-			ctx,
-			logging.VDebug,
-			states, podcommon.StatusScaleStateNotApplicable,
-			pod,
-			states.Resources.HumanReadable()+" scale not yet completed - has been proposed",
-			scaleConfigs,
-		)
-		return nil
-
 	case v1.PodResizeStatusInProgress:
 		a.logInfoAndUpdateStatus(
 			ctx,

@@ -832,15 +832,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		wantEventMsg            string
 	}{
 		{
-			name:                 "ScaleNotYetCompletedProposed",
-			configStatusMockFunc: func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
-			configPodHelperMockFunc: func(m *kubetest.MockPodHelper) {
-				m.On("ResizeStatus", mock.Anything).Return(v1.PodResizeStatusProposed)
-			},
-			wantStatusUpdate: true,
-			wantLogMsg:       "scale not yet completed - has been proposed",
-		},
-		{
 			name:                 "ScaleNotYetCompletedInProgress",
 			configStatusMockFunc: func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
 			configPodHelperMockFunc: func(m *kubetest.MockPodHelper) {

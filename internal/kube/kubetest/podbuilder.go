@@ -86,11 +86,6 @@ func (b *podBuilder) StateReadyUnknown() *podBuilder {
 	return b
 }
 
-func (b *podBuilder) ContainerStatusResizeStatusProposed() *podBuilder {
-	b.containerStatusResizeStatus = v1.PodResizeStatusProposed
-	return b
-}
-
 func (b *podBuilder) ContainerStatusResizeStatusInProgress() *podBuilder {
 	b.containerStatusResizeStatus = v1.PodResizeStatusInProgress
 	return b
