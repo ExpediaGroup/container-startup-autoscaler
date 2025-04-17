@@ -445,6 +445,23 @@ func TestConfigurationValidate(t *testing.T) {
 			wantErrMsg: "target container does not specify cpu requests",
 		},
 		{
+			name: "TargetContainerDoesNotSpecifyLimits",
+			fields: fields{
+				csaEnabled: true,
+				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+					m.On("Requests", mock.Anything, mock.Anything).Return(resource.MustParse("2m"))
+					m.On("Limits", mock.Anything, mock.Anything).Return(resource.Quantity{})
+				}),
+				hasStoredFromAnnotations: true,
+				resources: scalecommon.Resources{
+					Startup:             resource.MustParse("2m"),
+					PostStartupRequests: resource.MustParse("1m"),
+					PostStartupLimits:   resource.MustParse("1m"),
+				},
+			},
+			wantErrMsg: "target container does not specify cpu limits",
+		},
+		{
 			name: "TargetContainerRequestsMustEqualLimits",
 			fields: fields{
 				csaEnabled: true,

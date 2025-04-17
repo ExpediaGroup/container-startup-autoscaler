@@ -185,12 +185,17 @@ func (c *configuration) Validate(container *v1.Container) error {
 
 // ValidateRequestsLimits performs requests/limits-specific validation against the supplied container.
 func (c *configuration) ValidateRequestsLimits(container *v1.Container) error {
+	// If requests is omitted, it defaults to limits (if explicitly specified).
 	requests := c.containerHelper.Requests(container, c.resourceName)
 	if requests.IsZero() {
 		return fmt.Errorf("target container does not specify %s requests", c.resourceName)
 	}
 
 	limits := c.containerHelper.Limits(container, c.resourceName)
+	if limits.IsZero() {
+		return fmt.Errorf("target container does not specify %s limits", c.resourceName)
+	}
+
 	if !requests.Equal(limits) {
 		return fmt.Errorf(
 			"target container %s requests (%s) must equal limits (%s)",

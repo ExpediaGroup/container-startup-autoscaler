@@ -14,6 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// TODO(wt) remaining for Kube 1.33:
+// TODO(wt) Add note to docs around swap-enabled containers: https://github.com/kubernetes/kubernetes/pull/130831
+// TODO(wt) Add note to docs around https://kubernetes.io/docs/tasks/configure-pod-container/assign-pod-level-resources/ - not supported by CSA (is it even supported by in-place?)
+// TODO(wt) Need support for InPlacePodVerticalScalingExclusiveCPUs?
+// TODO(wt) FYI: support has been for in-place vertical scaling of pods with sidecars
+// TODO(wt) Update integration tests
+// TODO(wt) Update sandbox scripts
+// TODO(wt) Update docs
+
 package main
 
 import (
