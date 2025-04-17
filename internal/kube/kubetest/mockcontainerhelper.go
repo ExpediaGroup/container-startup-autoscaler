@@ -116,7 +116,7 @@ func (m *MockContainerHelper) HasReadinessProbeDefault() {
 }
 
 func (m *MockContainerHelper) StateDefault() {
-	m.On("State", mock.Anything, mock.Anything).Return(v1.ContainerState{Running: &v1.ContainerStateRunning{}}, nil)
+	m.On("State", mock.Anything, mock.Anything).Return(DefaultPodStatusContainerState, nil)
 }
 
 func (m *MockContainerHelper) IsStartedDefault() {

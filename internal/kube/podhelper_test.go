@@ -532,12 +532,25 @@ func TestPodHelperIsContainerInSpec(t *testing.T) {
 	}
 }
 
-func TestPodHelperResizeStatus(t *testing.T) {
-	h := NewPodHelper(nil)
-	pod := kubetest.NewPodBuilder().ContainerStatusResizeStatusInProgress().Build()
+func TestPodHelperResizeConditions(t *testing.T) {
+	t.Run("OkWithoutConditions", func(t *testing.T) {
+		pod := kubetest.NewPodBuilder().ResizeConditions().Build()
+		h := NewPodHelper(nil)
 
-	got := h.ResizeStatus(pod)
-	assert.Equal(t, v1.PodResizeStatusInProgress, got)
+		got := h.ResizeConditions(pod)
+		assert.Nil(t, got)
+	})
+
+	t.Run("OkWithConditions", func(t *testing.T) {
+		condition1 := v1.PodCondition{Type: v1.PodResizePending}
+		condition2 := v1.PodCondition{Type: "othertype"}
+		condition3 := v1.PodCondition{Type: v1.PodResizeInProgress}
+		pod := kubetest.NewPodBuilder().ResizeConditions(condition1, condition2, condition3).Build()
+		h := NewPodHelper(nil)
+
+		got := h.ResizeConditions(pod)
+		assert.Equal(t, []v1.PodCondition{condition1, condition3}, got)
+	})
 }
 
 func TestPodHelperWaitForCacheUpdate(t *testing.T) {

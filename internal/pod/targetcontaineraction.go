@@ -365,13 +365,11 @@ func (a *targetContainerAction) processConfigEnacted(
 	targetContainer *v1.Container,
 	scaleConfigs scalecommon.Configurations,
 ) error {
-	// Examine resize status.
-	switch a.podHelper.ResizeStatus(pod) {
-	case "":
-		// Empty means 'no pending resize' - assume it's completed and examine additional status later that will
-		// confirm this.
+	switch states.Resize.State {
+	case podcommon.StateResizeNotStartedOrCompleted:
+		// Examine additional status later that will confirm whether not started or completed.
 
-	case v1.PodResizeStatusInProgress:
+	case podcommon.StateResizeInProgress:
 		a.logInfoAndUpdateStatus(
 			ctx,
 			logging.VDebug,
@@ -382,18 +380,18 @@ func (a *targetContainerAction) processConfigEnacted(
 		)
 		return nil
 
-	case v1.PodResizeStatusDeferred:
+	case podcommon.StateResizeDeferred:
 		a.logInfoAndUpdateStatus(
 			ctx,
 			logging.VDebug,
 			states, podcommon.StatusScaleStateNotApplicable,
 			pod,
-			states.Resources.HumanReadable()+" scale not yet completed - deferred",
+			fmt.Sprintf("%s scale not yet completed - deferred (%s)", states.Resources.HumanReadable(), states.Resize.Message),
 			scaleConfigs,
 		)
 		return nil
 
-	case v1.PodResizeStatusInfeasible:
+	case podcommon.StateResizeInfeasible:
 		var scaleState podcommon.StatusScaleState
 
 		switch states.Resources {
@@ -403,13 +401,13 @@ func (a *targetContainerAction) processConfigEnacted(
 			scaleState = podcommon.StatusScaleStateUpFailed
 		}
 
-		msg := states.Resources.HumanReadable() + " scale failed - infeasible"
+		msg := fmt.Sprintf("%s scale failed - infeasible (%s)", states.Resources.HumanReadable(), states.Resize.Message)
 		a.updateStatus(ctx, states, scaleState, pod, msg, scaleConfigs)
 		metricsscale.Failure(states.Resources.Direction(), "infeasible").Inc()
 		a.warningEvent(pod, eventReasonScaling, msg)
 		return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
 
-	default:
+	case podcommon.StateResizeError:
 		var scaleState podcommon.StatusScaleState
 
 		switch states.Resources {
@@ -419,14 +417,17 @@ func (a *targetContainerAction) processConfigEnacted(
 			scaleState = podcommon.StatusScaleStateUpFailed
 		}
 
-		msg := states.Resources.HumanReadable() + " scale: unknown status"
+		msg := fmt.Sprintf("%s scale failed - error (%s)", states.Resources.HumanReadable(), states.Resize.Message)
 		a.updateStatus(ctx, states, scaleState, pod, msg, scaleConfigs)
-		metricsscale.Failure(states.Resources.Direction(), "unknownstatus").Inc()
+		metricsscale.Failure(states.Resources.Direction(), "error").Inc()
 		a.warningEvent(pod, eventReasonScaling, msg)
-		return fmt.Errorf("%s '%s'", msg, a.podHelper.ResizeStatus(pod))
+		return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
+
+	default:
+		panic(fmt.Errorf("unknown resize state '%s'", states.Resize.State))
 	}
 
-	// Resize is not pending, so examine StatusResources.
+	// Resize is either not started or completed (StateResizeNotStartedOrCompleted), so examine StatusResources.
 	switch states.StatusResources {
 	case podcommon.StateStatusResourcesIncomplete:
 		// Target container current CPU and/or memory resources are missing. Log and return with the expectation that

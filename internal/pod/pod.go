@@ -49,7 +49,7 @@ func NewPod(
 	return &Pod{
 		Configuration:         newConfiguration(podHelper, containerHelper),
 		Validation:            newValidation(recorder, stat, podHelper, containerHelper),
-		TargetContainerState:  newTargetContainerState(containerHelper),
+		TargetContainerState:  newTargetContainerState(podHelper, containerHelper),
 		TargetContainerAction: newTargetContainerAction(controllerConfig, recorder, stat, podHelper),
 		Status:                stat,
 		PodHelper:             podHelper,

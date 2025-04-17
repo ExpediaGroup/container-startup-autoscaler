@@ -19,6 +19,7 @@ package pod
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
@@ -32,11 +33,18 @@ import (
 
 // targetContainerState is the default implementation of podcommon.TargetContainerState.
 type targetContainerState struct {
+	podHelper       kubecommon.PodHelper
 	containerHelper kubecommon.ContainerHelper
 }
 
-func newTargetContainerState(containerHelper kubecommon.ContainerHelper) targetContainerState {
-	return targetContainerState{containerHelper: containerHelper}
+func newTargetContainerState(
+	podHelper kubecommon.PodHelper,
+	containerHelper kubecommon.ContainerHelper,
+) targetContainerState {
+	return targetContainerState{
+		podHelper:       podHelper,
+		containerHelper: containerHelper,
+	}
 }
 
 // States calculates and returns states from the supplied pod and config.
@@ -87,6 +95,14 @@ func (s targetContainerState) States(
 			return ret, nil
 		}
 		return ret, common.WrapErrorf(err, "unable to determine status resources states")
+	}
+
+	ret.Resize, err = s.stateResize(pod)
+	if err != nil {
+		if !s.shouldReturnError(ctx, err) {
+			return ret, nil
+		}
+		return ret, common.WrapErrorf(err, "unable to determine resize state")
 	}
 
 	return ret, nil
@@ -203,6 +219,73 @@ func (s targetContainerState) stateStatusResources(
 	}
 
 	return podcommon.StateStatusResourcesContainerResourcesMismatch, nil
+}
+
+// stateResize returns the resize state for the pod.
+func (s targetContainerState) stateResize(pod *v1.Pod) (podcommon.ResizeState, error) {
+	// Reference: https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/kubelet.go
+
+	// Both resize conditions are potentially transient.
+	resizeConditions := s.podHelper.ResizeConditions(pod)
+
+	// Neither PodResizePending nor PodResizeInProgress conditions will be present if 1) a resize has not yet been
+	// started or 2) has completed successfully.
+	if len(resizeConditions) == 0 {
+		return podcommon.NewResizeState(podcommon.StateResizeNotStartedOrCompleted, ""), nil
+	}
+
+	var condition v1.PodCondition
+
+	// Both PodResizePending and PodResizeInProgress conditions will be present if a new resize was requested in the
+	// middle of a previous pod resize that is still in progress. Inspect the PodResizePending condition in this case.
+	if len(resizeConditions) == 2 {
+		for _, cond := range resizeConditions {
+			if cond.Type == v1.PodResizePending {
+				condition = cond
+				break
+			}
+		}
+	} else {
+		condition = resizeConditions[0]
+	}
+
+	if condition.Type == v1.PodResizePending {
+		// condition.Status is always ConditionTrue.
+
+		if condition.Reason == v1.PodReasonDeferred {
+			return podcommon.NewResizeState(podcommon.StateResizeDeferred, condition.Message), nil
+		}
+
+		if condition.Reason == v1.PodReasonInfeasible {
+			return podcommon.NewResizeState(podcommon.StateResizeInfeasible, condition.Message), nil
+		}
+
+		return podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
+			fmt.Errorf("unknown pod resize pending condition reason '%s'", condition.Reason)
+	}
+
+	if condition.Type == v1.PodResizeInProgress {
+		if condition.Status == v1.ConditionFalse && condition.Reason == v1.PodReasonError {
+			// An error has occurred when resizing.
+			return podcommon.NewResizeState(podcommon.StateResizeError, condition.Message), nil
+		}
+
+		if condition.Status == v1.ConditionFalse {
+			// The resize is in progress.
+			return podcommon.NewResizeState(podcommon.StateResizeInProgress, ""), nil
+		}
+
+		if condition.Status == v1.ConditionTrue {
+			// The resize has completed successfully (will be cleared!).
+			return podcommon.NewResizeState(podcommon.StateResizeNotStartedOrCompleted, ""), nil
+		}
+
+		return podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
+			fmt.Errorf("unknown pod resize in progress condition state (%#v)", condition)
+	}
+
+	return podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
+		fmt.Errorf("unexpected pod resize conditions (%#v)", resizeConditions)
 }
 
 // shouldReturnError returns whether to return an error after examining the type of the supplied err. Certain errors

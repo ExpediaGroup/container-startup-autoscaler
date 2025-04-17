@@ -93,3 +93,20 @@ const (
 	// StateStatusResourcesUnknown indicates status resources are unknown.
 	StateStatusResourcesUnknown StateStatusResources = "unknown"
 )
+
+// StateResize indicates the state of a pod resize.
+type StateResize string
+
+const (
+	StateResizeNotStartedOrCompleted StateResize = "notstartedorcompleted"
+
+	StateResizeInProgress StateResize = "inprogress"
+
+	StateResizeDeferred StateResize = "deferred"
+
+	StateResizeInfeasible StateResize = "infeasible"
+
+	StateResizeError StateResize = "error"
+
+	StateResizeUnknown StateResize = "unknown"
+)

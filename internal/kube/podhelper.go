@@ -182,9 +182,17 @@ func (h *podHelper) IsContainerInSpec(pod *v1.Pod, containerName string) bool {
 	return false
 }
 
-// ResizeStatus returns the resize status for the supplied pod.
-func (h *podHelper) ResizeStatus(pod *v1.Pod) v1.PodResizeStatus {
-	return pod.Status.Resize
+// ResizeConditions returns the resize-related conditions for the supplied pod.
+func (h *podHelper) ResizeConditions(pod *v1.Pod) []v1.PodCondition {
+	var resizeConditions []v1.PodCondition
+
+	for _, condition := range pod.Status.Conditions {
+		if condition.Type == v1.PodResizePending || condition.Type == v1.PodResizeInProgress {
+			resizeConditions = append(resizeConditions, condition)
+		}
+	}
+
+	return resizeConditions
 }
 
 // expectedLabelOrAnnotationAs retrieves an expected label or annotation and returns the indicated type.

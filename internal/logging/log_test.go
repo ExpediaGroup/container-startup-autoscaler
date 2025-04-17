@@ -280,15 +280,7 @@ func testContextPodInfo() context.Context {
 	ctx := logr.NewContext(context.TODO(), Logger)
 	ctx = context.WithValue(ctx, testCtxKeyBuffer, buffer)
 	ctx = ccontext.WithTargetContainerName(ctx, testTargetContainerName)
-	ctx = ccontext.WithTargetContainerStates(ctx, podcommon.NewStates(
-		podcommon.StateBoolFalse,
-		podcommon.StateBoolFalse,
-		podcommon.StateContainerUnknown,
-		podcommon.StateBoolFalse,
-		podcommon.StateBoolFalse,
-		podcommon.StateResourcesUnknown,
-		podcommon.StateStatusResourcesUnknown,
-	))
+	ctx = ccontext.WithTargetContainerStates(ctx, podcommon.NewStatesAllUnknown())
 	return ctx
 }
 

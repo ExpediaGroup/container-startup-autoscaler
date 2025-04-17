@@ -32,7 +32,7 @@ type podBuilder struct {
 	resourcesState              podcommon.StateResources
 	stateStarted                podcommon.StateBool
 	stateReady                  podcommon.StateBool
-	containerStatusResizeStatus v1.PodResizeStatus
+	resizeConditions            []v1.PodCondition
 	additionalLabels            map[string]string
 	additionalAnnotations       map[string]string
 	nilContainerStatusStarted   bool
@@ -47,7 +47,7 @@ func NewPodBuilder() *podBuilder {
 	b.resourcesState = podcommon.StateResourcesStartup
 	b.stateStarted = podcommon.StateBoolFalse
 	b.stateReady = podcommon.StateBoolFalse
-	b.containerStatusResizeStatus = DefaultContainerStatusResizeStatus
+	b.resizeConditions = DefaultPodResizeConditions
 	return b
 }
 
@@ -86,18 +86,56 @@ func (b *podBuilder) StateReadyUnknown() *podBuilder {
 	return b
 }
 
-func (b *podBuilder) ContainerStatusResizeStatusInProgress() *podBuilder {
-	b.containerStatusResizeStatus = v1.PodResizeStatusInProgress
+func (b *podBuilder) ResizeConditions(conditions ...v1.PodCondition) *podBuilder {
+	b.resizeConditions = conditions
 	return b
 }
 
-func (b *podBuilder) ContainerStatusResizeStatusDeferred() *podBuilder {
-	b.containerStatusResizeStatus = v1.PodResizeStatusDeferred
+func (b *podBuilder) ResizeConditionsNotStartedOrCompletedNoConditions() *podBuilder {
+	b.resizeConditions = PodResizeConditionsNotStartedOrCompletedNoConditions
 	return b
 }
 
-func (b *podBuilder) ContainerStatusResizeStatusInfeasible() *podBuilder {
-	b.containerStatusResizeStatus = v1.PodResizeStatusInfeasible
+func (b *podBuilder) ResizeConditionsNotStartedOrCompletedResizeInProgressTrue() *podBuilder {
+	b.resizeConditions = PodResizeConditionsNotStartedOrCompletedResizeInProgressTrue
+	return b
+}
+
+func (b *podBuilder) ResizeConditionsInProgress() *podBuilder {
+	b.resizeConditions = PodResizeConditionsInProgress
+	return b
+}
+
+func (b *podBuilder) ResizeConditionsDeferred(message string) *podBuilder {
+	b.resizeConditions = PodResizeConditionsDeferred
+	b.resizeConditions[0].Message = message
+	return b
+}
+
+func (b *podBuilder) ResizeConditionsInfeasible(message string) *podBuilder {
+	b.resizeConditions = PodResizeConditionsInfeasible
+	b.resizeConditions[0].Message = message
+	return b
+}
+
+func (b *podBuilder) ResizeConditionsError(message string) *podBuilder {
+	b.resizeConditions = PodResizeConditionsError
+	b.resizeConditions[0].Message = message
+	return b
+}
+
+func (b *podBuilder) ResizeConditionsUnknownPending() *podBuilder {
+	b.resizeConditions = PodResizeConditionsUnknownPending
+	return b
+}
+
+func (b *podBuilder) ResizeConditionsUnknownInProgress() *podBuilder {
+	b.resizeConditions = PodResizeConditionsUnknownInProgress
+	return b
+}
+
+func (b *podBuilder) ResizeConditionsUnknownConditions() *podBuilder {
+	b.resizeConditions = PodResizeConditionsUnknownConditions
 	return b
 }
 
@@ -229,7 +267,7 @@ func (b *podBuilder) pod() *v1.Pod {
 					},
 				},
 			},
-			Resize: b.containerStatusResizeStatus,
+			Conditions: b.resizeConditions,
 		},
 	}
 }

@@ -34,6 +34,61 @@ const (
 	PodAnnotationMemoryUnknown = "999M"
 )
 
+var (
+	PodResizeConditionsNotStartedOrCompletedNoConditions         []corev1.PodCondition
+	PodResizeConditionsNotStartedOrCompletedResizeInProgressTrue = []corev1.PodCondition{
+		{
+			Type:   corev1.PodResizeInProgress,
+			Status: corev1.ConditionTrue,
+		},
+	}
+	PodResizeConditionsInProgress = []corev1.PodCondition{
+		{
+			Type:   corev1.PodResizeInProgress,
+			Status: corev1.ConditionFalse,
+		},
+	}
+	PodResizeConditionsDeferred = []corev1.PodCondition{
+		{
+			Type:    corev1.PodResizePending,
+			Reason:  corev1.PodReasonDeferred,
+			Message: "message",
+		},
+	}
+	PodResizeConditionsInfeasible = []corev1.PodCondition{
+		{
+			Type:    corev1.PodResizePending,
+			Reason:  corev1.PodReasonInfeasible,
+			Message: "message",
+		},
+	}
+	PodResizeConditionsError = []corev1.PodCondition{
+		{
+			Type:    corev1.PodResizeInProgress,
+			Status:  corev1.ConditionFalse,
+			Reason:  corev1.PodReasonError,
+			Message: "message",
+		},
+	}
+	PodResizeConditionsUnknownPending = []corev1.PodCondition{
+		{
+			Type:   corev1.PodResizePending,
+			Reason: "unknownreason",
+		},
+	}
+	PodResizeConditionsUnknownInProgress = []corev1.PodCondition{
+		{
+			Type:   corev1.PodResizeInProgress,
+			Status: corev1.ConditionUnknown,
+		},
+	}
+	PodResizeConditionsUnknownConditions = []corev1.PodCondition{
+		{
+			Type: "unknowntype",
+		},
+	}
+)
+
 const (
 	DefaultPodNamespace                  = "namespace"
 	DefaultPodName                       = "name"
@@ -48,6 +103,6 @@ var (
 		Namespace: DefaultPodNamespace,
 		Name:      DefaultPodName,
 	}
-	DefaultPodStatusContainerState     = corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}
-	DefaultContainerStatusResizeStatus = corev1.PodResizeStatus("")
+	DefaultPodStatusContainerState = corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}
+	DefaultPodResizeConditions     []corev1.PodCondition
 )

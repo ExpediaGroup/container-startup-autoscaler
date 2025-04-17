@@ -31,6 +31,7 @@ func TestNewStates(t *testing.T) {
 		StateBoolUnknown,
 		StateResourcesUnknown,
 		StateStatusResourcesUnknown,
+		NewResizeState(StateResizeNotStartedOrCompleted, ""),
 	)
 	assert.Equal(t, StateBoolUnknown, s.StartupProbe)
 	assert.Equal(t, StateBoolUnknown, s.ReadinessProbe)
@@ -39,6 +40,7 @@ func TestNewStates(t *testing.T) {
 	assert.Equal(t, StateBoolUnknown, s.Ready)
 	assert.Equal(t, StateResourcesUnknown, s.Resources)
 	assert.Equal(t, StateStatusResourcesUnknown, s.StatusResources)
+	assert.Equal(t, NewResizeState(StateResizeNotStartedOrCompleted, ""), s.Resize)
 }
 
 func TestNewStatesAllUnknown(t *testing.T) {
@@ -50,4 +52,14 @@ func TestNewStatesAllUnknown(t *testing.T) {
 	assert.Equal(t, StateBoolUnknown, s.Ready)
 	assert.Equal(t, StateResourcesUnknown, s.Resources)
 	assert.Equal(t, StateStatusResourcesUnknown, s.StatusResources)
+	assert.Equal(t, NewResizeState(StateResizeUnknown, ""), s.Resize)
+}
+
+func TestNewResizeState(t *testing.T) {
+	rs := NewResizeState(
+		StateResizeUnknown,
+		"test",
+	)
+	assert.Equal(t, StateResizeUnknown, rs.State)
+	assert.Equal(t, "test", rs.Message)
 }

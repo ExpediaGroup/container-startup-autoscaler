@@ -87,23 +87,26 @@ func (s *status) PodMutationFunc(
 		statScale := NewEmptyStatusAnnotationScale(scaleConfigs.AllEnabledConfigurationsResourceNames())
 
 		switch statusScaleState {
-		case podcommon.StatusScaleStateNotApplicable: // Preserve current status.
+		case podcommon.StatusScaleStateNotApplicable:
 			if gotStatAnn {
+				// Preserve current status.
 				statScale.LastCommanded = currentStat.Scale.LastCommanded
 				statScale.LastEnacted = currentStat.Scale.LastEnacted
 				statScale.LastFailed = currentStat.Scale.LastFailed
 			}
 		case podcommon.StatusScaleStateDownCommanded, podcommon.StatusScaleStateUpCommanded:
-			statScale.LastCommanded = s.formattedNow(timeFormatMilli) // i.e. others ""
+			statScale.LastCommanded = s.formattedNow(timeFormatMilli) // Clear other fields.
 		case podcommon.StatusScaleStateUnknownCommanded:
-			statScale.LastCommanded = s.formattedNow(timeFormatMilli) // i.e. others ""
+			statScale.LastCommanded = s.formattedNow(timeFormatMilli) // Clear other fields.
 			metricsscale.CommandedUnknownRes().Inc()
 		case podcommon.StatusScaleStateDownEnacted, podcommon.StatusScaleStateUpEnacted:
 			statScale.LastCommanded = currentStat.Scale.LastCommanded
 			statScale.LastEnacted = currentStat.Scale.LastEnacted
+			// Deliberately retain last failed timestamp (if set) as resize might have previously failed.
+			statScale.LastFailed = currentStat.Scale.LastFailed
 
 			// Only update if not already set.
-			if !gotStatAnn || (gotStatAnn && currentStat.Scale.LastCommanded != "" && currentStat.Scale.LastEnacted == "") {
+			if !gotStatAnn || (gotStatAnn && currentStat.Scale.LastEnacted == "") {
 				now := s.formattedNow(timeFormatMilli)
 				statScale.LastEnacted = now
 				s.updateDurationMetric(
@@ -114,7 +117,8 @@ func (s *status) PodMutationFunc(
 			}
 		case podcommon.StatusScaleStateDownFailed, podcommon.StatusScaleStateUpFailed:
 			statScale.LastCommanded = currentStat.Scale.LastCommanded
-			statScale.LastFailed = currentStat.Scale.LastEnacted
+			// statScale.LastEnacted not set as assumed we can't successfully enact but then later fail.
+			statScale.LastFailed = currentStat.Scale.LastFailed
 
 			// Only update if not already set.
 			if !gotStatAnn || (gotStatAnn && currentStat.Scale.LastFailed == "") {
