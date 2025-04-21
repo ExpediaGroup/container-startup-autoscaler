@@ -85,7 +85,7 @@ func NewStatusAnnotationScale(
 	lastFailed string,
 ) StatusAnnotationScale {
 	return StatusAnnotationScale{
-		enabledForResources,
+		fixedEnabledForResources(enabledForResources),
 		lastCommanded,
 		lastEnacted,
 		lastFailed,
@@ -94,6 +94,16 @@ func NewStatusAnnotationScale(
 
 func NewEmptyStatusAnnotationScale(enabledForResources []v1.ResourceName) StatusAnnotationScale {
 	return StatusAnnotationScale{
-		EnabledForResources: enabledForResources,
+		EnabledForResources: fixedEnabledForResources(enabledForResources),
 	}
+}
+
+// fixedEnabledForResources explicitly returns an empty slice if enabledForResources is nil, otherwise the original
+// slice. This ensures that the JSON output is always an array type, rather than null.
+func fixedEnabledForResources(enabledForResources []v1.ResourceName) []v1.ResourceName {
+	if enabledForResources == nil {
+		return []v1.ResourceName{}
+	}
+
+	return enabledForResources
 }

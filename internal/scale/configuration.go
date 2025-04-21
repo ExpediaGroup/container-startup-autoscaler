@@ -102,6 +102,8 @@ func (c *configuration) StoreFromAnnotations(pod *v1.Pod) error {
 	annErrFmt := "unable to get '%s' annotation value"
 	qParseErrFmt := "unable to parse '%s' annotation value ('%s')"
 
+	// TODO(wt) should just store the raw strings (c.rawResources?) and parse in Validate() so to give feedback through status
+	// TODO(wt) already know which annotations we have through above
 	value, err := c.podHelper.ExpectedAnnotationValueAs(pod, c.annotationStartupName, kubecommon.DataTypeString)
 	if err != nil {
 		return common.WrapErrorf(err, annErrFmt, c.annotationStartupName)
