@@ -203,7 +203,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			},
 			wantLastScaleCommanded: true,
 			wantLastScaleEnacted:   true,
-			wantLastScaleFailed:    true,
+			wantLastScaleFailed:    false,
 		},
 		{
 			name: "StatusScaleStateFailedNoPrevious",

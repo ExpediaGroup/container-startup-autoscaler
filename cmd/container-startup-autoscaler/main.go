@@ -19,9 +19,11 @@ limitations under the License.
 // TODO(wt) Add note to docs around https://kubernetes.io/docs/tasks/configure-pod-container/assign-pod-level-resources/ - not supported by CSA (is it even supported by in-place?)
 // TODO(wt) Need support for InPlacePodVerticalScalingExclusiveCPUs?
 // TODO(wt) FYI: support has been for in-place vertical scaling of pods with sidecars
+// TODO(wt) Integration tests to include infeasible test (ridiculously large startup CPU)
 // TODO(wt) Update integration tests
 // TODO(wt) Update sandbox scripts
 // TODO(wt) Update docs
+// TODO(wt) FYI behavior manually checked with sandbox scripts
 
 package main
 

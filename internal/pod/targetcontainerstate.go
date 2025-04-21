@@ -270,6 +270,7 @@ func (s targetContainerState) stateResize(pod *v1.Pod) (podcommon.ResizeState, e
 			return podcommon.NewResizeState(podcommon.StateResizeError, condition.Message), nil
 		}
 
+		// TODO(wt) never observed this condition...
 		if condition.Status == v1.ConditionFalse {
 			// The resize is in progress.
 			return podcommon.NewResizeState(podcommon.StateResizeInProgress, ""), nil

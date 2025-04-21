@@ -95,15 +95,18 @@ func (s *status) PodMutationFunc(
 				statScale.LastFailed = currentStat.Scale.LastFailed
 			}
 		case podcommon.StatusScaleStateDownCommanded, podcommon.StatusScaleStateUpCommanded:
-			statScale.LastCommanded = s.formattedNow(timeFormatMilli) // Clear other fields.
+			statScale.LastCommanded = s.formattedNow(timeFormatMilli)
+			statScale.LastEnacted = ""
+			statScale.LastFailed = ""
 		case podcommon.StatusScaleStateUnknownCommanded:
-			statScale.LastCommanded = s.formattedNow(timeFormatMilli) // Clear other fields.
+			statScale.LastCommanded = s.formattedNow(timeFormatMilli)
+			statScale.LastEnacted = ""
+			statScale.LastFailed = ""
 			metricsscale.CommandedUnknownRes().Inc()
 		case podcommon.StatusScaleStateDownEnacted, podcommon.StatusScaleStateUpEnacted:
 			statScale.LastCommanded = currentStat.Scale.LastCommanded
 			statScale.LastEnacted = currentStat.Scale.LastEnacted
-			// Deliberately retain last failed timestamp (if set) as resize might have previously failed.
-			statScale.LastFailed = currentStat.Scale.LastFailed
+			statScale.LastFailed = ""
 
 			// Only update if not already set.
 			if !gotStatAnn || (gotStatAnn && currentStat.Scale.LastEnacted == "") {
@@ -117,7 +120,7 @@ func (s *status) PodMutationFunc(
 			}
 		case podcommon.StatusScaleStateDownFailed, podcommon.StatusScaleStateUpFailed:
 			statScale.LastCommanded = currentStat.Scale.LastCommanded
-			// statScale.LastEnacted not set as assumed we can't successfully enact but then later fail.
+			statScale.LastEnacted = ""
 			statScale.LastFailed = currentStat.Scale.LastFailed
 
 			// Only update if not already set.
@@ -134,7 +137,7 @@ func (s *status) PodMutationFunc(
 			panic(fmt.Errorf("statusScaleState '%s' not supported", statusScaleState))
 		}
 
-		newStat := NewStatusAnnotation(common.CapitalizeFirstChar(status), states, statScale, s.formattedNow(timeFormatSecs))
+		newStat := NewStatusAnnotation(common.CapitalizeFirstChar(status), states, statScale, s.formattedNow(timeFormatMilli))
 		if gotStatAnn && newStat.Equal(currentStat) {
 			return nil
 		}
