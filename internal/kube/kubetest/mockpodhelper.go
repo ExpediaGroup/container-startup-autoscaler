@@ -168,7 +168,7 @@ func (m *MockPodHelper) IsContainerInSpecDefault() {
 }
 
 func (m *MockPodHelper) ResizeConditionsDefault() {
-	m.On("ResizeConditions", mock.Anything).Return(DefaultPodResizeConditions, nil)
+	m.On("ResizeConditions", mock.Anything).Return([]v1.PodCondition{}, nil)
 }
 
 func (m *MockPodHelper) QOSClassDefault() {

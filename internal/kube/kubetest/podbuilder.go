@@ -42,20 +42,29 @@ type podBuilder struct {
 	containerCustomizerFunc func(*containerBuilder)
 }
 
-// TODO(wt) maybe expose default values for examination?
 func NewPodBuilder() *podBuilder {
 	b := &podBuilder{}
-	b.enabledResources = []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory}
-	b.resourcesState = podcommon.StateResourcesStartup
-	b.stateStarted = podcommon.StateBoolFalse
-	b.stateReady = podcommon.StateBoolFalse
-	b.resizeConditions = DefaultPodResizeConditions
-	b.qosClass = DefaultPodQOSClass
+	b.EnabledResourcesAll()
+	b.ResourcesState(podcommon.StateResourcesStartup)
+	b.StateStarted(podcommon.StateBoolFalse)
+	b.StateReady(podcommon.StateBoolFalse)
+	b.ResizeConditions()
+	b.QOSClass(v1.PodQOSGuaranteed)
 	return b
 }
 
 func (b *podBuilder) EnabledResources(enabledResources []v1.ResourceName) *podBuilder {
 	b.enabledResources = enabledResources
+	return b
+}
+
+func (b *podBuilder) EnabledResourcesAll() *podBuilder {
+	b.enabledResources = []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory}
+	return b
+}
+
+func (b *podBuilder) EnabledResourcesNone() *podBuilder {
+	b.enabledResources = []v1.ResourceName{}
 	return b
 }
 
@@ -250,7 +259,7 @@ func (b *podBuilder) pod() *v1.Pod {
 			ContainerStatuses: []v1.ContainerStatus{
 				{
 					Name:    DefaultStatusContainerName,
-					State:   DefaultPodStatusContainerState,
+					State:   v1.ContainerState{Running: &v1.ContainerStateRunning{}},
 					Started: &stateStarted,
 					Ready:   stateReady,
 					Resources: &v1.ResourceRequirements{

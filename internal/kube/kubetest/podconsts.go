@@ -103,7 +103,4 @@ var (
 		Namespace: DefaultPodNamespace,
 		Name:      DefaultPodName,
 	}
-	DefaultPodStatusContainerState = corev1.ContainerState{Running: &corev1.ContainerStateRunning{}}
-	DefaultPodResizeConditions     []corev1.PodCondition
-	DefaultPodQOSClass             = corev1.PodQOSGuaranteed
 )

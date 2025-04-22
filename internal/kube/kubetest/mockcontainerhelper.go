@@ -104,7 +104,10 @@ func (m *MockContainerHelper) CurrentLimits(
 }
 
 func (m *MockContainerHelper) GetDefault() {
-	m.On("Get", mock.Anything, mock.Anything).Return(NewContainerBuilder().Build(), nil)
+	m.On("Get", mock.Anything, mock.Anything).Return(
+		NewContainerBuilder().Build(),
+		nil,
+	)
 }
 
 func (m *MockContainerHelper) HasStartupProbeDefault() {
@@ -116,7 +119,7 @@ func (m *MockContainerHelper) HasReadinessProbeDefault() {
 }
 
 func (m *MockContainerHelper) StateDefault() {
-	m.On("State", mock.Anything, mock.Anything).Return(DefaultPodStatusContainerState, nil)
+	m.On("State", mock.Anything, mock.Anything).Return(v1.ContainerState{Running: &v1.ContainerStateRunning{}}, nil)
 }
 
 func (m *MockContainerHelper) IsStartedDefault() {

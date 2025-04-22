@@ -165,7 +165,7 @@ func TestContainerHelperState(t *testing.T) {
 				pod:       kubetest.NewPodBuilder().Build(),
 				container: kubetest.NewContainerBuilder().Build(),
 			},
-			want: kubetest.DefaultPodStatusContainerState,
+			want: v1.ContainerState{Running: &v1.ContainerStateRunning{}},
 		},
 	}
 	for _, tt := range tests {

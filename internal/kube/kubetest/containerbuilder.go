@@ -32,17 +32,25 @@ type containerBuilder struct {
 	nilLimits        bool
 }
 
-// TODO(wt) maybe expose default values for examination?
 func NewContainerBuilder() *containerBuilder {
 	b := &containerBuilder{}
-	b.enabledResources = []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory}
-	b.resourcesState = podcommon.StateResourcesStartup
-
+	b.EnabledResourcesAll()
+	b.ResourcesState(podcommon.StateResourcesStartup)
 	return b
 }
 
 func (b *containerBuilder) EnabledResources(enabledResources []v1.ResourceName) *containerBuilder {
 	b.enabledResources = enabledResources
+	return b
+}
+
+func (b *containerBuilder) EnabledResourcesAll() *containerBuilder {
+	b.enabledResources = []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory}
+	return b
+}
+
+func (b *containerBuilder) EnabledResourcesNone() *containerBuilder {
+	b.enabledResources = []v1.ResourceName{}
 	return b
 }
 
