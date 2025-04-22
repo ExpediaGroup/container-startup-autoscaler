@@ -64,6 +64,10 @@ type PodHelper interface {
 	ResizeConditions(
 		pod *v1.Pod,
 	) []v1.PodCondition
+
+	QOSClass(
+		pod *v1.Pod,
+	) (v1.PodQOSClass, error)
 }
 
 // ContainerHelper performs operations relating to Kube containers.

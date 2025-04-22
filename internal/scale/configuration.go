@@ -176,51 +176,26 @@ func (c *configuration) Validate(container *v1.Container) error {
 		return common.WrapErrorf(err, annParseErrFmt, c.annotationPostStartupLimitsName, c.rawResources.PostStartupLimits)
 	}
 
-	c.resources = scalecommon.NewResources(startupQuantity, postStartupRequestsQuantity, postStartupLimitsQuantity)
-
 	// TODO(wt) QoS class is currently immutable so post-startup resources must also be 'guaranteed'. See
 	//  https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/1287-in-place-update-pod-resources#qos-class
-	if !c.resources.PostStartupRequests.Equal(c.resources.PostStartupLimits) {
+	if !postStartupRequestsQuantity.Equal(postStartupLimitsQuantity) {
 		return fmt.Errorf(
 			"%s post-startup requests (%s) must equal post-startup limits (%s)",
 			c.resourceName,
-			c.resources.PostStartupRequests.String(),
-			c.resources.PostStartupLimits.String(),
+			postStartupRequestsQuantity.String(),
+			postStartupLimitsQuantity.String(),
 		)
 	}
 
-	if c.resources.PostStartupRequests.Cmp(c.resources.Startup) == 1 {
+	if postStartupRequestsQuantity.Cmp(startupQuantity) == 1 {
 		return fmt.Errorf(
 			"%s post-startup requests (%s) is greater than startup value (%s)",
 			c.resourceName,
-			c.resources.PostStartupRequests.String(),
-			c.resources.Startup.String(),
+			postStartupRequestsQuantity.String(),
+			startupQuantity.String(),
 		)
 	}
 
-	if err = c.ValidateRequestsLimits(container); err != nil {
-		return err
-	}
-
-	resizePolicy, err := c.containerHelper.ResizePolicy(container, c.resourceName)
-	if err != nil {
-		return common.WrapErrorf(err, "unable to get target container %s resize policy", c.resourceName)
-	}
-	if resizePolicy != v1.NotRequired {
-		return fmt.Errorf(
-			"target container %s resize policy is not '%s' ('%s')",
-			c.resourceName, v1.NotRequired, resizePolicy,
-		)
-	}
-
-	c.userEnabled = true
-	c.hasValidated = true
-	return nil
-}
-
-// ValidateRequestsLimits performs requests/limits-specific validation against the supplied container.
-func (c *configuration) ValidateRequestsLimits(container *v1.Container) error {
-	// If requests is omitted, it defaults to limits (if explicitly specified).
 	requests := c.containerHelper.Requests(container, c.resourceName)
 	if requests.IsZero() {
 		return fmt.Errorf("target container does not specify %s requests", c.resourceName)
@@ -238,6 +213,20 @@ func (c *configuration) ValidateRequestsLimits(container *v1.Container) error {
 		)
 	}
 
+	resizePolicy, err := c.containerHelper.ResizePolicy(container, c.resourceName)
+	if err != nil {
+		return common.WrapErrorf(err, "unable to get target container %s resize policy", c.resourceName)
+	}
+	if resizePolicy != v1.NotRequired {
+		return fmt.Errorf(
+			"target container %s resize policy is not '%s' ('%s')",
+			c.resourceName, v1.NotRequired, resizePolicy,
+		)
+	}
+
+	c.resources = scalecommon.NewResources(startupQuantity, postStartupRequestsQuantity, postStartupLimitsQuantity)
+	c.userEnabled = true
+	c.hasValidated = true
 	return nil
 }
 

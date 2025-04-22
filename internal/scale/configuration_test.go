@@ -28,6 +28,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestNewConfiguration(t *testing.T) {
@@ -300,6 +301,7 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 	}
 }
 
+// TODO(wt) standardize on not setting test fields unless they deviate from zero value
 func TestConfigurationValidate(t *testing.T) {
 	type fields struct {
 		csaEnabled      bool
@@ -312,25 +314,20 @@ func TestConfigurationValidate(t *testing.T) {
 		fields           fields
 		wantPanicMsg     string
 		wantErrMsg       string
-		wantUserEnabled  bool // TODO(wt)
+		wantUserEnabled  bool
 		wantHasValidated bool
 		wantResources    scalecommon.Resources
 	}{
 		{
-			name: "PanicStoreFromAnnotations",
-			fields: fields{
-				hasStored: false,
-			},
+			name:         "PanicStoreFromAnnotations",
 			wantPanicMsg: "StoreFromAnnotations() hasn't been invoked first",
 		},
 		{
 			name: "NotCsaEnabled",
 			fields: fields{
-				csaEnabled: false,
-				hasStored:  true,
+				hasStored: true,
 			},
 			wantErrMsg:       "",
-			wantUserEnabled:  false,
 			wantHasValidated: true,
 		},
 		{
@@ -341,155 +338,224 @@ func TestConfigurationValidate(t *testing.T) {
 				rawResources: scalecommon.RawResources{},
 			},
 			wantErrMsg:       "",
-			wantUserEnabled:  false,
 			wantHasValidated: true,
 		},
-
-		// TODO(wt) continue here
-		//{
-		//	name: "PostStartupRequestsMustEqualPostStartupLimits",
-		//	fields: fields{
-		//		csaEnabled: true,
-		//		hasStored:  true,
-		//		resources: scalecommon.Resources{
-		//			PostStartupRequests: resource.MustParse("1m"),
-		//			PostStartupLimits:   resource.MustParse("2m"),
-		//		},
-		//	},
-		//	wantErrMsg:       "cpu post-startup requests (1m) must equal post-startup limits (2m)",
-		//	wantHasValidated: false,
-		//},
-		//{
-		//	name: "PostStartupRequestsGreaterThanStartupValue",
-		//	fields: fields{
-		//		csaEnabled: true,
-		//		hasStored:  true,
-		//		resources: scalecommon.Resources{
-		//			Startup:             resource.MustParse("1m"),
-		//			PostStartupRequests: resource.MustParse("2m"),
-		//			PostStartupLimits:   resource.MustParse("2m"),
-		//		},
-		//	},
-		//	wantErrMsg:       "cpu post-startup requests (2m) is greater than startup value (1m)",
-		//	wantHasValidated: false,
-		//},
-		//{
-		//	name: "TargetContainerDoesNotSpecifyRequests",
-		//	fields: fields{
-		//		csaEnabled: true,
-		//		containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
-		//			m.On("Requests", mock.Anything, mock.Anything).Return(resource.Quantity{})
-		//		}),
-		//		hasStored: true,
-		//		resources: scalecommon.Resources{
-		//			Startup:             resource.MustParse("2m"),
-		//			PostStartupRequests: resource.MustParse("1m"),
-		//			PostStartupLimits:   resource.MustParse("1m"),
-		//		},
-		//	},
-		//	wantErrMsg:       "target container does not specify cpu requests",
-		//	wantHasValidated: false,
-		//},
-		//{
-		//	name: "TargetContainerDoesNotSpecifyLimits",
-		//	fields: fields{
-		//		csaEnabled: true,
-		//		containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
-		//			m.On("Requests", mock.Anything, mock.Anything).Return(resource.MustParse("2m"))
-		//			m.On("Limits", mock.Anything, mock.Anything).Return(resource.Quantity{})
-		//		}),
-		//		hasStored: true,
-		//		resources: scalecommon.Resources{
-		//			Startup:             resource.MustParse("2m"),
-		//			PostStartupRequests: resource.MustParse("1m"),
-		//			PostStartupLimits:   resource.MustParse("1m"),
-		//		},
-		//	},
-		//	wantErrMsg:       "target container does not specify cpu limits",
-		//	wantHasValidated: false,
-		//},
-		//{
-		//	name: "TargetContainerRequestsMustEqualLimits",
-		//	fields: fields{
-		//		csaEnabled: true,
-		//		containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
-		//			m.On("Requests", mock.Anything, mock.Anything).Return(resource.MustParse("1m"))
-		//			m.On("Limits", mock.Anything, mock.Anything).Return(resource.MustParse("2m"))
-		//		}),
-		//		hasStored: true,
-		//		resources: scalecommon.Resources{
-		//			Startup:             resource.MustParse("2m"),
-		//			PostStartupRequests: resource.MustParse("1m"),
-		//			PostStartupLimits:   resource.MustParse("1m"),
-		//		},
-		//	},
-		//	wantErrMsg:       "target container cpu requests (1m) must equal limits (2m)",
-		//	wantHasValidated: false,
-		//},
-		//{
-		//	name: "UnableToGetTargetContainerResizePolicy",
-		//	fields: fields{
-		//		csaEnabled: true,
-		//		containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
-		//			m.On("ResizePolicy", mock.Anything, mock.Anything).
-		//				Return(v1.ResourceResizeRestartPolicy(""), errors.New(""))
-		//			m.RequestsDefault()
-		//			m.LimitsDefault()
-		//		}),
-		//		hasStored: true,
-		//		resources: scalecommon.Resources{
-		//			Startup:             resource.MustParse("2m"),
-		//			PostStartupRequests: resource.MustParse("1m"),
-		//			PostStartupLimits:   resource.MustParse("1m"),
-		//		},
-		//	},
-		//	wantErrMsg:       "unable to get target container cpu resize policy",
-		//	wantHasValidated: false,
-		//},
-		//{
-		//	name: "TargetContainerResizePolicyIsNotNotRequired",
-		//	fields: fields{
-		//		csaEnabled: true,
-		//		containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
-		//			m.On("ResizePolicy", mock.Anything, mock.Anything).
-		//				Return(v1.RestartContainer, nil)
-		//			m.RequestsDefault()
-		//			m.LimitsDefault()
-		//		}),
-		//		hasStored: true,
-		//		resources: scalecommon.Resources{
-		//			Startup:             resource.MustParse("2m"),
-		//			PostStartupRequests: resource.MustParse("1m"),
-		//			PostStartupLimits:   resource.MustParse("1m"),
-		//		},
-		//	},
-		//	wantErrMsg:       "target container cpu resize policy is not 'NotRequired' ('RestartContainer')",
-		//	wantHasValidated: false,
-		//},
-		//{
-		//	name: "Ok",
-		//	fields: fields{
-		//		csaEnabled:      true,
-		//		containerHelper: kubetest.NewMockContainerHelper(nil),
-		//		hasStored:       true,
-		//		resources: scalecommon.Resources{
-		//			Startup:             resource.MustParse("2m"),
-		//			PostStartupRequests: resource.MustParse("1m"),
-		//			PostStartupLimits:   resource.MustParse("1m"),
-		//		},
-		//	},
-		//	wantErrMsg:       "",
-		//	wantHasValidated: true,
-		//},
+		{
+			name: "AnnotationStartupNotPresent",
+			fields: fields{
+				csaEnabled:   true,
+				hasStored:    true,
+				rawResources: scalecommon.RawResources{PostStartupRequests: "1m"},
+			},
+			wantErrMsg: "annotation 'annotationStartupName' not present",
+		},
+		{
+			name: "AnnotationPostStartupRequestsNotPresent",
+			fields: fields{
+				csaEnabled:   true,
+				hasStored:    true,
+				rawResources: scalecommon.RawResources{Startup: "1m"},
+			},
+			wantErrMsg: "annotation 'annotationPostStartupRequestsName' not present",
+		},
+		{
+			name: "AnnotationPostStartupLimitsNotPresent",
+			fields: fields{
+				csaEnabled: true,
+				hasStored:  true,
+				rawResources: scalecommon.RawResources{
+					Startup:             "1m",
+					PostStartupRequests: "1m",
+				},
+			},
+			wantErrMsg: "annotation 'annotationPostStartupLimitsName' not present",
+		},
+		{
+			name: "UnableToParseStartupAnnotationValue",
+			fields: fields{
+				csaEnabled: true,
+				hasStored:  true,
+				rawResources: scalecommon.RawResources{
+					Startup:             "invalid",
+					PostStartupRequests: "1m",
+					PostStartupLimits:   "1m",
+				},
+			},
+			wantErrMsg: "unable to parse 'annotationStartupName' annotation value ('invalid')",
+		},
+		{
+			name: "UnableToParsePostStartupRequestsAnnotationValue",
+			fields: fields{
+				csaEnabled: true,
+				hasStored:  true,
+				rawResources: scalecommon.RawResources{
+					Startup:             "2m",
+					PostStartupRequests: "invalid",
+					PostStartupLimits:   "1m",
+				},
+			},
+			wantErrMsg: "unable to parse 'annotationPostStartupRequestsName' annotation value ('invalid')",
+		},
+		{
+			name: "UnableToParsePostStartupLimitsAnnotationValue",
+			fields: fields{
+				csaEnabled: true,
+				hasStored:  true,
+				rawResources: scalecommon.RawResources{
+					Startup:             "2m",
+					PostStartupRequests: "1m",
+					PostStartupLimits:   "invalid",
+				},
+			},
+			wantErrMsg: "unable to parse 'annotationPostStartupLimitsName' annotation value ('invalid')",
+		},
+		{
+			name: "PostStartupRequestsMustEqualPostStartupLimits",
+			fields: fields{
+				csaEnabled: true,
+				hasStored:  true,
+				rawResources: scalecommon.RawResources{
+					Startup:             "2m",
+					PostStartupRequests: "1m",
+					PostStartupLimits:   "2m",
+				},
+			},
+			wantErrMsg: "cpu post-startup requests (1m) must equal post-startup limits (2m)",
+		},
+		{
+			name: "PostStartupRequestsGreaterThanStartupValue",
+			fields: fields{
+				csaEnabled: true,
+				hasStored:  true,
+				rawResources: scalecommon.RawResources{
+					Startup:             "1m",
+					PostStartupRequests: "2m",
+					PostStartupLimits:   "2m",
+				},
+			},
+			wantErrMsg: "cpu post-startup requests (2m) is greater than startup value (1m)",
+		},
+		{
+			name: "TargetContainerDoesNotSpecifyRequests",
+			fields: fields{
+				csaEnabled: true,
+				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+					m.On("Requests", mock.Anything, mock.Anything).Return(resource.Quantity{})
+				}),
+				hasStored: true,
+				rawResources: scalecommon.RawResources{
+					Startup:             "2m",
+					PostStartupRequests: "1m",
+					PostStartupLimits:   "1m",
+				},
+			},
+			wantErrMsg: "target container does not specify cpu requests",
+		},
+		{
+			name: "TargetContainerDoesNotSpecifyLimits",
+			fields: fields{
+				csaEnabled: true,
+				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+					m.On("Requests", mock.Anything, mock.Anything).Return(resource.MustParse("2m"))
+					m.On("Limits", mock.Anything, mock.Anything).Return(resource.Quantity{})
+				}),
+				hasStored: true,
+				rawResources: scalecommon.RawResources{
+					Startup:             "2m",
+					PostStartupRequests: "1m",
+					PostStartupLimits:   "1m",
+				},
+			},
+			wantErrMsg: "target container does not specify cpu limits",
+		},
+		{
+			name: "TargetContainerRequestsMustEqualLimits",
+			fields: fields{
+				csaEnabled: true,
+				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+					m.On("Requests", mock.Anything, mock.Anything).Return(resource.MustParse("1m"))
+					m.On("Limits", mock.Anything, mock.Anything).Return(resource.MustParse("2m"))
+				}),
+				hasStored: true,
+				rawResources: scalecommon.RawResources{
+					Startup:             "2m",
+					PostStartupRequests: "1m",
+					PostStartupLimits:   "1m",
+				},
+			},
+			wantErrMsg: "target container cpu requests (1m) must equal limits (2m)",
+		},
+		{
+			name: "UnableToGetTargetContainerResizePolicy",
+			fields: fields{
+				csaEnabled: true,
+				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+					m.On("ResizePolicy", mock.Anything, mock.Anything).
+						Return(v1.ResourceResizeRestartPolicy(""), errors.New(""))
+					m.RequestsDefault()
+					m.LimitsDefault()
+				}),
+				hasStored: true,
+				rawResources: scalecommon.RawResources{
+					Startup:             "2m",
+					PostStartupRequests: "1m",
+					PostStartupLimits:   "1m",
+				},
+			},
+			wantErrMsg: "unable to get target container cpu resize policy",
+		},
+		{
+			name: "TargetContainerResizePolicyIsNotNotRequired",
+			fields: fields{
+				csaEnabled: true,
+				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+					m.On("ResizePolicy", mock.Anything, mock.Anything).
+						Return(v1.RestartContainer, nil)
+					m.RequestsDefault()
+					m.LimitsDefault()
+				}),
+				hasStored: true,
+				rawResources: scalecommon.RawResources{
+					Startup:             "2m",
+					PostStartupRequests: "1m",
+					PostStartupLimits:   "1m",
+				},
+			},
+			wantErrMsg: "target container cpu resize policy is not 'NotRequired' ('RestartContainer')",
+		},
+		{
+			name: "Ok",
+			fields: fields{
+				csaEnabled:      true,
+				containerHelper: kubetest.NewMockContainerHelper(nil),
+				hasStored:       true,
+				rawResources: scalecommon.RawResources{
+					Startup:             "2m",
+					PostStartupRequests: "1m",
+					PostStartupLimits:   "1m",
+				},
+			},
+			wantErrMsg:       "",
+			wantUserEnabled:  true,
+			wantHasValidated: true,
+			wantResources: scalecommon.Resources{
+				Startup:             resource.MustParse("2m"),
+				PostStartupRequests: resource.MustParse("1m"),
+				PostStartupLimits:   resource.MustParse("1m"),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &configuration{
-				resourceName:    v1.ResourceCPU,
-				csaEnabled:      tt.fields.csaEnabled,
-				containerHelper: tt.fields.containerHelper,
-				hasStored:       tt.fields.hasStored,
-				rawResources:    tt.fields.rawResources,
+				resourceName:                      v1.ResourceCPU,
+				annotationStartupName:             "annotationStartupName",
+				annotationPostStartupRequestsName: "annotationPostStartupRequestsName",
+				annotationPostStartupLimitsName:   "annotationPostStartupLimitsName",
+				csaEnabled:                        tt.fields.csaEnabled,
+				containerHelper:                   tt.fields.containerHelper,
+				hasStored:                         tt.fields.hasStored,
+				rawResources:                      tt.fields.rawResources,
 			}
 			if tt.wantPanicMsg != "" {
 				assert.PanicsWithError(t, tt.wantPanicMsg, func() { _ = config.Validate(&v1.Container{}) })

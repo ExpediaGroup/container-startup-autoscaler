@@ -25,7 +25,6 @@ type RawResources struct {
 	PostStartupLimits   string
 }
 
-// TODO(wt) test
 func NewRawResources(
 	startup string,
 	postStartupRequests string,

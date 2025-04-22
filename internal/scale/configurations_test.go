@@ -196,20 +196,6 @@ func TestConfigurationsValidateCollection(t *testing.T) {
 			wantErrMsg: "no resources are configured for scaling",
 		},
 		{
-			name: "RequestsLimitsValidationFailed",
-			fields: fields{
-				cpuConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
-					m.On("IsEnabled").Return(true)
-					m.ValidateRequestsLimitsDefault()
-				}),
-				memoryConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
-					m.On("IsEnabled").Return(false)
-					m.On("ValidateRequestsLimits", mock.Anything).Return(errors.New("validaterequestslimits"))
-				}),
-			},
-			wantErrMsg: "validaterequestslimits",
-		},
-		{
 			name: "Ok",
 			fields: fields{
 				cpuConfig:    scaletest.NewMockConfiguration(nil),
@@ -224,7 +210,7 @@ func TestConfigurationsValidateCollection(t *testing.T) {
 				cpuConfig:    tt.fields.cpuConfig,
 				memoryConfig: tt.fields.memoryConfig,
 			}
-			err := configs.ValidateCollection(&v1.Container{})
+			err := configs.ValidateCollection()
 			if tt.wantErrMsg != "" {
 				assert.Contains(t, err.Error(), tt.wantErrMsg)
 			} else {
@@ -316,12 +302,14 @@ func TestConfigurationsAllEnabledConfigs(t *testing.T) {
 			resourceName: v1.ResourceCPU,
 			csaEnabled:   false,
 			hasStored:    true,
+			hasValidated: true,
 			userEnabled:  false,
 		},
 		memoryConfig: &configuration{
 			resourceName: v1.ResourceMemory,
 			csaEnabled:   true,
 			hasStored:    true,
+			hasValidated: true,
 			userEnabled:  true,
 		},
 	}
@@ -336,12 +324,14 @@ func TestConfigurationsAllEnabledConfigsResourceNames(t *testing.T) {
 			resourceName: v1.ResourceCPU,
 			csaEnabled:   false,
 			hasStored:    true,
+			hasValidated: true,
 			userEnabled:  false,
 		},
 		memoryConfig: &configuration{
 			resourceName: v1.ResourceMemory,
 			csaEnabled:   true,
 			hasStored:    true,
+			hasValidated: true,
 			userEnabled:  true,
 		},
 	}

@@ -94,12 +94,22 @@ func (v *validation) Validate(
 		return nil, v.updateStatusAndGetError(ctx, pod, "target container does not specify startup probe or readiness probe", nil, scaleConfigs)
 	}
 
-	if err = scaleConfigs.ValidateAll(ctr); err != nil {
-		return nil, v.updateStatusAndGetError(ctx, pod, "unable to validate configuration", err, scaleConfigs)
+	// All resources must be guaranteed in nature to avoid change in pod QoS class.
+	qosClass, err := v.podHelper.QOSClass(pod)
+	if err != nil {
+		return nil, v.updateStatusAndGetError(ctx, pod, "unable to determine pod qos class", err, scaleConfigs)
 	}
 
-	if err = scaleConfigs.ValidateCollection(ctr); err != nil {
-		return nil, v.updateStatusAndGetError(ctx, pod, "unable to validate configuration collection", err, scaleConfigs)
+	if qosClass != v1.PodQOSGuaranteed {
+		return nil, v.updateStatusAndGetError(ctx, pod, "pod qos class is not guaranteed", nil, scaleConfigs)
+	}
+
+	if err = scaleConfigs.ValidateAll(ctr); err != nil {
+		return nil, v.updateStatusAndGetError(ctx, pod, "unable to validate scale configuration", err, scaleConfigs)
+	}
+
+	if err = scaleConfigs.ValidateCollection(); err != nil {
+		return nil, v.updateStatusAndGetError(ctx, pod, "unable to validate scale configuration collection", err, scaleConfigs)
 	}
 
 	return ctr, nil
@@ -116,7 +126,14 @@ func (v *validation) updateStatusAndGetError(
 ) error {
 	ret := NewValidationError(errMessage, cause)
 
-	_, err := v.status.Update(ctx, pod, ret.Error(), podcommon.NewStatesAllUnknown(), podcommon.StatusScaleStateNotApplicable, scaleConfigs)
+	_, err := v.status.Update(
+		ctx,
+		pod,
+		ret.Error(),
+		podcommon.NewStatesAllUnknown(),
+		podcommon.StatusScaleStateNotApplicable,
+		scaleConfigs,
+	)
 	if err != nil {
 		logging.Errorf(ctx, err, "unable to update status (will continue)")
 	}

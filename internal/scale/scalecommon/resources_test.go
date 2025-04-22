@@ -23,12 +23,26 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+func TestNewRawResources(t *testing.T) {
+	startup, postStartupRequests, postStartupLimits := "3m", "1m", "2m"
+	resources := NewRawResources(startup, postStartupRequests, postStartupLimits)
+	expected := RawResources{ // TODO(wt) standardize on this elsewhere
+		startup,
+		postStartupRequests,
+		postStartupLimits,
+	}
+	assert.Equal(t, expected, resources)
+}
+
 func TestNewResources(t *testing.T) {
 	startup := resource.MustParse("3m")
 	postStartupRequests := resource.MustParse("1m")
 	postStartupLimits := resource.MustParse("2m")
 	resources := NewResources(startup, postStartupRequests, postStartupLimits)
-	assert.Equal(t, startup, resources.Startup)
-	assert.Equal(t, postStartupRequests, resources.PostStartupRequests)
-	assert.Equal(t, postStartupLimits, resources.PostStartupLimits)
+	expected := Resources{
+		startup,
+		postStartupRequests,
+		postStartupLimits,
+	}
+	assert.Equal(t, expected, resources)
 }

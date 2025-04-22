@@ -36,10 +36,6 @@ type Configuration interface {
 		container *v1.Container,
 	) error
 
-	ValidateRequestsLimits(
-		container *v1.Container,
-	) error
-
 	String() string
 }
 
@@ -57,9 +53,7 @@ type Configurations interface {
 		container *v1.Container,
 	) error
 
-	ValidateCollection(
-		container *v1.Container,
-	) error
+	ValidateCollection() error
 
 	ConfigurationFor(
 		resourceName v1.ResourceName,

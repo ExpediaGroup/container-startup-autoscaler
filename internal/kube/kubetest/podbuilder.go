@@ -33,6 +33,7 @@ type podBuilder struct {
 	stateStarted                podcommon.StateBool
 	stateReady                  podcommon.StateBool
 	resizeConditions            []v1.PodCondition
+	qosClass                    v1.PodQOSClass
 	additionalLabels            map[string]string
 	additionalAnnotations       map[string]string
 	nilContainerStatusStarted   bool
@@ -41,6 +42,7 @@ type podBuilder struct {
 	containerCustomizerFunc func(*containerBuilder)
 }
 
+// TODO(wt) maybe expose default values for examination?
 func NewPodBuilder() *podBuilder {
 	b := &podBuilder{}
 	b.enabledResources = []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory}
@@ -48,6 +50,7 @@ func NewPodBuilder() *podBuilder {
 	b.stateStarted = podcommon.StateBoolFalse
 	b.stateReady = podcommon.StateBoolFalse
 	b.resizeConditions = DefaultPodResizeConditions
+	b.qosClass = DefaultPodQOSClass
 	return b
 }
 
@@ -136,6 +139,16 @@ func (b *podBuilder) ResizeConditionsUnknownInProgress() *podBuilder {
 
 func (b *podBuilder) ResizeConditionsUnknownConditions() *podBuilder {
 	b.resizeConditions = PodResizeConditionsUnknownConditions
+	return b
+}
+
+func (b *podBuilder) QOSClassNotPresent() *podBuilder {
+	b.qosClass = ""
+	return b
+}
+
+func (b *podBuilder) QOSClassBurstable() *podBuilder {
+	b.qosClass = v1.PodQOSBurstable
 	return b
 }
 
@@ -268,6 +281,7 @@ func (b *podBuilder) pod() *v1.Pod {
 				},
 			},
 			Conditions: b.resizeConditions,
+			QOSClass:   b.qosClass,
 		},
 	}
 }

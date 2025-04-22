@@ -195,6 +195,16 @@ func (h *podHelper) ResizeConditions(pod *v1.Pod) []v1.PodCondition {
 	return resizeConditions
 }
 
+// QOSClass returns the QOS class of the supplied pod. It returns an error if the QOS class is not (yet) present in the
+// pod's status.
+func (h *podHelper) QOSClass(pod *v1.Pod) (v1.PodQOSClass, error) {
+	if pod.Status.QOSClass == "" {
+		return pod.Status.QOSClass, errors.New("pod status qos class not present")
+	}
+
+	return pod.Status.QOSClass, nil
+}
+
 // expectedLabelOrAnnotationAs retrieves an expected label or annotation and returns the indicated type.
 func (h *podHelper) expectedLabelOrAnnotationAs(
 	mapFor mapFor,

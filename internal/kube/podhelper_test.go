@@ -553,6 +553,26 @@ func TestPodHelperResizeConditions(t *testing.T) {
 	})
 }
 
+func TestPodHelperQOSClass(t *testing.T) {
+	t.Run("NotPresent", func(t *testing.T) {
+		pod := kubetest.NewPodBuilder().QOSClassNotPresent().Build()
+		h := NewPodHelper(nil)
+
+		got, err := h.QOSClass(pod)
+		assert.Error(t, err, "pod status qos class not present") // TODO(wt) standardize elsewhere?
+		assert.Equal(t, v1.PodQOSClass(""), got)
+	})
+
+	t.Run("Ok", func(t *testing.T) {
+		pod := kubetest.NewPodBuilder().Build()
+		h := NewPodHelper(nil)
+
+		got, err := h.QOSClass(pod)
+		assert.NoError(t, err) // TODO(wt) standardize elsewhere?
+		assert.Equal(t, v1.PodQOSGuaranteed, got)
+	})
+}
+
 func TestPodHelperWaitForCacheUpdate(t *testing.T) {
 	t.Run("Ok", func(t *testing.T) {
 		pod := kubetest.NewPodBuilder().Build()

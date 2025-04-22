@@ -83,6 +83,11 @@ func (m *MockPodHelper) ResizeConditions(pod *v1.Pod) []v1.PodCondition {
 	return args.Get(0).([]v1.PodCondition)
 }
 
+func (m *MockPodHelper) QOSClass(pod *v1.Pod) (v1.PodQOSClass, error) {
+	args := m.Called(pod)
+	return args.Get(0).(v1.PodQOSClass), args.Error(1)
+}
+
 func (m *MockPodHelper) GetDefault() {
 	m.On("Get", mock.Anything, mock.Anything).Return(true, &v1.Pod{}, nil)
 }
@@ -166,6 +171,10 @@ func (m *MockPodHelper) ResizeConditionsDefault() {
 	m.On("ResizeConditions", mock.Anything).Return(DefaultPodResizeConditions, nil)
 }
 
+func (m *MockPodHelper) QOSClassDefault() {
+	m.On("QOSClass", mock.Anything).Return(v1.PodQOSGuaranteed, nil)
+}
+
 func (m *MockPodHelper) AllDefaults() {
 	m.GetDefault()
 	m.PatchDefault()
@@ -174,4 +183,5 @@ func (m *MockPodHelper) AllDefaults() {
 	m.ExpectedAnnotationValueAsDefault()
 	m.IsContainerInSpecDefault()
 	m.ResizeConditionsDefault()
+	m.QOSClassDefault()
 }
