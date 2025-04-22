@@ -140,3 +140,16 @@ func TestNewEmptyStatusAnnotationScale(t *testing.T) {
 	assert.Empty(t, statAnn.LastEnacted)
 	assert.Empty(t, statAnn.LastFailed)
 }
+
+func TestFixedEnabledForResources(t *testing.T) {
+	t.Run("Nil", func(t *testing.T) {
+		got := fixedEnabledForResources(nil)
+		assert.NotNil(t, got)
+	})
+
+	t.Run("NotNil", func(t *testing.T) {
+		resources := []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory}
+		got := fixedEnabledForResources(resources)
+		assert.Equal(t, resources, got)
+	})
+}
