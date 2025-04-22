@@ -56,9 +56,9 @@ func TestStateIsStartupConfigApplied(t *testing.T) {
 			name: "NotEnabled",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              false,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: false,
 				},
 			},
 			want: nil,
@@ -67,10 +67,10 @@ func TestStateIsStartupConfigApplied(t *testing.T) {
 			name: "True",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
-					resources:                scaletest.ResourcesCpuEnabled,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
+					resources:   scaletest.ResourcesCpuEnabled,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(nil),
 			},
@@ -80,10 +80,10 @@ func TestStateIsStartupConfigApplied(t *testing.T) {
 			name: "False",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
-					resources:                scaletest.ResourcesCpuEnabled,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
+					resources:   scaletest.ResourcesCpuEnabled,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("Requests", mock.Anything, mock.Anything).Return(kubetest.PodCpuPostStartupRequestsEnabled)
@@ -119,9 +119,9 @@ func TestStateIsPostStartupConfigApplied(t *testing.T) {
 			name: "NotEnabled",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              false,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: false,
 				},
 			},
 			want: nil,
@@ -130,10 +130,10 @@ func TestStateIsPostStartupConfigApplied(t *testing.T) {
 			name: "True",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
-					resources:                scaletest.ResourcesCpuEnabled,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
+					resources:   scaletest.ResourcesCpuEnabled,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("Requests", mock.Anything, mock.Anything).Return(kubetest.PodCpuPostStartupRequestsEnabled)
@@ -146,10 +146,10 @@ func TestStateIsPostStartupConfigApplied(t *testing.T) {
 			name: "False",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
-					resources:                scaletest.ResourcesCpuEnabled,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
+					resources:   scaletest.ResourcesCpuEnabled,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(nil),
 			},
@@ -184,9 +184,9 @@ func TestStateIsAnyCurrentZero(t *testing.T) {
 			name: "NotEnabled",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              false,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: false,
 				},
 			},
 			wantErrMsg: "",
@@ -196,9 +196,9 @@ func TestStateIsAnyCurrentZero(t *testing.T) {
 			name: "UnableToGetCpuCurrentRequests",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
@@ -212,9 +212,9 @@ func TestStateIsAnyCurrentZero(t *testing.T) {
 			name: "UnableToGetCpuCurrentLimits",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentLimits", mock.Anything, mock.Anything, mock.Anything).
@@ -229,9 +229,9 @@ func TestStateIsAnyCurrentZero(t *testing.T) {
 			name: "True",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
@@ -247,9 +247,9 @@ func TestStateIsAnyCurrentZero(t *testing.T) {
 			name: "False",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(nil),
 			},
@@ -290,9 +290,9 @@ func TestStateDoesRequestsCurrentMatchSpec(t *testing.T) {
 			name: "NotEnabled",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              false,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: false,
 				},
 			},
 			wantErrMsg: "",
@@ -302,9 +302,9 @@ func TestStateDoesRequestsCurrentMatchSpec(t *testing.T) {
 			name: "UnableToGetCpuCurrentRequests",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
@@ -318,9 +318,9 @@ func TestStateDoesRequestsCurrentMatchSpec(t *testing.T) {
 			name: "True",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
@@ -335,9 +335,9 @@ func TestStateDoesRequestsCurrentMatchSpec(t *testing.T) {
 			name: "False",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
@@ -382,9 +382,9 @@ func TestStateDoesLimitsCurrentMatchSpec(t *testing.T) {
 			name: "NotEnabled",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              false,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: false,
 				},
 			},
 			wantErrMsg: "",
@@ -394,9 +394,9 @@ func TestStateDoesLimitsCurrentMatchSpec(t *testing.T) {
 			name: "UnableToGetCpuCurrentLimits",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentLimits", mock.Anything, mock.Anything, mock.Anything).
@@ -410,9 +410,9 @@ func TestStateDoesLimitsCurrentMatchSpec(t *testing.T) {
 			name: "True",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentLimits", mock.Anything, mock.Anything, mock.Anything).
@@ -427,9 +427,9 @@ func TestStateDoesLimitsCurrentMatchSpec(t *testing.T) {
 			name: "False",
 			fields: fields{
 				config: &configuration{
-					csaEnabled:               true,
-					hasStoredFromAnnotations: true,
-					userEnabled:              true,
+					csaEnabled:  true,
+					hasStored:   true,
+					userEnabled: true,
 				},
 				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentLimits", mock.Anything, mock.Anything, mock.Anything).

@@ -35,10 +35,10 @@ func TestNewUpdates(t *testing.T) {
 func TestStartupPodMutationFuncAll(t *testing.T) {
 	updates := &updates{
 		cpuUpdate: &update{
-			config: &configuration{hasStoredFromAnnotations: true},
+			config: &configuration{hasStored: true},
 		},
 		memoryUpdate: &update{
-			config: &configuration{hasStoredFromAnnotations: true},
+			config: &configuration{hasStored: true},
 		},
 	}
 	allFuncs := updates.StartupPodMutationFuncAll(&v1.Container{})
@@ -48,10 +48,10 @@ func TestStartupPodMutationFuncAll(t *testing.T) {
 func TestPostStartupPodMutationFuncAll(t *testing.T) {
 	updates := &updates{
 		cpuUpdate: &update{
-			config: &configuration{hasStoredFromAnnotations: true},
+			config: &configuration{hasStored: true},
 		},
 		memoryUpdate: &update{
-			config: &configuration{hasStoredFromAnnotations: true},
+			config: &configuration{hasStored: true},
 		},
 	}
 	allFuncs := updates.PostStartupPodMutationFuncAll(&v1.Container{})

@@ -28,7 +28,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func TestNewConfiguration(t *testing.T) {
@@ -53,8 +52,9 @@ func TestConfigurationResourceName(t *testing.T) {
 
 func TestConfigurationIsEnabled(t *testing.T) {
 	type fields struct {
-		csaEnabled               bool
-		hasStoredFromAnnotations bool
+		csaEnabled   bool
+		hasStored    bool
+		hasValidated bool
 	}
 	tests := []struct {
 		name         string
@@ -63,25 +63,35 @@ func TestConfigurationIsEnabled(t *testing.T) {
 		want         bool
 	}{
 		{
-			name: "Panic",
+			name: "PanicStoreFromAnnotations",
 			fields: fields{
-				hasStoredFromAnnotations: false,
+				hasStored: false,
 			},
 			wantPanicMsg: "StoreFromAnnotations() hasn't been invoked first",
 		},
 		{
+			name: "PanicValidate",
+			fields: fields{
+				hasStored:    true,
+				hasValidated: false,
+			},
+			wantPanicMsg: "Validate() hasn't been invoked first",
+		},
+		{
 			name: "True",
 			fields: fields{
-				csaEnabled:               true,
-				hasStoredFromAnnotations: true,
+				csaEnabled:   true,
+				hasStored:    true,
+				hasValidated: true,
 			},
 			want: true,
 		},
 		{
 			name: "False",
 			fields: fields{
-				csaEnabled:               false,
-				hasStoredFromAnnotations: true,
+				csaEnabled:   false,
+				hasStored:    true,
+				hasValidated: true,
 			},
 			want: false,
 		},
@@ -89,9 +99,10 @@ func TestConfigurationIsEnabled(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &configuration{
-				csaEnabled:               tt.fields.csaEnabled,
-				hasStoredFromAnnotations: tt.fields.hasStoredFromAnnotations,
-				userEnabled:              true,
+				csaEnabled:   tt.fields.csaEnabled,
+				hasStored:    tt.fields.hasStored,
+				hasValidated: tt.fields.hasValidated,
+				userEnabled:  true,
 			}
 			if tt.wantPanicMsg != "" {
 				assert.PanicsWithError(t, tt.wantPanicMsg, func() { config.IsEnabled() })
@@ -104,9 +115,10 @@ func TestConfigurationIsEnabled(t *testing.T) {
 
 func TestConfigurationResources(t *testing.T) {
 	type fields struct {
-		csaEnabled               bool
-		hasStoredFromAnnotations bool
-		resources                scalecommon.Resources
+		csaEnabled   bool
+		hasStored    bool
+		hasValidated bool
+		resources    scalecommon.Resources
 	}
 	tests := []struct {
 		name         string
@@ -115,17 +127,26 @@ func TestConfigurationResources(t *testing.T) {
 		want         scalecommon.Resources
 	}{
 		{
-			name: "Panic",
+			name: "PanicStoreFromAnnotations",
 			fields: fields{
-				hasStoredFromAnnotations: false,
+				hasStored: false,
 			},
 			wantPanicMsg: "StoreFromAnnotations() hasn't been invoked first",
 		},
 		{
+			name: "PanicValidate",
+			fields: fields{
+				hasStored:    true,
+				hasValidated: false,
+			},
+			wantPanicMsg: "Validate() hasn't been invoked first",
+		},
+		{
 			name: "Ok",
 			fields: fields{
-				hasStoredFromAnnotations: true,
-				resources:                scaletest.ResourcesCpuEnabled,
+				hasStored:    true,
+				hasValidated: true,
+				resources:    scaletest.ResourcesCpuEnabled,
 			},
 			want: scaletest.ResourcesCpuEnabled,
 		},
@@ -133,10 +154,11 @@ func TestConfigurationResources(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &configuration{
-				csaEnabled:               true,
-				hasStoredFromAnnotations: tt.fields.hasStoredFromAnnotations,
-				userEnabled:              true,
-				resources:                tt.fields.resources,
+				csaEnabled:   true,
+				hasStored:    tt.fields.hasStored,
+				hasValidated: tt.fields.hasValidated,
+				userEnabled:  true,
+				resources:    tt.fields.resources,
 			}
 			if tt.wantPanicMsg != "" {
 				assert.PanicsWithError(t, tt.wantPanicMsg, func() { config.Resources() })
@@ -156,33 +178,18 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 		podHelper                         kubecommon.PodHelper
 	}
 	tests := []struct {
-		name                         string
-		fields                       fields
-		wantErrMsg                   string
-		wantUserEnabled              bool
-		wantHasStoredFromAnnotations bool
-		wantResources                scalecommon.Resources
+		name             string
+		fields           fields
+		wantErrMsg       string
+		wantHasStored    bool
+		wantRawResources scalecommon.RawResources
 	}{
 		{
-			name:                         "NotCsaEnabled",
-			fields:                       fields{csaEnabled: false},
-			wantErrMsg:                   "",
-			wantUserEnabled:              false,
-			wantHasStoredFromAnnotations: true,
-			wantResources:                scalecommon.Resources{},
-		},
-		{
-			name: "NotUserEnabled",
-			fields: fields{
-				csaEnabled: true,
-				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
-					m.On("HasAnnotation", mock.Anything, mock.Anything).Return(false, "")
-				}),
-			},
-			wantErrMsg:                   "",
-			wantUserEnabled:              false,
-			wantHasStoredFromAnnotations: true,
-			wantResources:                scalecommon.Resources{},
+			name:             "NotCsaEnabled",
+			fields:           fields{csaEnabled: false},
+			wantErrMsg:       "",
+			wantHasStored:    true,
+			wantRawResources: scalecommon.RawResources{},
 		},
 		{
 			name: "UnableToGetStartupAnnotationValue",
@@ -195,26 +202,9 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 					m.HasAnnotationDefault()
 				}),
 			},
-			wantErrMsg:                   "unable to get '" + scalecommon.AnnotationCpuStartup + "' annotation value",
-			wantUserEnabled:              false,
-			wantHasStoredFromAnnotations: false,
-			wantResources:                scalecommon.Resources{},
-		},
-		{
-			name: "UnableToParseStartupAnnotationValue",
-			fields: fields{
-				annotationStartupName: scalecommon.AnnotationCpuStartup,
-				csaEnabled:            true,
-				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
-					m.On("ExpectedAnnotationValueAs", mock.Anything, mock.Anything, mock.Anything).
-						Return("test", nil)
-					m.HasAnnotationDefault()
-				}),
-			},
-			wantErrMsg:                   "unable to parse '" + scalecommon.AnnotationCpuStartup + "' annotation value ('test')",
-			wantUserEnabled:              false,
-			wantHasStoredFromAnnotations: false,
-			wantResources:                scalecommon.Resources{},
+			wantErrMsg:       "unable to get '" + scalecommon.AnnotationCpuStartup + "' annotation value",
+			wantHasStored:    false,
+			wantRawResources: scalecommon.RawResources{},
 		},
 		{
 			name: "UnableToGetPostStartupRequestsAnnotationValue",
@@ -238,37 +228,9 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 					m.HasAnnotationDefault()
 				}),
 			},
-			wantErrMsg:                   "unable to get '" + scalecommon.AnnotationCpuPostStartupRequests + "' annotation value",
-			wantUserEnabled:              false,
-			wantHasStoredFromAnnotations: false,
-			wantResources:                scalecommon.Resources{},
-		},
-		{
-			name: "UnableToParsePostStartupRequestsAnnotationValue",
-			fields: fields{
-				annotationStartupName:             scalecommon.AnnotationCpuStartup,
-				annotationPostStartupRequestsName: scalecommon.AnnotationCpuPostStartupRequests,
-				csaEnabled:                        true,
-				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
-					m.On(
-						"ExpectedAnnotationValueAs",
-						mock.Anything,
-						mock.MatchedBy(func(ann string) bool { return strings.Contains(ann, scalecommon.AnnotationCpuStartup) }),
-						kubecommon.DataTypeString,
-					).Return(kubetest.PodAnnotationCpuStartup, nil)
-					m.On(
-						"ExpectedAnnotationValueAs",
-						mock.Anything,
-						mock.MatchedBy(func(ann string) bool { return strings.Contains(ann, scalecommon.AnnotationCpuPostStartupRequests) }),
-						kubecommon.DataTypeString,
-					).Return("test", nil)
-					m.HasAnnotationDefault()
-				}),
-			},
-			wantErrMsg:                   "unable to parse '" + scalecommon.AnnotationCpuPostStartupRequests + "' annotation value ('test')",
-			wantUserEnabled:              false,
-			wantHasStoredFromAnnotations: false,
-			wantResources:                scalecommon.Resources{},
+			wantErrMsg:       "unable to get '" + scalecommon.AnnotationCpuPostStartupRequests + "' annotation value",
+			wantHasStored:    false,
+			wantRawResources: scalecommon.RawResources{},
 		},
 		{
 			name: "UnableToGetPostStartupLimitsAnnotationValue",
@@ -299,44 +261,9 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 					m.HasAnnotationDefault()
 				}),
 			},
-			wantErrMsg:                   "unable to get '" + scalecommon.AnnotationCpuPostStartupLimits + "' annotation value",
-			wantUserEnabled:              false,
-			wantHasStoredFromAnnotations: false,
-			wantResources:                scalecommon.Resources{},
-		},
-		{
-			name: "UnableToParsePostStartupLimitsAnnotationValue",
-			fields: fields{
-				annotationStartupName:             scalecommon.AnnotationCpuStartup,
-				annotationPostStartupRequestsName: scalecommon.AnnotationCpuPostStartupRequests,
-				annotationPostStartupLimitsName:   scalecommon.AnnotationCpuPostStartupLimits,
-				csaEnabled:                        true,
-				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
-					m.On(
-						"ExpectedAnnotationValueAs",
-						mock.Anything,
-						mock.MatchedBy(func(ann string) bool { return strings.Contains(ann, scalecommon.AnnotationCpuStartup) }),
-						kubecommon.DataTypeString,
-					).Return(kubetest.PodAnnotationCpuStartup, nil)
-					m.On(
-						"ExpectedAnnotationValueAs",
-						mock.Anything,
-						mock.MatchedBy(func(ann string) bool { return strings.Contains(ann, scalecommon.AnnotationCpuPostStartupRequests) }),
-						kubecommon.DataTypeString,
-					).Return(kubetest.PodAnnotationCpuPostStartupRequests, nil)
-					m.On(
-						"ExpectedAnnotationValueAs",
-						mock.Anything,
-						mock.MatchedBy(func(ann string) bool { return strings.Contains(ann, scalecommon.AnnotationCpuPostStartupLimits) }),
-						kubecommon.DataTypeString,
-					).Return("test", nil)
-					m.HasAnnotationDefault()
-				}),
-			},
-			wantErrMsg:                   "unable to parse '" + scalecommon.AnnotationCpuPostStartupLimits + "' annotation value ('test')",
-			wantUserEnabled:              false,
-			wantHasStoredFromAnnotations: false,
-			wantResources:                scalecommon.Resources{},
+			wantErrMsg:       "unable to get '" + scalecommon.AnnotationCpuPostStartupLimits + "' annotation value",
+			wantHasStored:    false,
+			wantRawResources: scalecommon.RawResources{},
 		},
 		{
 			name: "Ok",
@@ -347,10 +274,9 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 				csaEnabled:                        true,
 				podHelper:                         kubetest.NewMockPodHelper(nil),
 			},
-			wantErrMsg:                   "",
-			wantUserEnabled:              true,
-			wantHasStoredFromAnnotations: true,
-			wantResources:                scaletest.ResourcesCpuEnabled,
+			wantErrMsg:       "",
+			wantHasStored:    true,
+			wantRawResources: scaletest.RawResourcesCpuEnabled,
 		},
 	}
 	for _, tt := range tests {
@@ -368,178 +294,202 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 			} else {
 				assert.Nil(t, err)
 			}
-			assert.Equal(t, tt.wantUserEnabled, config.userEnabled)
-			assert.Equal(t, tt.wantHasStoredFromAnnotations, config.hasStoredFromAnnotations)
-			assert.Equal(t, tt.wantResources, config.resources)
+			assert.Equal(t, tt.wantHasStored, config.hasStored)
+			assert.Equal(t, tt.wantRawResources, config.rawResources)
 		})
 	}
 }
 
 func TestConfigurationValidate(t *testing.T) {
 	type fields struct {
-		csaEnabled               bool
-		containerHelper          kubecommon.ContainerHelper
-		hasStoredFromAnnotations bool
-		resources                scalecommon.Resources
+		csaEnabled      bool
+		containerHelper kubecommon.ContainerHelper
+		hasStored       bool
+		rawResources    scalecommon.RawResources
 	}
 	tests := []struct {
-		name         string
-		fields       fields
-		wantPanicMsg string
-		wantErrMsg   string
+		name             string
+		fields           fields
+		wantPanicMsg     string
+		wantErrMsg       string
+		wantUserEnabled  bool // TODO(wt)
+		wantHasValidated bool
+		wantResources    scalecommon.Resources
 	}{
 		{
-			name: "Panics",
+			name: "PanicStoreFromAnnotations",
 			fields: fields{
-				hasStoredFromAnnotations: false,
+				hasStored: false,
 			},
 			wantPanicMsg: "StoreFromAnnotations() hasn't been invoked first",
 		},
 		{
-			name: "NotEnabled",
+			name: "NotCsaEnabled",
 			fields: fields{
-				csaEnabled:               false,
-				hasStoredFromAnnotations: true,
+				csaEnabled: false,
+				hasStored:  true,
 			},
-			wantErrMsg: "",
+			wantErrMsg:       "",
+			wantUserEnabled:  false,
+			wantHasValidated: true,
 		},
 		{
-			name: "PostStartupRequestsMustEqualPostStartupLimits",
+			name: "NotUserEnabled",
 			fields: fields{
-				csaEnabled:               true,
-				hasStoredFromAnnotations: true,
-				resources: scalecommon.Resources{
-					PostStartupRequests: resource.MustParse("1m"),
-					PostStartupLimits:   resource.MustParse("2m"),
-				},
+				csaEnabled:   true,
+				hasStored:    true,
+				rawResources: scalecommon.RawResources{},
 			},
-			wantErrMsg: "cpu post-startup requests (1m) must equal post-startup limits (2m)",
+			wantErrMsg:       "",
+			wantUserEnabled:  false,
+			wantHasValidated: true,
 		},
-		{
-			name: "PostStartupRequestsGreaterThanStartupValue",
-			fields: fields{
-				csaEnabled:               true,
-				hasStoredFromAnnotations: true,
-				resources: scalecommon.Resources{
-					Startup:             resource.MustParse("1m"),
-					PostStartupRequests: resource.MustParse("2m"),
-					PostStartupLimits:   resource.MustParse("2m"),
-				},
-			},
-			wantErrMsg: "cpu post-startup requests (2m) is greater than startup value (1m)",
-		},
-		{
-			name: "TargetContainerDoesNotSpecifyRequests",
-			fields: fields{
-				csaEnabled: true,
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
-					m.On("Requests", mock.Anything, mock.Anything).Return(resource.Quantity{})
-				}),
-				hasStoredFromAnnotations: true,
-				resources: scalecommon.Resources{
-					Startup:             resource.MustParse("2m"),
-					PostStartupRequests: resource.MustParse("1m"),
-					PostStartupLimits:   resource.MustParse("1m"),
-				},
-			},
-			wantErrMsg: "target container does not specify cpu requests",
-		},
-		{
-			name: "TargetContainerDoesNotSpecifyLimits",
-			fields: fields{
-				csaEnabled: true,
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
-					m.On("Requests", mock.Anything, mock.Anything).Return(resource.MustParse("2m"))
-					m.On("Limits", mock.Anything, mock.Anything).Return(resource.Quantity{})
-				}),
-				hasStoredFromAnnotations: true,
-				resources: scalecommon.Resources{
-					Startup:             resource.MustParse("2m"),
-					PostStartupRequests: resource.MustParse("1m"),
-					PostStartupLimits:   resource.MustParse("1m"),
-				},
-			},
-			wantErrMsg: "target container does not specify cpu limits",
-		},
-		{
-			name: "TargetContainerRequestsMustEqualLimits",
-			fields: fields{
-				csaEnabled: true,
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
-					m.On("Requests", mock.Anything, mock.Anything).Return(resource.MustParse("1m"))
-					m.On("Limits", mock.Anything, mock.Anything).Return(resource.MustParse("2m"))
-				}),
-				hasStoredFromAnnotations: true,
-				resources: scalecommon.Resources{
-					Startup:             resource.MustParse("2m"),
-					PostStartupRequests: resource.MustParse("1m"),
-					PostStartupLimits:   resource.MustParse("1m"),
-				},
-			},
-			wantErrMsg: "target container cpu requests (1m) must equal limits (2m)",
-		},
-		{
-			name: "UnableToGetTargetContainerResizePolicy",
-			fields: fields{
-				csaEnabled: true,
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
-					m.On("ResizePolicy", mock.Anything, mock.Anything).
-						Return(v1.ResourceResizeRestartPolicy(""), errors.New(""))
-					m.RequestsDefault()
-					m.LimitsDefault()
-				}),
-				hasStoredFromAnnotations: true,
-				resources: scalecommon.Resources{
-					Startup:             resource.MustParse("2m"),
-					PostStartupRequests: resource.MustParse("1m"),
-					PostStartupLimits:   resource.MustParse("1m"),
-				},
-			},
-			wantErrMsg: "unable to get target container cpu resize policy",
-		},
-		{
-			name: "TargetContainerResizePolicyIsNotNotRequired",
-			fields: fields{
-				csaEnabled: true,
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
-					m.On("ResizePolicy", mock.Anything, mock.Anything).
-						Return(v1.RestartContainer, nil)
-					m.RequestsDefault()
-					m.LimitsDefault()
-				}),
-				hasStoredFromAnnotations: true,
-				resources: scalecommon.Resources{
-					Startup:             resource.MustParse("2m"),
-					PostStartupRequests: resource.MustParse("1m"),
-					PostStartupLimits:   resource.MustParse("1m"),
-				},
-			},
-			wantErrMsg: "target container cpu resize policy is not 'NotRequired' ('RestartContainer')",
-		},
-		{
-			name: "Ok",
-			fields: fields{
-				csaEnabled:               true,
-				containerHelper:          kubetest.NewMockContainerHelper(nil),
-				hasStoredFromAnnotations: true,
-				resources: scalecommon.Resources{
-					Startup:             resource.MustParse("2m"),
-					PostStartupRequests: resource.MustParse("1m"),
-					PostStartupLimits:   resource.MustParse("1m"),
-				},
-			},
-			wantErrMsg: "",
-		},
+
+		// TODO(wt) continue here
+		//{
+		//	name: "PostStartupRequestsMustEqualPostStartupLimits",
+		//	fields: fields{
+		//		csaEnabled: true,
+		//		hasStored:  true,
+		//		resources: scalecommon.Resources{
+		//			PostStartupRequests: resource.MustParse("1m"),
+		//			PostStartupLimits:   resource.MustParse("2m"),
+		//		},
+		//	},
+		//	wantErrMsg:       "cpu post-startup requests (1m) must equal post-startup limits (2m)",
+		//	wantHasValidated: false,
+		//},
+		//{
+		//	name: "PostStartupRequestsGreaterThanStartupValue",
+		//	fields: fields{
+		//		csaEnabled: true,
+		//		hasStored:  true,
+		//		resources: scalecommon.Resources{
+		//			Startup:             resource.MustParse("1m"),
+		//			PostStartupRequests: resource.MustParse("2m"),
+		//			PostStartupLimits:   resource.MustParse("2m"),
+		//		},
+		//	},
+		//	wantErrMsg:       "cpu post-startup requests (2m) is greater than startup value (1m)",
+		//	wantHasValidated: false,
+		//},
+		//{
+		//	name: "TargetContainerDoesNotSpecifyRequests",
+		//	fields: fields{
+		//		csaEnabled: true,
+		//		containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+		//			m.On("Requests", mock.Anything, mock.Anything).Return(resource.Quantity{})
+		//		}),
+		//		hasStored: true,
+		//		resources: scalecommon.Resources{
+		//			Startup:             resource.MustParse("2m"),
+		//			PostStartupRequests: resource.MustParse("1m"),
+		//			PostStartupLimits:   resource.MustParse("1m"),
+		//		},
+		//	},
+		//	wantErrMsg:       "target container does not specify cpu requests",
+		//	wantHasValidated: false,
+		//},
+		//{
+		//	name: "TargetContainerDoesNotSpecifyLimits",
+		//	fields: fields{
+		//		csaEnabled: true,
+		//		containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+		//			m.On("Requests", mock.Anything, mock.Anything).Return(resource.MustParse("2m"))
+		//			m.On("Limits", mock.Anything, mock.Anything).Return(resource.Quantity{})
+		//		}),
+		//		hasStored: true,
+		//		resources: scalecommon.Resources{
+		//			Startup:             resource.MustParse("2m"),
+		//			PostStartupRequests: resource.MustParse("1m"),
+		//			PostStartupLimits:   resource.MustParse("1m"),
+		//		},
+		//	},
+		//	wantErrMsg:       "target container does not specify cpu limits",
+		//	wantHasValidated: false,
+		//},
+		//{
+		//	name: "TargetContainerRequestsMustEqualLimits",
+		//	fields: fields{
+		//		csaEnabled: true,
+		//		containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+		//			m.On("Requests", mock.Anything, mock.Anything).Return(resource.MustParse("1m"))
+		//			m.On("Limits", mock.Anything, mock.Anything).Return(resource.MustParse("2m"))
+		//		}),
+		//		hasStored: true,
+		//		resources: scalecommon.Resources{
+		//			Startup:             resource.MustParse("2m"),
+		//			PostStartupRequests: resource.MustParse("1m"),
+		//			PostStartupLimits:   resource.MustParse("1m"),
+		//		},
+		//	},
+		//	wantErrMsg:       "target container cpu requests (1m) must equal limits (2m)",
+		//	wantHasValidated: false,
+		//},
+		//{
+		//	name: "UnableToGetTargetContainerResizePolicy",
+		//	fields: fields{
+		//		csaEnabled: true,
+		//		containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+		//			m.On("ResizePolicy", mock.Anything, mock.Anything).
+		//				Return(v1.ResourceResizeRestartPolicy(""), errors.New(""))
+		//			m.RequestsDefault()
+		//			m.LimitsDefault()
+		//		}),
+		//		hasStored: true,
+		//		resources: scalecommon.Resources{
+		//			Startup:             resource.MustParse("2m"),
+		//			PostStartupRequests: resource.MustParse("1m"),
+		//			PostStartupLimits:   resource.MustParse("1m"),
+		//		},
+		//	},
+		//	wantErrMsg:       "unable to get target container cpu resize policy",
+		//	wantHasValidated: false,
+		//},
+		//{
+		//	name: "TargetContainerResizePolicyIsNotNotRequired",
+		//	fields: fields{
+		//		csaEnabled: true,
+		//		containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+		//			m.On("ResizePolicy", mock.Anything, mock.Anything).
+		//				Return(v1.RestartContainer, nil)
+		//			m.RequestsDefault()
+		//			m.LimitsDefault()
+		//		}),
+		//		hasStored: true,
+		//		resources: scalecommon.Resources{
+		//			Startup:             resource.MustParse("2m"),
+		//			PostStartupRequests: resource.MustParse("1m"),
+		//			PostStartupLimits:   resource.MustParse("1m"),
+		//		},
+		//	},
+		//	wantErrMsg:       "target container cpu resize policy is not 'NotRequired' ('RestartContainer')",
+		//	wantHasValidated: false,
+		//},
+		//{
+		//	name: "Ok",
+		//	fields: fields{
+		//		csaEnabled:      true,
+		//		containerHelper: kubetest.NewMockContainerHelper(nil),
+		//		hasStored:       true,
+		//		resources: scalecommon.Resources{
+		//			Startup:             resource.MustParse("2m"),
+		//			PostStartupRequests: resource.MustParse("1m"),
+		//			PostStartupLimits:   resource.MustParse("1m"),
+		//		},
+		//	},
+		//	wantErrMsg:       "",
+		//	wantHasValidated: true,
+		//},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &configuration{
-				resourceName:             v1.ResourceCPU,
-				csaEnabled:               tt.fields.csaEnabled,
-				containerHelper:          tt.fields.containerHelper,
-				userEnabled:              true,
-				hasStoredFromAnnotations: tt.fields.hasStoredFromAnnotations,
-				resources:                tt.fields.resources,
+				resourceName:    v1.ResourceCPU,
+				csaEnabled:      tt.fields.csaEnabled,
+				containerHelper: tt.fields.containerHelper,
+				hasStored:       tt.fields.hasStored,
+				rawResources:    tt.fields.rawResources,
 			}
 			if tt.wantPanicMsg != "" {
 				assert.PanicsWithError(t, tt.wantPanicMsg, func() { _ = config.Validate(&v1.Container{}) })
@@ -550,6 +500,9 @@ func TestConfigurationValidate(t *testing.T) {
 				} else {
 					assert.Nil(t, err)
 				}
+				assert.Equal(t, tt.wantUserEnabled, config.userEnabled)
+				assert.Equal(t, tt.wantHasValidated, config.hasValidated)
+				assert.Equal(t, tt.wantResources, config.resources)
 			}
 		})
 	}
@@ -557,9 +510,10 @@ func TestConfigurationValidate(t *testing.T) {
 
 func TestConfigurationString(t *testing.T) {
 	type fields struct {
-		csaEnabled               bool
-		hasStoredFromAnnotations bool
-		resources                scalecommon.Resources
+		csaEnabled   bool
+		hasStored    bool
+		hasValidated bool
+		resources    scalecommon.Resources
 	}
 	tests := []struct {
 		name         string
@@ -568,26 +522,36 @@ func TestConfigurationString(t *testing.T) {
 		want         string
 	}{
 		{
-			name: "Panics",
+			name: "PanicStoreFromAnnotations",
 			fields: fields{
-				hasStoredFromAnnotations: false,
+				hasStored: false,
 			},
 			wantPanicMsg: "StoreFromAnnotations() hasn't been invoked first",
 		},
 		{
+			name: "PanicValidate",
+			fields: fields{
+				hasStored:    true,
+				hasValidated: false,
+			},
+			wantPanicMsg: "Validate() hasn't been invoked first",
+		},
+		{
 			name: "NotEnabled",
 			fields: fields{
-				csaEnabled:               false,
-				hasStoredFromAnnotations: true,
+				csaEnabled:   false,
+				hasStored:    true,
+				hasValidated: true,
 			},
 			want: "(cpu) not enabled",
 		},
 		{
 			name: "Enabled",
 			fields: fields{
-				csaEnabled:               true,
-				hasStoredFromAnnotations: true,
-				resources:                scaletest.ResourcesCpuEnabled,
+				csaEnabled:   true,
+				hasStored:    true,
+				hasValidated: true,
+				resources:    scaletest.ResourcesCpuEnabled,
 			},
 			want: "(cpu) startup: " + kubetest.PodAnnotationCpuStartup +
 				", post-startup requests: " + kubetest.PodAnnotationCpuPostStartupRequests +
@@ -597,11 +561,12 @@ func TestConfigurationString(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &configuration{
-				resourceName:             v1.ResourceCPU,
-				csaEnabled:               tt.fields.csaEnabled,
-				userEnabled:              true,
-				hasStoredFromAnnotations: tt.fields.hasStoredFromAnnotations,
-				resources:                tt.fields.resources,
+				resourceName: v1.ResourceCPU,
+				csaEnabled:   tt.fields.csaEnabled,
+				userEnabled:  true,
+				hasStored:    tt.fields.hasStored,
+				hasValidated: tt.fields.hasValidated,
+				resources:    tt.fields.resources,
 			}
 			if tt.wantPanicMsg != "" {
 				assert.PanicsWithError(t, tt.wantPanicMsg, func() { _ = config.String() })

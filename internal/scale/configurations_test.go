@@ -313,16 +313,16 @@ func TestConfigurationsAllConfigs(t *testing.T) {
 func TestConfigurationsAllEnabledConfigs(t *testing.T) {
 	configs := &configurations{
 		cpuConfig: &configuration{
-			resourceName:             v1.ResourceCPU,
-			csaEnabled:               false,
-			hasStoredFromAnnotations: true,
-			userEnabled:              false,
+			resourceName: v1.ResourceCPU,
+			csaEnabled:   false,
+			hasStored:    true,
+			userEnabled:  false,
 		},
 		memoryConfig: &configuration{
-			resourceName:             v1.ResourceMemory,
-			csaEnabled:               true,
-			hasStoredFromAnnotations: true,
-			userEnabled:              true,
+			resourceName: v1.ResourceMemory,
+			csaEnabled:   true,
+			hasStored:    true,
+			userEnabled:  true,
 		},
 	}
 	allConfigs := configs.AllEnabledConfigurations()
@@ -333,16 +333,16 @@ func TestConfigurationsAllEnabledConfigs(t *testing.T) {
 func TestConfigurationsAllEnabledConfigsResourceNames(t *testing.T) {
 	configs := &configurations{
 		cpuConfig: &configuration{
-			resourceName:             v1.ResourceCPU,
-			csaEnabled:               false,
-			hasStoredFromAnnotations: true,
-			userEnabled:              false,
+			resourceName: v1.ResourceCPU,
+			csaEnabled:   false,
+			hasStored:    true,
+			userEnabled:  false,
 		},
 		memoryConfig: &configuration{
-			resourceName:             v1.ResourceMemory,
-			csaEnabled:               true,
-			hasStoredFromAnnotations: true,
-			userEnabled:              true,
+			resourceName: v1.ResourceMemory,
+			csaEnabled:   true,
+			hasStored:    true,
+			userEnabled:  true,
 		},
 	}
 	assert.Equal(t, []v1.ResourceName{v1.ResourceMemory}, configs.AllEnabledConfigurationsResourceNames())
