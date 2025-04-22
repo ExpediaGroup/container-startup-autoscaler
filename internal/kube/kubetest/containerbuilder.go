@@ -51,38 +51,28 @@ func (b *containerBuilder) ResourcesState(resourcesState podcommon.StateResource
 	return b
 }
 
-func (b *containerBuilder) ResourcesStatePostStartup() *containerBuilder {
-	b.resourcesState = podcommon.StateResourcesPostStartup
+func (b *containerBuilder) StartupProbe(startupProbe bool) *containerBuilder {
+	b.startupProbe = startupProbe
 	return b
 }
 
-func (b *containerBuilder) ResourcesStateUnknown() *containerBuilder {
-	b.resourcesState = podcommon.StateResourcesUnknown
+func (b *containerBuilder) ReadinessProbe(readinessProbe bool) *containerBuilder {
+	b.readinessProbe = readinessProbe
 	return b
 }
 
-func (b *containerBuilder) StartupProbe() *containerBuilder {
-	b.startupProbe = true
+func (b *containerBuilder) NilResizePolicy(nilResizePolicy bool) *containerBuilder {
+	b.nilResizePolicy = nilResizePolicy
 	return b
 }
 
-func (b *containerBuilder) ReadinessProbe() *containerBuilder {
-	b.readinessProbe = true
+func (b *containerBuilder) NilRequests(nilRequests bool) *containerBuilder {
+	b.nilRequests = nilRequests
 	return b
 }
 
-func (b *containerBuilder) NilResizePolicy() *containerBuilder {
-	b.nilResizePolicy = true
-	return b
-}
-
-func (b *containerBuilder) NilRequests() *containerBuilder {
-	b.nilRequests = true
-	return b
-}
-
-func (b *containerBuilder) NilLimits() *containerBuilder {
-	b.nilLimits = true
+func (b *containerBuilder) NilLimits(nilLimits bool) *containerBuilder {
+	b.nilLimits = nilLimits
 	return b
 }
 

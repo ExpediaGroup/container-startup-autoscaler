@@ -59,33 +59,18 @@ func (b *podBuilder) EnabledResources(enabledResources []v1.ResourceName) *podBu
 	return b
 }
 
-func (b *podBuilder) ResourcesStatePostStartup() *podBuilder {
-	b.resourcesState = podcommon.StateResourcesPostStartup
+func (b *podBuilder) ResourcesState(resourcesState podcommon.StateResources) *podBuilder {
+	b.resourcesState = resourcesState
 	return b
 }
 
-func (b *podBuilder) ResourcesStateUnknown() *podBuilder {
-	b.resourcesState = podcommon.StateResourcesUnknown
+func (b *podBuilder) StateStarted(stateStarted podcommon.StateBool) *podBuilder {
+	b.stateStarted = stateStarted
 	return b
 }
 
-func (b *podBuilder) StateStartedTrue() *podBuilder {
-	b.stateStarted = podcommon.StateBoolTrue
-	return b
-}
-
-func (b *podBuilder) StateStartedUnknown() *podBuilder {
-	b.stateStarted = podcommon.StateBoolUnknown
-	return b
-}
-
-func (b *podBuilder) StateReadyTrue() *podBuilder {
-	b.stateReady = podcommon.StateBoolTrue
-	return b
-}
-
-func (b *podBuilder) StateReadyUnknown() *podBuilder {
-	b.stateReady = podcommon.StateBoolUnknown
+func (b *podBuilder) StateReady(stateReady podcommon.StateBool) *podBuilder {
+	b.stateReady = stateReady
 	return b
 }
 
@@ -142,13 +127,13 @@ func (b *podBuilder) ResizeConditionsUnknownConditions() *podBuilder {
 	return b
 }
 
-func (b *podBuilder) QOSClassNotPresent() *podBuilder {
-	b.qosClass = ""
+func (b *podBuilder) QOSClass(qosClass v1.PodQOSClass) *podBuilder {
+	b.qosClass = qosClass
 	return b
 }
 
-func (b *podBuilder) QOSClassBurstable() *podBuilder {
-	b.qosClass = v1.PodQOSBurstable
+func (b *podBuilder) QOSClassNotPresent() *podBuilder {
+	b.qosClass = ""
 	return b
 }
 
@@ -162,13 +147,13 @@ func (b *podBuilder) AdditionalAnnotations(annotations map[string]string) *podBu
 	return b
 }
 
-func (b *podBuilder) NilContainerStatusStarted() *podBuilder {
-	b.nilContainerStatusStarted = true
+func (b *podBuilder) NilContainerStatusStarted(nilContainerStatusStarted bool) *podBuilder {
+	b.nilContainerStatusStarted = nilContainerStatusStarted
 	return b
 }
 
-func (b *podBuilder) NilContainerStatusResources() *podBuilder {
-	b.nilContainerStatusResources = true
+func (b *podBuilder) NilContainerStatusResources(nilContainerStatusResources bool) *podBuilder {
+	b.nilContainerStatusResources = nilContainerStatusResources
 	return b
 }
 

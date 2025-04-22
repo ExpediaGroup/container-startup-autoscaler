@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -86,7 +87,7 @@ func TestContainerHelperHasStartupProbe(t *testing.T) {
 		{
 			name: "True",
 			args: args{
-				container: kubetest.NewContainerBuilder().StartupProbe().Build(),
+				container: kubetest.NewContainerBuilder().StartupProbe(true).Build(),
 			},
 			want: true,
 		},
@@ -118,7 +119,7 @@ func TestContainerHelperHasReadinessProbe(t *testing.T) {
 		{
 			name: "True",
 			args: args{
-				container: kubetest.NewContainerBuilder().ReadinessProbe().Build(),
+				container: kubetest.NewContainerBuilder().ReadinessProbe(true).Build(),
 			},
 			want: true,
 		},
@@ -205,7 +206,7 @@ func TestContainerHelperIsStarted(t *testing.T) {
 		{
 			name: "True",
 			args: args{
-				pod:       kubetest.NewPodBuilder().StateStartedTrue().StateReadyTrue().Build(),
+				pod:       kubetest.NewPodBuilder().StateStarted(podcommon.StateBoolTrue).StateReady(podcommon.StateBoolTrue).Build(),
 				container: kubetest.NewContainerBuilder().Build(),
 			},
 			want: true,
@@ -221,7 +222,7 @@ func TestContainerHelperIsStarted(t *testing.T) {
 		{
 			name: "FalseNil",
 			args: args{
-				pod:       kubetest.NewPodBuilder().NilContainerStatusStarted().Build(),
+				pod:       kubetest.NewPodBuilder().NilContainerStatusStarted(true).Build(),
 				container: kubetest.NewContainerBuilder().Build(),
 			},
 			want: false,
@@ -265,7 +266,7 @@ func TestContainerHelperIsReady(t *testing.T) {
 		{
 			name: "True",
 			args: args{
-				pod:       kubetest.NewPodBuilder().StateStartedTrue().StateReadyTrue().Build(),
+				pod:       kubetest.NewPodBuilder().StateStarted(podcommon.StateBoolTrue).StateReady(podcommon.StateBoolTrue).Build(),
 				container: kubetest.NewContainerBuilder().Build(),
 			},
 			want: true,
@@ -308,7 +309,7 @@ func TestContainerHelperRequests(t *testing.T) {
 		{
 			name: "NilRequests",
 			args: args{
-				container:    kubetest.NewContainerBuilder().NilRequests().Build(),
+				container:    kubetest.NewContainerBuilder().NilRequests(true).Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want: resource.Quantity{},
@@ -367,7 +368,7 @@ func TestContainerHelperLimits(t *testing.T) {
 		{
 			name: "NilLimits",
 			args: args{
-				container:    kubetest.NewContainerBuilder().NilLimits().Build(),
+				container:    kubetest.NewContainerBuilder().NilLimits(true).Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want: resource.Quantity{},
@@ -427,7 +428,7 @@ func TestContainerHelperResizePolicy(t *testing.T) {
 		{
 			name: "ContainerResizePolicyNull",
 			args: args{
-				container:    kubetest.NewContainerBuilder().NilResizePolicy().Build(),
+				container:    kubetest.NewContainerBuilder().NilResizePolicy(true).Build(),
 				resourceName: v1.ResourceCPU,
 			},
 			want:       v1.ResourceResizeRestartPolicy(""),
@@ -496,7 +497,7 @@ func TestContainerHelperCurrentRequests(t *testing.T) {
 		{
 			name: "StatusResourcesNil",
 			args: args{
-				pod:          kubetest.NewPodBuilder().NilContainerStatusResources().Build(),
+				pod:          kubetest.NewPodBuilder().NilContainerStatusResources(true).Build(),
 				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},
@@ -579,7 +580,7 @@ func TestContainerHelperCurrentLimits(t *testing.T) {
 		{
 			name: "StatusResourcesNil",
 			args: args{
-				pod:          kubetest.NewPodBuilder().NilContainerStatusResources().Build(),
+				pod:          kubetest.NewPodBuilder().NilContainerStatusResources(true).Build(),
 				container:    kubetest.NewContainerBuilder().Build(),
 				resourceName: v1.ResourceCPU,
 			},

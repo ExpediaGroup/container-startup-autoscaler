@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scaletest"
 	"github.com/stretchr/testify/assert"
@@ -65,7 +66,7 @@ func TestStartupPodMutationFunc(t *testing.T) {
 				}),
 			},
 			args: args{
-				funcPod: kubetest.NewPodBuilder().ResourcesStatePostStartup().Build(),
+				funcPod: kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
 			},
 			wantErrMsg:   "",
 			wantRequests: kubetest.PodCpuPostStartupRequestsEnabled,
@@ -80,7 +81,7 @@ func TestStartupPodMutationFunc(t *testing.T) {
 			},
 			args: args{
 				container: &v1.Container{Name: ""},
-				funcPod:   kubetest.NewPodBuilder().ResourcesStatePostStartup().Build(),
+				funcPod:   kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
 			},
 			wantErrMsg:   "container not present",
 			wantRequests: kubetest.PodCpuPostStartupRequestsEnabled,
@@ -93,8 +94,8 @@ func TestStartupPodMutationFunc(t *testing.T) {
 				config:       scaletest.NewMockConfiguration(nil),
 			},
 			args: args{
-				container: &kubetest.NewPodBuilder().ResourcesStatePostStartup().Build().Spec.Containers[0],
-				funcPod:   kubetest.NewPodBuilder().ResourcesStatePostStartup().Build(),
+				container: &kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build().Spec.Containers[0],
+				funcPod:   kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
 			},
 			wantErrMsg:   "",
 			wantRequests: kubetest.PodCpuStartupEnabled,
