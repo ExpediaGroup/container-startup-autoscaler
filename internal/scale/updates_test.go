@@ -86,36 +86,31 @@ func TestUpdateFor(t *testing.T) {
 		wantResourceName v1.ResourceName
 	}{
 		{
-			name: "Cpu",
-			fields: fields{
-				cpuUpdate:    &update{resourceName: v1.ResourceCPU},
-				memoryUpdate: &update{resourceName: v1.ResourceMemory},
+			"Cpu",
+			fields{
+				&update{resourceName: v1.ResourceCPU},
+				&update{resourceName: v1.ResourceMemory},
 			},
-			args: args{
-				resourceName: v1.ResourceCPU,
-			},
-			wantNil:          false,
-			wantResourceName: v1.ResourceCPU,
+			args{v1.ResourceCPU},
+			false,
+			v1.ResourceCPU,
 		},
 		{
-			name: "Memory",
-			fields: fields{
-				cpuUpdate:    &update{resourceName: v1.ResourceCPU},
-				memoryUpdate: &update{resourceName: v1.ResourceMemory},
+			"Memory",
+			fields{
+				&update{resourceName: v1.ResourceCPU},
+				&update{resourceName: v1.ResourceMemory},
 			},
-			args: args{
-				resourceName: v1.ResourceMemory,
-			},
-			wantNil:          false,
-			wantResourceName: v1.ResourceMemory,
+			args{v1.ResourceMemory},
+			false,
+			v1.ResourceMemory,
 		},
 		{
-			name:   "Default",
-			fields: fields{},
-			args: args{
-				resourceName: v1.ResourceName(""),
-			},
-			wantNil: true,
+			"Default",
+			fields{},
+			args{v1.ResourceName("")},
+			true,
+			v1.ResourceName(""),
 		},
 	}
 	for _, tt := range tests {

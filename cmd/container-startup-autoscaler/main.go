@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 // TODO(wt) Remaining for Kube 1.33:
-// TODO(wt) Test standardization (see TODOs)
 // TODO(wt) Integration tests to include infeasible test (ridiculously large startup CPU), plus any others
 // TODO(wt) Ensure docs state that target containers must explicitly state CPU/memory requests/limits
 // TODO(wt) Add note to docs around swap-enabled containers: https://github.com/kubernetes/kubernetes/pull/130831

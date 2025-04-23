@@ -56,51 +56,53 @@ func TestPodHelperGet(t *testing.T) {
 		name       string
 		client     client.Client
 		args       args
+		wantErrMsg string
 		wantFound  bool
 		wantPod    *v1.Pod
-		wantErrMsg string
 	}{
 		{
-			name: "UnableToGetPod",
-			client: kubetest.ControllerRuntimeFakeClientWithKubeFake(
+			"UnableToGetPod",
+			kubetest.ControllerRuntimeFakeClientWithKubeFake(
 				func() *kubefake.Clientset { return kubefake.NewClientset() },
 				func() interceptor.Funcs { return interceptor.Funcs{Get: kubetest.InterceptorFuncGetFail()} },
 			),
-			args: args{
-				ctx:  contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
-				name: kubetest.DefaultPodNamespacedName,
+			args{
+				contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
+				kubetest.DefaultPodNamespacedName,
 			},
-			wantFound:  false,
-			wantPod:    &v1.Pod{},
-			wantErrMsg: "unable to get pod",
+			"unable to get pod",
+			false,
+			&v1.Pod{},
 		},
 		{
-			name: "NotFound",
-			client: kubetest.ControllerRuntimeFakeClientWithKubeFake(
+			"NotFound",
+			kubetest.ControllerRuntimeFakeClientWithKubeFake(
 				func() *kubefake.Clientset { return kubefake.NewClientset() },
 				func() interceptor.Funcs { return interceptor.Funcs{} },
 			),
-			args: args{
-				ctx:  contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
-				name: kubetest.DefaultPodNamespacedName,
+			args{
+				contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
+				kubetest.DefaultPodNamespacedName,
 			},
-			wantFound: false,
-			wantPod:   &v1.Pod{},
+			"",
+			false,
+			&v1.Pod{},
 		},
 		{
-			name: "Found",
-			client: kubetest.ControllerRuntimeFakeClientWithKubeFake(
+			"Found",
+			kubetest.ControllerRuntimeFakeClientWithKubeFake(
 				func() *kubefake.Clientset {
 					return kubefake.NewClientset(kubetest.NewPodBuilder().Build())
 				},
 				func() interceptor.Funcs { return interceptor.Funcs{} },
 			),
-			args: args{
-				ctx:  contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
-				name: kubetest.DefaultPodNamespacedName,
+			args{
+				contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
+				kubetest.DefaultPodNamespacedName,
 			},
-			wantFound: true,
-			wantPod:   kubetest.NewPodBuilder().Build(),
+			"",
+			true,
+			kubetest.NewPodBuilder().Build(),
 		},
 	}
 	for _, tt := range tests {
@@ -389,47 +391,53 @@ func TestPodHelperExpectedLabelValueAs(t *testing.T) {
 	tests := []struct {
 		name            string
 		args            args
-		want            any
 		wantPanicErrMsg string
 		wantErrMsg      string
+		want            any
 	}{
 		{
-			name: "NotPresent",
-			args: args{
-				pod:  kubetest.NewPodBuilder().Build(),
-				name: "test",
-				as:   kubecommon.DataTypeString,
+			"NotPresent",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				"test",
+				kubecommon.DataTypeString,
 			},
-			want:       nil,
-			wantErrMsg: fmt.Sprintf("%s '%s' not present", mapForLabel, "test"),
+			"",
+			fmt.Sprintf("%s '%s' not present", mapForLabel, "test"),
+			nil,
 		},
 		{
-			name: "UnableToParseValueAsBool",
-			args: args{
-				pod:  kubetest.NewPodBuilder().AdditionalLabels(map[string]string{"test": "test"}).Build(),
-				name: "test",
-				as:   kubecommon.DataTypeBool,
+			"UnableToParseValueAsBool",
+			args{
+				kubetest.NewPodBuilder().AdditionalLabels(map[string]string{"test": "test"}).Build(),
+				"test",
+				kubecommon.DataTypeBool,
 			},
-			want:       nil,
-			wantErrMsg: fmt.Sprintf("unable to parse 'test' %s value 'test' as %s", mapForLabel, kubecommon.DataTypeBool),
+			"",
+			fmt.Sprintf("unable to parse 'test' %s value 'test' as %s", mapForLabel, kubecommon.DataTypeBool),
+			nil,
 		},
 		{
-			name: "AsNotSupported",
-			args: args{
-				pod:  kubetest.NewPodBuilder().AdditionalLabels(map[string]string{"test": "test"}).Build(),
-				name: "test",
-				as:   "test",
+			"AsNotSupported",
+			args{
+				kubetest.NewPodBuilder().AdditionalLabels(map[string]string{"test": "test"}).Build(),
+				"test",
+				"test",
 			},
-			wantPanicErrMsg: "as 'test' not supported",
+			"as 'test' not supported",
+			"",
+			nil,
 		},
 		{
-			name: "Ok",
-			args: args{
-				pod:  kubetest.NewPodBuilder().Build(),
-				name: kubecommon.LabelEnabled,
-				as:   kubecommon.DataTypeBool,
+			"Ok",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				kubecommon.LabelEnabled,
+				kubecommon.DataTypeBool,
 			},
-			want: true,
+			"",
+			"",
+			true,
 		},
 	}
 	for _, tt := range tests {
@@ -461,18 +469,20 @@ func TestPodHelperExpectedAnnotationValueAs(t *testing.T) {
 	tests := []struct {
 		name            string
 		args            args
-		want            any
 		wantPanicErrMsg string
 		wantErrMsg      string
+		want            any
 	}{
 		{
-			name: "Ok",
-			args: args{
-				pod:  kubetest.NewPodBuilder().Build(),
-				name: scalecommon.AnnotationCpuStartup,
-				as:   kubecommon.DataTypeString,
+			"Ok",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				scalecommon.AnnotationCpuStartup,
+				kubecommon.DataTypeString,
 			},
-			want: kubetest.PodAnnotationCpuStartup,
+			"",
+			"",
+			kubetest.PodAnnotationCpuStartup,
 		},
 	}
 	for _, tt := range tests {
@@ -506,20 +516,20 @@ func TestPodHelperIsContainerInSpec(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "False",
-			args: args{
-				pod:           kubetest.NewPodBuilder().Build(),
-				containerName: "",
+			"False",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				"",
 			},
-			want: false,
+			false,
 		},
 		{
-			name: "True",
-			args: args{
-				pod:           kubetest.NewPodBuilder().Build(),
-				containerName: kubetest.DefaultContainerName,
+			"True",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				kubetest.DefaultContainerName,
 			},
-			want: true,
+			true,
 		},
 	}
 	for _, tt := range tests {
@@ -559,7 +569,7 @@ func TestPodHelperQOSClass(t *testing.T) {
 		h := NewPodHelper(nil)
 
 		got, err := h.QOSClass(pod)
-		assert.Error(t, err, "pod status qos class not present") // TODO(wt) standardize elsewhere?
+		assert.Error(t, err, "pod status qos class not present")
 		assert.Equal(t, v1.PodQOSClass(""), got)
 	})
 
@@ -568,7 +578,7 @@ func TestPodHelperQOSClass(t *testing.T) {
 		h := NewPodHelper(nil)
 
 		got, err := h.QOSClass(pod)
-		assert.NoError(t, err) // TODO(wt) standardize elsewhere?
+		assert.NoError(t, err)
 		assert.Equal(t, v1.PodQOSGuaranteed, got)
 	})
 }

@@ -57,47 +57,48 @@ func TestStateIsStartupConfigApplied(t *testing.T) {
 		want   *bool
 	}{
 		{
-			name: "NotEnabled",
-			fields: fields{
-				config: &configuration{
+			"NotEnabled",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  false,
 				},
+				nil,
 			},
-			want: nil,
+			nil,
 		},
 		{
-			name: "True",
-			fields: fields{
-				config: &configuration{
+			"True",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 					resources:    scaletest.ResourcesCpuEnabled,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(nil),
+				kubetest.NewMockContainerHelper(nil),
 			},
-			want: func() *bool { b := true; return &b }(),
+			func() *bool { b := true; return &b }(),
 		},
 		{
-			name: "False",
-			fields: fields{
-				config: &configuration{
+			"False",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 					resources:    scaletest.ResourcesCpuEnabled,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+				kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("Requests", mock.Anything, mock.Anything).Return(kubetest.PodCpuPostStartupRequestsEnabled)
 					m.LimitsDefault()
 				}),
 			},
-			want: func() *bool { b := false; return &b }(),
+			func() *bool { b := false; return &b }(),
 		},
 	}
 	for _, tt := range tests {
@@ -123,47 +124,48 @@ func TestStateIsPostStartupConfigApplied(t *testing.T) {
 		want   *bool
 	}{
 		{
-			name: "NotEnabled",
-			fields: fields{
-				config: &configuration{
+			"NotEnabled",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  false,
 				},
+				nil,
 			},
-			want: nil,
+			nil,
 		},
 		{
-			name: "True",
-			fields: fields{
-				config: &configuration{
+			"True",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 					resources:    scaletest.ResourcesCpuEnabled,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+				kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("Requests", mock.Anything, mock.Anything).Return(kubetest.PodCpuPostStartupRequestsEnabled)
 					m.On("Limits", mock.Anything, mock.Anything).Return(kubetest.PodCpuPostStartupLimitsEnabled)
 				}),
 			},
-			want: func() *bool { b := true; return &b }(),
+			func() *bool { b := true; return &b }(),
 		},
 		{
-			name: "False",
-			fields: fields{
-				config: &configuration{
+			"False",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 					resources:    scaletest.ResourcesCpuEnabled,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(nil),
+				kubetest.NewMockContainerHelper(nil),
 			},
-			want: func() *bool { b := false; return &b }(),
+			func() *bool { b := false; return &b }(),
 		},
 	}
 	for _, tt := range tests {
@@ -191,85 +193,86 @@ func TestStateIsAnyCurrentZero(t *testing.T) {
 		want       *bool
 	}{
 		{
-			name: "NotEnabled",
-			fields: fields{
-				config: &configuration{
+			"NotEnabled",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  false,
 				},
+				nil,
 			},
-			wantErrMsg: "",
-			want:       nil,
+			"",
+			nil,
 		},
 		{
-			name: "UnableToGetCpuCurrentRequests",
-			fields: fields{
-				config: &configuration{
+			"UnableToGetCpuCurrentRequests",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+				kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
 						Return(resource.Quantity{}, errors.New(""))
 				}),
 			},
-			wantErrMsg: "unable to get cpu current requests",
-			want:       func() *bool { b := false; return &b }(),
+			"unable to get cpu current requests",
+			func() *bool { b := false; return &b }(),
 		},
 		{
-			name: "UnableToGetCpuCurrentLimits",
-			fields: fields{
-				config: &configuration{
+			"UnableToGetCpuCurrentLimits",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+				kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentLimits", mock.Anything, mock.Anything, mock.Anything).
 						Return(resource.Quantity{}, errors.New(""))
 					m.CurrentRequestsDefault()
 				}),
 			},
-			wantErrMsg: "unable to get cpu current limits",
-			want:       func() *bool { b := false; return &b }(),
+			"unable to get cpu current limits",
+			func() *bool { b := false; return &b }(),
 		},
 		{
-			name: "True",
-			fields: fields{
-				config: &configuration{
+			"True",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+				kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
 						Return(resource.Quantity{}, nil)
 					m.On("CurrentLimits", mock.Anything, mock.Anything, mock.Anything).
 						Return(resource.Quantity{}, nil)
 				}),
 			},
-			wantErrMsg: "",
-			want:       func() *bool { b := true; return &b }(),
+			"",
+			func() *bool { b := true; return &b }(),
 		},
 		{
-			name: "False",
-			fields: fields{
-				config: &configuration{
+			"False",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(nil),
+				kubetest.NewMockContainerHelper(nil),
 			},
-			wantErrMsg: "",
-			want:       func() *bool { b := false; return &b }(),
+			"",
+			func() *bool { b := false; return &b }(),
 		},
 	}
 	for _, tt := range tests {
@@ -302,70 +305,71 @@ func TestStateDoesRequestsCurrentMatchSpec(t *testing.T) {
 		want       *bool
 	}{
 		{
-			name: "NotEnabled",
-			fields: fields{
-				config: &configuration{
+			"NotEnabled",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  false,
 				},
+				nil,
 			},
-			wantErrMsg: "",
-			want:       nil,
+			"",
+			nil,
 		},
 		{
-			name: "UnableToGetCpuCurrentRequests",
-			fields: fields{
-				config: &configuration{
+			"UnableToGetCpuCurrentRequests",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+				kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
 						Return(resource.Quantity{}, errors.New(""))
 				}),
 			},
-			wantErrMsg: "unable to get cpu current requests",
-			want:       func() *bool { b := false; return &b }(),
+			"unable to get cpu current requests",
+			func() *bool { b := false; return &b }(),
 		},
 		{
-			name: "True",
-			fields: fields{
-				config: &configuration{
+			"True",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+				kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
 						Return(resource.Quantity{}, nil)
 					m.On("Requests", mock.Anything, v1.ResourceCPU).Return(resource.Quantity{})
 				}),
 			},
-			wantErrMsg: "",
-			want:       func() *bool { b := true; return &b }(),
+			"",
+			func() *bool { b := true; return &b }(),
 		},
 		{
-			name: "False",
-			fields: fields{
-				config: &configuration{
+			"False",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+				kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
 						Return(resource.Quantity{}, nil)
 					m.On("Requests", mock.Anything, v1.ResourceCPU).Return(resource.MustParse("1m"))
 				}),
 			},
-			wantErrMsg: "",
-			want:       func() *bool { b := false; return &b }(),
+			"",
+			func() *bool { b := false; return &b }(),
 		},
 	}
 	for _, tt := range tests {
@@ -398,70 +402,71 @@ func TestStateDoesLimitsCurrentMatchSpec(t *testing.T) {
 		want       *bool
 	}{
 		{
-			name: "NotEnabled",
-			fields: fields{
-				config: &configuration{
+			"NotEnabled",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  false,
 				},
+				nil,
 			},
-			wantErrMsg: "",
-			want:       nil,
+			"",
+			nil,
 		},
 		{
-			name: "UnableToGetCpuCurrentLimits",
-			fields: fields{
-				config: &configuration{
+			"UnableToGetCpuCurrentLimits",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+				kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentLimits", mock.Anything, mock.Anything, mock.Anything).
 						Return(resource.Quantity{}, errors.New(""))
 				}),
 			},
-			wantErrMsg: "unable to get cpu current limits",
-			want:       func() *bool { b := false; return &b }(),
+			"unable to get cpu current limits",
+			func() *bool { b := false; return &b }(),
 		},
 		{
-			name: "True",
-			fields: fields{
-				config: &configuration{
+			"True",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+				kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentLimits", mock.Anything, mock.Anything, mock.Anything).
 						Return(resource.Quantity{}, nil)
 					m.On("Limits", mock.Anything, v1.ResourceCPU).Return(resource.Quantity{})
 				}),
 			},
-			wantErrMsg: "",
-			want:       func() *bool { b := true; return &b }(),
+			"",
+			func() *bool { b := true; return &b }(),
 		},
 		{
-			name: "False",
-			fields: fields{
-				config: &configuration{
+			"False",
+			fields{
+				&configuration{
 					csaEnabled:   true,
 					hasStored:    true,
 					hasValidated: true,
 					userEnabled:  true,
 				},
-				containerHelper: kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
+				kubetest.NewMockContainerHelper(func(m *kubetest.MockContainerHelper) {
 					m.On("CurrentLimits", mock.Anything, mock.Anything, mock.Anything).
 						Return(resource.Quantity{}, nil)
 					m.On("Limits", mock.Anything, v1.ResourceCPU).Return(resource.MustParse("1m"))
 				}),
 			},
-			wantErrMsg: "",
-			want:       func() *bool { b := false; return &b }(),
+			"",
+			func() *bool { b := false; return &b }(),
 		},
 	}
 	for _, tt := range tests {

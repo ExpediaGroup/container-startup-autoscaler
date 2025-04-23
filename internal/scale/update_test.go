@@ -61,48 +61,49 @@ func TestStartupPodMutationFunc(t *testing.T) {
 		wantLimits   resource.Quantity
 	}{
 		{
-			name: "NotEnabled",
-			fields: fields{
-				resourceName: v1.ResourceCPU,
-				config: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
+			"NotEnabled",
+			fields{
+				v1.ResourceCPU,
+				scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 					m.On("IsEnabled").Return(false)
 				}),
 			},
-			args: args{
-				funcPod: kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
+			args{
+				nil,
+				kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
 			},
-			wantErrMsg:   "",
-			wantRequests: kubetest.PodCpuPostStartupRequestsEnabled,
-			wantLimits:   kubetest.PodCpuPostStartupLimitsEnabled,
+			"",
+			kubetest.PodCpuPostStartupRequestsEnabled,
+			kubetest.PodCpuPostStartupLimitsEnabled,
 		},
 
 		{
-			name: "ContainerNotPreset",
-			fields: fields{
-				resourceName: v1.ResourceCPU,
-				config:       scaletest.NewMockConfiguration(nil),
+			"ContainerNotPreset",
+			fields{
+				v1.ResourceCPU,
+				scaletest.NewMockConfiguration(nil),
 			},
-			args: args{
-				container: &v1.Container{Name: ""},
-				funcPod:   kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
+			args{
+				&v1.Container{Name: ""},
+				kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
 			},
-			wantErrMsg:   "container not present",
-			wantRequests: kubetest.PodCpuPostStartupRequestsEnabled,
-			wantLimits:   kubetest.PodCpuPostStartupLimitsEnabled,
+			"container not present",
+			kubetest.PodCpuPostStartupRequestsEnabled,
+			kubetest.PodCpuPostStartupLimitsEnabled,
 		},
 		{
-			name: "Ok",
-			fields: fields{
-				resourceName: v1.ResourceCPU,
-				config:       scaletest.NewMockConfiguration(nil),
+			"Ok",
+			fields{
+				v1.ResourceCPU,
+				scaletest.NewMockConfiguration(nil),
 			},
-			args: args{
-				container: &kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build().Spec.Containers[0],
-				funcPod:   kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
+			args{
+				&kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build().Spec.Containers[0],
+				kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
 			},
-			wantErrMsg:   "",
-			wantRequests: kubetest.PodCpuStartupEnabled,
-			wantLimits:   kubetest.PodCpuStartupEnabled,
+			"",
+			kubetest.PodCpuStartupEnabled,
+			kubetest.PodCpuStartupEnabled,
 		},
 	}
 	for _, tt := range tests {
@@ -142,48 +143,49 @@ func TestPostStartupPodMutationFunc(t *testing.T) {
 		wantLimits   resource.Quantity
 	}{
 		{
-			name: "NotEnabled",
-			fields: fields{
-				resourceName: v1.ResourceCPU,
-				config: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
+			"NotEnabled",
+			fields{
+				v1.ResourceCPU,
+				scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 					m.On("IsEnabled").Return(false)
 				}),
 			},
-			args: args{
-				funcPod: kubetest.NewPodBuilder().Build(),
+			args{
+				nil,
+				kubetest.NewPodBuilder().Build(),
 			},
-			wantErrMsg:   "",
-			wantRequests: kubetest.PodCpuStartupEnabled,
-			wantLimits:   kubetest.PodCpuStartupEnabled,
+			"",
+			kubetest.PodCpuStartupEnabled,
+			kubetest.PodCpuStartupEnabled,
 		},
 
 		{
-			name: "ContainerNotPreset",
-			fields: fields{
-				resourceName: v1.ResourceCPU,
-				config:       scaletest.NewMockConfiguration(nil),
+			"ContainerNotPreset",
+			fields{
+				v1.ResourceCPU,
+				scaletest.NewMockConfiguration(nil),
 			},
-			args: args{
-				container: &v1.Container{Name: ""},
-				funcPod:   kubetest.NewPodBuilder().Build(),
+			args{
+				&v1.Container{Name: ""},
+				kubetest.NewPodBuilder().Build(),
 			},
-			wantErrMsg:   "container not present",
-			wantRequests: kubetest.PodCpuStartupEnabled,
-			wantLimits:   kubetest.PodCpuStartupEnabled,
+			"container not present",
+			kubetest.PodCpuStartupEnabled,
+			kubetest.PodCpuStartupEnabled,
 		},
 		{
-			name: "Ok",
-			fields: fields{
-				resourceName: v1.ResourceCPU,
-				config:       scaletest.NewMockConfiguration(nil),
+			"Ok",
+			fields{
+				v1.ResourceCPU,
+				scaletest.NewMockConfiguration(nil),
 			},
-			args: args{
-				container: &kubetest.NewPodBuilder().Build().Spec.Containers[0],
-				funcPod:   kubetest.NewPodBuilder().Build(),
+			args{
+				&kubetest.NewPodBuilder().Build().Spec.Containers[0],
+				kubetest.NewPodBuilder().Build(),
 			},
-			wantErrMsg:   "",
-			wantRequests: kubetest.PodCpuPostStartupRequestsEnabled,
-			wantLimits:   kubetest.PodCpuPostStartupLimitsEnabled,
+			"",
+			kubetest.PodCpuPostStartupRequestsEnabled,
+			kubetest.PodCpuPostStartupLimitsEnabled,
 		},
 	}
 	for _, tt := range tests {

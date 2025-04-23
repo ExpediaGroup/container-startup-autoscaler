@@ -105,39 +105,49 @@ func TestInit(t *testing.T) {
 func TestErrorf(t *testing.T) {
 	tests := []test{
 		{
-			name: "ValidateFormatPanic",
-			args: args{
-				err:    errors.New(testErrorMsg),
-				format: " ",
+			"ValidateFormatPanic",
+			args{
+				nil,
+				VInfo,
+				errors.New(testErrorMsg),
+				" ",
+				nil,
 			},
-			wantPanicErrMsg: "format is empty",
+			"format is empty",
+			wantLogRxConfig{},
 		},
 		{
-			name: "NoPodInfo",
-			args: args{
-				ctx:    testContextNoPodInfo(),
-				err:    errors.New(testErrorMsg),
-				format: testFormat,
-				args:   []any{testArg},
+			"NoPodInfo",
+			args{
+				testContextNoPodInfo(),
+				VInfo,
+				errors.New(testErrorMsg),
+				testFormat,
+				[]any{testArg},
 			},
-			wantLogRxConfig: wantLogRxConfig{
-				wantLevelRx: wantErrorLevelRx,
-				wantMsgRx:   wantFormatArgsMsgRx,
+			"",
+			wantLogRxConfig{
+				wantErrorLevelRx,
+				wantFormatArgsMsgRx,
+				"",
+				false,
 			},
 		},
 		{
-			name: "PodInfo",
-			args: args{
-				ctx:    testContextPodInfo(),
-				err:    errors.New(testErrorMsg),
-				format: testFormat,
-				args:   []any{testArg},
+			"PodInfo",
+			args{
+				testContextPodInfo(),
+				VInfo,
+				errors.New(testErrorMsg),
+				testFormat,
+				[]any{testArg},
 			},
-			wantLogRxConfig: wantLogRxConfig{
-				wantLevelRx:      wantErrorLevelRx,
-				wantMsgRx:        wantFormatArgsMsgRx,
-				wantTargetNameRx: testTargetContainerName,
-				wantTargetStates: true,
+			"",
+			wantLogRxConfig{
+				wantErrorLevelRx,
+				wantFormatArgsMsgRx,
+				testTargetContainerName,
+				true,
 			},
 		},
 	}
@@ -151,39 +161,49 @@ func TestErrorf(t *testing.T) {
 func TestFatalf(t *testing.T) {
 	tests := []test{
 		{
-			name: "ValidateFormatPanic",
-			args: args{
-				err:    errors.New(testErrorMsg),
-				format: " ",
+			"ValidateFormatPanic",
+			args{
+				nil,
+				VInfo,
+				errors.New(testErrorMsg),
+				" ",
+				nil,
 			},
-			wantPanicErrMsg: "format is empty",
+			"format is empty",
+			wantLogRxConfig{},
 		},
 		{
-			name: "NoPodInfo",
-			args: args{
-				ctx:    testContextNoPodInfo(),
-				err:    errors.New(testErrorMsg),
-				format: testFormat,
-				args:   []any{testArg},
+			"NoPodInfo",
+			args{
+				testContextNoPodInfo(),
+				VInfo,
+				errors.New(testErrorMsg),
+				testFormat,
+				[]any{testArg},
 			},
-			wantLogRxConfig: wantLogRxConfig{
-				wantLevelRx: wantErrorLevelRx,
-				wantMsgRx:   wantFormatArgsMsgRx + fatalSuffixRx,
+			"",
+			wantLogRxConfig{
+				wantErrorLevelRx,
+				wantFormatArgsMsgRx + fatalSuffixRx,
+				"",
+				false,
 			},
 		},
 		{
-			name: "PodInfo",
-			args: args{
-				ctx:    testContextPodInfo(),
-				err:    errors.New(testErrorMsg),
-				format: testFormat,
-				args:   []any{testArg},
+			"PodInfo",
+			args{
+				testContextPodInfo(),
+				VInfo,
+				errors.New(testErrorMsg),
+				testFormat,
+				[]any{testArg},
 			},
-			wantLogRxConfig: wantLogRxConfig{
-				wantLevelRx:      wantErrorLevelRx,
-				wantMsgRx:        wantFormatArgsMsgRx + fatalSuffixRx,
-				wantTargetNameRx: testTargetContainerName,
-				wantTargetStates: true,
+			"",
+			wantLogRxConfig{
+				wantErrorLevelRx,
+				wantFormatArgsMsgRx + fatalSuffixRx,
+				testTargetContainerName,
+				true,
 			},
 		},
 	}
@@ -197,65 +217,83 @@ func TestFatalf(t *testing.T) {
 func TestInfof(t *testing.T) {
 	tests := []test{
 		{
-			name: "ValidateFormatPanic",
-			args: args{
-				v:      VInfo,
-				format: " ",
+			"ValidateFormatPanic",
+			args{
+				nil,
+				VInfo,
+				nil,
+				" ",
+				nil,
 			},
-			wantPanicErrMsg: "format is empty",
+			"format is empty",
+			wantLogRxConfig{},
 		},
 		{
-			name: "VInfoNoPodInfo",
-			args: args{
-				ctx:    testContextNoPodInfo(),
-				v:      VInfo,
-				format: testFormat,
-				args:   []any{testArg},
+			"VInfoNoPodInfo",
+			args{
+				testContextNoPodInfo(),
+				VInfo,
+				nil,
+				testFormat,
+				[]any{testArg},
 			},
-			wantLogRxConfig: wantLogRxConfig{
-				wantLevelRx: wantInfoLevelRx,
-				wantMsgRx:   wantFormatArgsMsgRx,
-			},
-		},
-		{
-			name: "VInfoPodInfo",
-			args: args{
-				ctx:    testContextPodInfo(),
-				v:      VInfo,
-				format: testFormat,
-				args:   []any{testArg},
-			},
-			wantLogRxConfig: wantLogRxConfig{
-				wantLevelRx:      wantInfoLevelRx,
-				wantMsgRx:        wantFormatArgsMsgRx,
-				wantTargetNameRx: testTargetContainerName,
-				wantTargetStates: true,
+			"",
+			wantLogRxConfig{
+				wantInfoLevelRx,
+				wantFormatArgsMsgRx,
+				"",
+				false,
 			},
 		},
 		{
-			name: "VDebugNoPodInfo",
-			args: args{
-				ctx:    testContextNoPodInfo(),
-				v:      VDebug,
-				format: testFormat,
-				args:   []any{testArg},
+			"VInfoPodInfo",
+			args{
+				testContextPodInfo(),
+				VInfo,
+				nil,
+				testFormat,
+				[]any{testArg},
 			},
-			wantLogRxConfig: wantLogRxConfig{
-				wantLevelRx: wantDebugLevelRx,
-				wantMsgRx:   wantFormatArgsMsgRx,
+			"",
+			wantLogRxConfig{
+				wantInfoLevelRx,
+				wantFormatArgsMsgRx,
+				testTargetContainerName,
+				true,
 			},
 		},
 		{
-			name: "VTraceNoPodInfo",
-			args: args{
-				ctx:    testContextNoPodInfo(),
-				v:      VTrace,
-				format: testFormat,
-				args:   []any{testArg},
+			"VDebugNoPodInfo",
+			args{
+				testContextNoPodInfo(),
+				VDebug,
+				nil,
+				testFormat,
+				[]any{testArg},
 			},
-			wantLogRxConfig: wantLogRxConfig{
-				wantLevelRx: wantTraceLevelRx,
-				wantMsgRx:   wantFormatArgsMsgRx,
+			"",
+			wantLogRxConfig{
+				wantDebugLevelRx,
+				wantFormatArgsMsgRx,
+				"",
+				false,
+			},
+		},
+		{
+			"VTraceNoPodInfo",
+			args{
+				testContextNoPodInfo(),
+				VTrace,
+				nil,
+				testFormat,
+				[]any{testArg},
+			},
+			"",
+			wantLogRxConfig{
+				wantTraceLevelRx,
+				wantFormatArgsMsgRx,
+				"",
+				false,
 			},
 		},
 	}

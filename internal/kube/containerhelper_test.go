@@ -39,25 +39,26 @@ func TestContainerHelperGet(t *testing.T) {
 	tests := []struct {
 		name       string
 		args       args
-		wantName   string
 		wantErrMsg string
+		wantName   string
 	}{
 		{
-			name: "ContainerNotPresent",
-			args: args{
-				pod:  &v1.Pod{},
-				name: kubetest.DefaultContainerName,
+			"ContainerNotPresent",
+			args{
+				&v1.Pod{},
+				kubetest.DefaultContainerName,
 			},
-			wantName:   "",
-			wantErrMsg: "container not present",
+			"container not present",
+			"",
 		},
 		{
-			name: "Ok",
-			args: args{
-				pod:  kubetest.NewPodBuilder().Build(),
-				name: kubetest.DefaultContainerName,
+			"Ok",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				kubetest.DefaultContainerName,
 			},
-			wantName: kubetest.DefaultContainerName,
+			"",
+			kubetest.DefaultContainerName,
 		},
 	}
 	for _, tt := range tests {
@@ -85,18 +86,14 @@ func TestContainerHelperHasStartupProbe(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "True",
-			args: args{
-				container: kubetest.NewContainerBuilder().StartupProbe(true).Build(),
-			},
-			want: true,
+			"True",
+			args{kubetest.NewContainerBuilder().StartupProbe(true).Build()},
+			true,
 		},
 		{
-			name: "False",
-			args: args{
-				container: kubetest.NewContainerBuilder().Build(),
-			},
-			want: false,
+			"False",
+			args{kubetest.NewContainerBuilder().Build()},
+			false,
 		},
 	}
 	for _, tt := range tests {
@@ -117,18 +114,14 @@ func TestContainerHelperHasReadinessProbe(t *testing.T) {
 		want bool
 	}{
 		{
-			name: "True",
-			args: args{
-				container: kubetest.NewContainerBuilder().ReadinessProbe(true).Build(),
-			},
-			want: true,
+			"True",
+			args{kubetest.NewContainerBuilder().ReadinessProbe(true).Build()},
+			true,
 		},
 		{
-			name: "False",
-			args: args{
-				container: kubetest.NewContainerBuilder().Build(),
-			},
-			want: false,
+			"False",
+			args{kubetest.NewContainerBuilder().Build()},
+			false,
 		},
 	}
 	for _, tt := range tests {
@@ -147,25 +140,26 @@ func TestContainerHelperState(t *testing.T) {
 	tests := []struct {
 		name       string
 		args       args
-		want       v1.ContainerState
 		wantErrMsg string
+		want       v1.ContainerState
 	}{
 		{
-			name: "UnableToGetContainerStatus",
-			args: args{
-				pod:       &v1.Pod{},
-				container: &v1.Container{},
+			"UnableToGetContainerStatus",
+			args{
+				&v1.Pod{},
+				&v1.Container{},
 			},
-			want:       v1.ContainerState{},
-			wantErrMsg: "unable to get container status",
+			"unable to get container status",
+			v1.ContainerState{},
 		},
 		{
-			name: "Ok",
-			args: args{
-				pod:       kubetest.NewPodBuilder().Build(),
-				container: kubetest.NewContainerBuilder().Build(),
+			"Ok",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				kubetest.NewContainerBuilder().Build(),
 			},
-			want: v1.ContainerState{Running: &v1.ContainerStateRunning{}},
+			"",
+			v1.ContainerState{Running: &v1.ContainerStateRunning{}},
 		},
 	}
 	for _, tt := range tests {
@@ -191,41 +185,44 @@ func TestContainerHelperIsStarted(t *testing.T) {
 	tests := []struct {
 		name       string
 		args       args
-		want       bool
 		wantErrMsg string
+		want       bool
 	}{
 		{
-			name: "UnableToGetContainerStatus",
-			args: args{
-				pod:       &v1.Pod{},
-				container: &v1.Container{},
+			"UnableToGetContainerStatus",
+			args{
+				&v1.Pod{},
+				&v1.Container{},
 			},
-			want:       false,
-			wantErrMsg: "unable to get container status",
+			"unable to get container status",
+			false,
 		},
 		{
-			name: "True",
-			args: args{
-				pod:       kubetest.NewPodBuilder().StateStarted(podcommon.StateBoolTrue).StateReady(podcommon.StateBoolTrue).Build(),
-				container: kubetest.NewContainerBuilder().Build(),
+			"True",
+			args{
+				kubetest.NewPodBuilder().StateStarted(podcommon.StateBoolTrue).StateReady(podcommon.StateBoolTrue).Build(),
+				kubetest.NewContainerBuilder().Build(),
 			},
-			want: true,
+			"",
+			true,
 		},
 		{
-			name: "FalseNotNil",
-			args: args{
-				pod:       kubetest.NewPodBuilder().Build(),
-				container: kubetest.NewContainerBuilder().Build(),
+			"FalseNotNil",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				kubetest.NewContainerBuilder().Build(),
 			},
-			want: false,
+			"",
+			false,
 		},
 		{
-			name: "FalseNil",
-			args: args{
-				pod:       kubetest.NewPodBuilder().NilContainerStatusStarted(true).Build(),
-				container: kubetest.NewContainerBuilder().Build(),
+			"FalseNil",
+			args{
+				kubetest.NewPodBuilder().NilContainerStatusStarted(true).Build(),
+				kubetest.NewContainerBuilder().Build(),
 			},
-			want: false,
+			"",
+			false,
 		},
 	}
 	for _, tt := range tests {
@@ -251,33 +248,35 @@ func TestContainerHelperIsReady(t *testing.T) {
 	tests := []struct {
 		name       string
 		args       args
-		want       bool
 		wantErrMsg string
+		want       bool
 	}{
 		{
-			name: "UnableToGetContainerStatus",
-			args: args{
-				pod:       &v1.Pod{},
-				container: &v1.Container{},
+			"UnableToGetContainerStatus",
+			args{
+				&v1.Pod{},
+				&v1.Container{},
 			},
-			want:       false,
-			wantErrMsg: "unable to get container status",
+			"unable to get container status",
+			false,
 		},
 		{
-			name: "True",
-			args: args{
-				pod:       kubetest.NewPodBuilder().StateStarted(podcommon.StateBoolTrue).StateReady(podcommon.StateBoolTrue).Build(),
-				container: kubetest.NewContainerBuilder().Build(),
+			"True",
+			args{
+				kubetest.NewPodBuilder().StateStarted(podcommon.StateBoolTrue).StateReady(podcommon.StateBoolTrue).Build(),
+				kubetest.NewContainerBuilder().Build(),
 			},
-			want: true,
+			"",
+			true,
 		},
 		{
-			name: "False",
-			args: args{
-				pod:       kubetest.NewPodBuilder().Build(),
-				container: kubetest.NewContainerBuilder().Build(),
+			"False",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				kubetest.NewContainerBuilder().Build(),
 			},
-			want: false,
+			"",
+			false,
 		},
 	}
 	for _, tt := range tests {
@@ -303,40 +302,44 @@ func TestContainerHelperRequests(t *testing.T) {
 	tests := []struct {
 		name            string
 		args            args
-		want            resource.Quantity
 		wantPanicErrMsg string
+		want            resource.Quantity
 	}{
 		{
-			name: "NilRequests",
-			args: args{
-				container:    kubetest.NewContainerBuilder().NilRequests(true).Build(),
-				resourceName: v1.ResourceCPU,
+			"NilRequests",
+			args{
+				kubetest.NewContainerBuilder().NilRequests(true).Build(),
+				v1.ResourceCPU,
 			},
-			want: resource.Quantity{},
+			"",
+			resource.Quantity{},
 		},
 		{
-			name: "Cpu",
-			args: args{
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceCPU,
+			"Cpu",
+			args{
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceCPU,
 			},
-			want: kubetest.PodCpuStartupEnabled,
+			"",
+			kubetest.PodCpuStartupEnabled,
 		},
 		{
-			name: "Memory",
-			args: args{
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceMemory,
+			"Memory",
+			args{
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceMemory,
 			},
-			want: kubetest.PodMemoryStartupEnabled,
+			"",
+			kubetest.PodMemoryStartupEnabled,
 		},
 		{
-			name: "ResourceNameNotSupported",
-			args: args{
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceConfigMaps,
+			"ResourceNameNotSupported",
+			args{
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceConfigMaps,
 			},
-			wantPanicErrMsg: fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
+			fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
+			resource.Quantity{},
 		},
 	}
 	for _, tt := range tests {
@@ -362,40 +365,44 @@ func TestContainerHelperLimits(t *testing.T) {
 	tests := []struct {
 		name            string
 		args            args
-		want            resource.Quantity
 		wantPanicErrMsg string
+		want            resource.Quantity
 	}{
 		{
-			name: "NilLimits",
-			args: args{
-				container:    kubetest.NewContainerBuilder().NilLimits(true).Build(),
-				resourceName: v1.ResourceCPU,
+			"NilLimits",
+			args{
+				kubetest.NewContainerBuilder().NilLimits(true).Build(),
+				v1.ResourceCPU,
 			},
-			want: resource.Quantity{},
+			"",
+			resource.Quantity{},
 		},
 		{
-			name: "Cpu",
-			args: args{
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceCPU,
+			"Cpu",
+			args{
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceCPU,
 			},
-			want: kubetest.PodCpuStartupEnabled,
+			"",
+			kubetest.PodCpuStartupEnabled,
 		},
 		{
-			name: "Memory",
-			args: args{
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceMemory,
+			"Memory",
+			args{
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceMemory,
 			},
-			want: kubetest.PodMemoryStartupEnabled,
+			"",
+			kubetest.PodMemoryStartupEnabled,
 		},
 		{
-			name: "ResourceNameNotSupported",
-			args: args{
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceConfigMaps,
+			"ResourceNameNotSupported",
+			args{
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceConfigMaps,
 			},
-			wantPanicErrMsg: fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
+			fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
+			resource.Quantity{},
 		},
 	}
 	for _, tt := range tests {
@@ -421,34 +428,39 @@ func TestContainerHelperResizePolicy(t *testing.T) {
 	tests := []struct {
 		name            string
 		args            args
-		want            v1.ResourceResizeRestartPolicy
-		wantErrMsg      string
 		wantPanicErrMsg string
+		wantErrMsg      string
+		want            v1.ResourceResizeRestartPolicy
 	}{
 		{
-			name: "ContainerResizePolicyNull",
-			args: args{
-				container:    kubetest.NewContainerBuilder().NilResizePolicy(true).Build(),
-				resourceName: v1.ResourceCPU,
+			"ContainerResizePolicyNull",
+			args{
+				kubetest.NewContainerBuilder().NilResizePolicy(true).Build(),
+				v1.ResourceCPU,
 			},
-			want:       v1.ResourceResizeRestartPolicy(""),
-			wantErrMsg: "container resize policy is null",
+			"",
+			"container resize policy is null",
+			v1.ResourceResizeRestartPolicy(""),
 		},
 		{
-			name: "Ok",
-			args: args{
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceCPU,
+			"Ok",
+			args{
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceCPU,
 			},
-			want: v1.NotRequired,
+			"",
+			"",
+			v1.NotRequired,
 		},
 		{
-			name: "ResourceNameNotSupported",
-			args: args{
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceConfigMaps,
+			"ResourceNameNotSupported",
+			args{
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceConfigMaps,
 			},
-			wantPanicErrMsg: fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
+			fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
+			"",
+			v1.ResourceResizeRestartPolicy(""),
 		},
 	}
 	for _, tt := range tests {
@@ -480,56 +492,64 @@ func TestContainerHelperCurrentRequests(t *testing.T) {
 	tests := []struct {
 		name            string
 		args            args
-		want            resource.Quantity
-		wantErrMsg      string
 		wantPanicErrMsg string
+		wantErrMsg      string
+		want            resource.Quantity
 	}{
 		{
-			name: "UnableToGetContainerStatus",
-			args: args{
-				pod:          &v1.Pod{},
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceCPU,
+			"UnableToGetContainerStatus",
+			args{
+				&v1.Pod{},
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceCPU,
 			},
-			want:       resource.Quantity{},
-			wantErrMsg: "unable to get container status",
+			"",
+			"unable to get container status",
+			resource.Quantity{},
 		},
 		{
-			name: "StatusResourcesNil",
-			args: args{
-				pod:          kubetest.NewPodBuilder().NilContainerStatusResources(true).Build(),
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceCPU,
+			"StatusResourcesNil",
+			args{
+				kubetest.NewPodBuilder().NilContainerStatusResources(true).Build(),
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceCPU,
 			},
-			want:       resource.Quantity{},
-			wantErrMsg: "container status resources not present",
+			"",
+			"container status resources not present",
+			resource.Quantity{},
 		},
 		{
-			name: "Cpu",
-			args: args{
-				pod:          kubetest.NewPodBuilder().Build(),
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceCPU,
+			"Cpu",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceCPU,
 			},
-			want: kubetest.PodCpuStartupEnabled,
+			"",
+			"",
+			kubetest.PodCpuStartupEnabled,
 		},
 		{
-			name: "Memory",
-			args: args{
-				pod:          kubetest.NewPodBuilder().Build(),
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceMemory,
+			"Memory",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceMemory,
 			},
-			want: kubetest.PodMemoryStartupEnabled,
+			"",
+			"",
+			kubetest.PodMemoryStartupEnabled,
 		},
 		{
-			name: "ResourceNameNotSupported",
-			args: args{
-				pod:          kubetest.NewPodBuilder().Build(),
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceConfigMaps,
+			"ResourceNameNotSupported",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceConfigMaps,
 			},
-			wantPanicErrMsg: fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
+			fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
+			"",
+			resource.Quantity{},
 		},
 	}
 	for _, tt := range tests {
@@ -563,56 +583,64 @@ func TestContainerHelperCurrentLimits(t *testing.T) {
 	tests := []struct {
 		name            string
 		args            args
-		want            resource.Quantity
-		wantErrMsg      string
 		wantPanicErrMsg string
+		wantErrMsg      string
+		want            resource.Quantity
 	}{
 		{
-			name: "UnableToGetContainerStatus",
-			args: args{
-				pod:          &v1.Pod{},
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceCPU,
+			"UnableToGetContainerStatus",
+			args{
+				&v1.Pod{},
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceCPU,
 			},
-			want:       resource.Quantity{},
-			wantErrMsg: "unable to get container status",
+			"",
+			"unable to get container status",
+			resource.Quantity{},
 		},
 		{
-			name: "StatusResourcesNil",
-			args: args{
-				pod:          kubetest.NewPodBuilder().NilContainerStatusResources(true).Build(),
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceCPU,
+			"StatusResourcesNil",
+			args{
+				kubetest.NewPodBuilder().NilContainerStatusResources(true).Build(),
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceCPU,
 			},
-			want:       resource.Quantity{},
-			wantErrMsg: "container status resources not present",
+			"",
+			"container status resources not present",
+			resource.Quantity{},
 		},
 		{
-			name: "Cpu",
-			args: args{
-				pod:          kubetest.NewPodBuilder().Build(),
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceCPU,
+			"Cpu",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceCPU,
 			},
-			want: kubetest.PodCpuStartupEnabled,
+			"",
+			"",
+			kubetest.PodCpuStartupEnabled,
 		},
 		{
-			name: "Memory",
-			args: args{
-				pod:          kubetest.NewPodBuilder().Build(),
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceMemory,
+			"Memory",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceMemory,
 			},
-			want: kubetest.PodMemoryStartupEnabled,
+			"",
+			"",
+			kubetest.PodMemoryStartupEnabled,
 		},
 		{
-			name: "ResourceNameNotSupported",
-			args: args{
-				pod:          kubetest.NewPodBuilder().Build(),
-				container:    kubetest.NewContainerBuilder().Build(),
-				resourceName: v1.ResourceConfigMaps,
+			"ResourceNameNotSupported",
+			args{
+				kubetest.NewPodBuilder().Build(),
+				kubetest.NewContainerBuilder().Build(),
+				v1.ResourceConfigMaps,
 			},
-			wantPanicErrMsg: fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
+			fmt.Sprintf("resourceName '%s' not supported", v1.ResourceConfigMaps),
+			"",
+			resource.Quantity{},
 		},
 	}
 	for _, tt := range tests {

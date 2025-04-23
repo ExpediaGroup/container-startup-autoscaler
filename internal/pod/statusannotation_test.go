@@ -72,14 +72,14 @@ func TestStatusAnnotationEqual(t *testing.T) {
 	}{
 		{
 			"TrueLastUpdatedSame",
-			fields{Status: "status"},
-			args{to: StatusAnnotation{Status: "status"}},
+			fields{"status"},
+			args{StatusAnnotation{Status: "status"}},
 			true,
 		},
 		{
 			"TrueLastUpdatedDifferent",
-			fields{Status: "status"},
-			args{to: StatusAnnotation{
+			fields{"status"},
+			args{StatusAnnotation{
 				Status:      "status",
 				LastUpdated: "lastUpdated",
 			}},
@@ -87,8 +87,8 @@ func TestStatusAnnotationEqual(t *testing.T) {
 		},
 		{
 			"False",
-			fields{Status: "status1"},
-			args{to: StatusAnnotation{Status: "status2"}},
+			fields{"status1"},
+			args{StatusAnnotation{Status: "status2"}},
 			false,
 		},
 	}

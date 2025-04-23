@@ -151,88 +151,98 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 		wantLastScaleFailed    bool
 	}{
 		{
-			name: "StatusScaleStateNotApplicablePrevious",
-			args: args{
+			"StatusScaleStateNotApplicablePrevious",
+			args{
 				kubetest.NewPodBuilder().
 					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateNotApplicable,
 			},
-			wantLastScaleCommanded: true,
-			wantLastScaleEnacted:   true,
-			wantLastScaleFailed:    true,
+			"",
+			true,
+			true,
+			true,
 		},
 		{
-			name: "StatusScaleStateCommanded",
-			args: args{
+			"StatusScaleStateCommanded",
+			args{
 				kubetest.NewPodBuilder().Build(),
 				podcommon.StatusScaleStateUpCommanded,
 			},
-			wantLastScaleCommanded: true,
-			wantLastScaleEnacted:   false,
-			wantLastScaleFailed:    false,
+			"",
+			true,
+			false,
+			false,
 		},
 		{
-			name: "StatusScaleStateUnknownCommanded",
-			args: args{
+			"StatusScaleStateUnknownCommanded",
+			args{
 				kubetest.NewPodBuilder().Build(),
 				podcommon.StatusScaleStateUnknownCommanded,
 			},
-			wantLastScaleCommanded: true,
-			wantLastScaleEnacted:   false,
-			wantLastScaleFailed:    false,
+			"",
+			true,
+			false,
+			false,
 		},
 		{
-			name: "StatusScaleStateEnactedNoPrevious",
-			args: args{
+			"StatusScaleStateEnactedNoPrevious",
+			args{
 				kubetest.NewPodBuilder().Build(),
 				podcommon.StatusScaleStateUpEnacted,
 			},
-			wantLastScaleCommanded: false,
-			wantLastScaleEnacted:   true,
-			wantLastScaleFailed:    false,
+			"",
+			false,
+			true,
+			false,
 		},
 		{
-			name: "StatusScaleStateEnactedPrevious",
-			args: args{
+			"StatusScaleStateEnactedPrevious",
+			args{
 				kubetest.NewPodBuilder().
 					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateUpEnacted,
 			},
-			wantLastScaleCommanded: true,
-			wantLastScaleEnacted:   true,
-			wantLastScaleFailed:    false,
+			"",
+			true,
+			true,
+			false,
 		},
 		{
-			name: "StatusScaleStateFailedNoPrevious",
-			args: args{
+			"StatusScaleStateFailedNoPrevious",
+			args{
 				kubetest.NewPodBuilder().Build(),
 				podcommon.StatusScaleStateUpFailed,
 			},
-			wantLastScaleCommanded: false,
-			wantLastScaleEnacted:   false,
-			wantLastScaleFailed:    true,
+			"",
+			false,
+			false,
+			true,
 		},
 		{
-			name: "StatusScaleStateFailedPrevious",
-			args: args{
+			"StatusScaleStateFailedPrevious",
+			args{
 				kubetest.NewPodBuilder().
 					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateUpFailed,
 			},
-			wantLastScaleCommanded: true,
-			wantLastScaleEnacted:   false,
-			wantLastScaleFailed:    true,
+			"",
+			true,
+			false,
+			true,
 		},
 		{
-			name: "StatusScaleStateNotSupported",
-			args: args{
+			"StatusScaleStateNotSupported",
+			args{
 				&v1.Pod{},
 				podcommon.StatusScaleState("test"),
 			},
-			wantPanicErrMsg: "statusScaleState 'test' not supported",
+			"statusScaleState 'test' not supported",
+			false,
+			false,
+			false,
 		},
 	}
 	for _, tt := range tests {
@@ -302,45 +312,52 @@ func TestStatusUpdateDurationMetric(t *testing.T) {
 		wantLogMsg              string
 	}{
 		{
-			name:       "Empty",
-			args:       args{},
-			wantLogMsg: "",
-		},
-		{
-			name: "UnableToParseCommandedTime",
-			args: args{
-				commanded: "test",
-				now:       "test",
+			"Empty",
+			func(t *testing.T) {},
+			args{
+				"",
+				"",
 			},
-			wantLogMsg: "unable to parse commanded time",
+			"",
 		},
 		{
-			name: "UnableToParseNowTime",
-			args: args{
-				commanded: "2023-01-01T00:00:00.000-0000",
-				now:       "test",
+			"UnableToParseCommandedTime",
+			func(t *testing.T) {},
+			args{
+				"test",
+				"test",
 			},
-			wantLogMsg: "unable to parse now time",
+			"unable to parse commanded time",
 		},
 		{
-			name: "NegativeDiff",
-			args: args{
-				commanded: "2023-01-01T00:01:00.000-0000",
-				now:       "2023-01-01T00:00:00.000-0000",
+			"UnableToParseNowTime",
+			func(t *testing.T) {},
+			args{
+				"2023-01-01T00:00:00.000-0000",
+				"test",
 			},
-			wantLogMsg: "negative commanded/now seconds difference",
+			"unable to parse now time",
 		},
 		{
-			name: "Ok",
-			configMetricAssertsFunc: func(t *testing.T) {
+			"NegativeDiff",
+			func(t *testing.T) {},
+			args{
+				"2023-01-01T00:01:00.000-0000",
+				"2023-01-01T00:00:00.000-0000",
+			},
+			"negative commanded/now seconds difference",
+		},
+		{
+			"Ok",
+			func(t *testing.T) {
 				metricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeSuccess))
 				assert.Equal(t, uint64(1), metricVal)
 			},
-			args: args{
-				commanded: "2023-01-01T00:00:00.000-0000",
-				now:       "2023-01-01T00:01:00.000-0000",
+			args{
+				"2023-01-01T00:00:00.000-0000",
+				"2023-01-01T00:01:00.000-0000",
 			},
-			wantLogMsg: "",
+			"",
 		},
 	}
 	for _, tt := range tests {

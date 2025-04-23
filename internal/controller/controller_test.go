@@ -190,28 +190,29 @@ func TestControllerInitialize(t *testing.T) {
 		wantErrMsg               string
 	}{
 		{
-			name: "UnableToWatchPods",
-			configManagerMockFunc: func(runtimeManager *mockRuntimeManager) {
+			"UnableToWatchPods",
+			func(runtimeManager *mockRuntimeManager) {
 				runtimeManager.On("GetClient").Return(nil)
 				runtimeManager.On("GetEventRecorderFor", mock.Anything).Return(nil)
 				runtimeManager.On("GetCache").Return(nil)
 			},
-			configControllerMockFunc: func(controller *mockController) {
+			func(controller *mockController) {
 				controller.On("Watch", mock.Anything, mock.Anything, mock.Anything).Return(errors.New(""))
 			},
-			wantErrMsg: "unable to watch pods",
+			"unable to watch pods",
 		},
 		{
-			name: "Ok",
-			configManagerMockFunc: func(runtimeManager *mockRuntimeManager) {
+			"Ok",
+			func(runtimeManager *mockRuntimeManager) {
 				runtimeManager.On("GetClient").Return(nil)
 				runtimeManager.On("GetEventRecorderFor", mock.Anything).Return(nil)
 				runtimeManager.On("GetCache").Return(nil)
 				runtimeManager.On("Start", mock.Anything).Return(nil)
 			},
-			configControllerMockFunc: func(controller *mockController) {
+			func(controller *mockController) {
 				controller.On("Watch", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			},
+			"",
 		},
 	}
 	for _, tt := range tests {
