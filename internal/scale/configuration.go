@@ -73,12 +73,11 @@ func (c *configuration) ResourceName() v1.ResourceName {
 // StoreFromAnnotations has not first been invoked.
 func (c *configuration) IsEnabled() bool {
 	c.checkStored()
-	c.checkValidated()
 	return c.csaEnabled && c.userEnabled
 }
 
-// Resources returns scalecommon.Resources stored from annotations. Panics if StoreFromAnnotations has not first been
-// invoked.
+// Resources returns scalecommon.Resources stored from annotations. Panics if StoreFromAnnotations and Validate have
+// not first been invoked.
 func (c *configuration) Resources() scalecommon.Resources {
 	c.checkStored()
 	c.checkValidated()
@@ -96,6 +95,12 @@ func (c *configuration) StoreFromAnnotations(pod *v1.Pod) error {
 	hasStartupAnn, _ := c.podHelper.HasAnnotation(pod, c.annotationStartupName)
 	hasPostStartupRequestsAnn, _ := c.podHelper.HasAnnotation(pod, c.annotationPostStartupRequestsName)
 	hasPostStartupLimitsAnn, _ := c.podHelper.HasAnnotation(pod, c.annotationPostStartupLimitsName)
+
+	if !hasStartupAnn && !hasPostStartupRequestsAnn && !hasPostStartupLimitsAnn {
+		c.userEnabled = false
+		c.hasStored = true
+		return nil
+	}
 
 	startup, postStartupRequests, postStartupLimits := "", "", ""
 	annErrFmt := "unable to get '%s' annotation value"
@@ -125,6 +130,7 @@ func (c *configuration) StoreFromAnnotations(pod *v1.Pod) error {
 	}
 
 	c.rawResources = scalecommon.NewRawResources(startup, postStartupRequests, postStartupLimits)
+	c.userEnabled = true // But subject to later validation.
 	c.hasStored = true
 	return nil
 }
@@ -134,13 +140,7 @@ func (c *configuration) StoreFromAnnotations(pod *v1.Pod) error {
 func (c *configuration) Validate(container *v1.Container) error {
 	c.checkStored()
 
-	if !c.csaEnabled {
-		c.hasValidated = true
-		return nil
-	}
-
-	if c.rawResources.Startup == "" && c.rawResources.PostStartupRequests == "" && c.rawResources.PostStartupLimits == "" {
-		c.userEnabled = false
+	if !c.IsEnabled() {
 		c.hasValidated = true
 		return nil
 	}
@@ -182,8 +182,8 @@ func (c *configuration) Validate(container *v1.Container) error {
 		return fmt.Errorf(
 			"%s post-startup requests (%s) must equal post-startup limits (%s)",
 			c.resourceName,
-			postStartupRequestsQuantity.String(),
-			postStartupLimitsQuantity.String(),
+			c.rawResources.PostStartupRequests,
+			c.rawResources.PostStartupLimits,
 		)
 	}
 
@@ -191,8 +191,8 @@ func (c *configuration) Validate(container *v1.Container) error {
 		return fmt.Errorf(
 			"%s post-startup requests (%s) is greater than startup value (%s)",
 			c.resourceName,
-			postStartupRequestsQuantity.String(),
-			startupQuantity.String(),
+			c.rawResources.PostStartupRequests,
+			c.rawResources.Startup,
 		)
 	}
 
@@ -225,27 +225,25 @@ func (c *configuration) Validate(container *v1.Container) error {
 	}
 
 	c.resources = scalecommon.NewResources(startupQuantity, postStartupRequestsQuantity, postStartupLimitsQuantity)
-	c.userEnabled = true
 	c.hasValidated = true
 	return nil
 }
 
-// String returns a string representation of the configuration. Panics if StoreFromAnnotations and Validate have not
-// first been invoked.
+// String returns a string representation of the configuration. Panics if StoreFromAnnotations has not first been
+// invoked.
 func (c *configuration) String() string {
 	c.checkStored()
-	c.checkValidated()
 
-	if !c.csaEnabled || !c.userEnabled {
+	if !c.IsEnabled() {
 		return fmt.Sprintf("(%s) not enabled", c.resourceName)
 	}
 
 	return fmt.Sprintf(
 		"(%s) startup: %s, post-startup requests: %s, post-startup limits: %s",
 		c.resourceName,
-		c.resources.Startup.String(),
-		c.resources.PostStartupRequests.String(),
-		c.resources.PostStartupLimits.String(),
+		c.rawResources.Startup,
+		c.rawResources.PostStartupRequests,
+		c.rawResources.PostStartupLimits,
 	)
 }
 

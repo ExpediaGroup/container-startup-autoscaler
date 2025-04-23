@@ -197,12 +197,12 @@ func TestValidationValidate(t *testing.T) {
 			},
 			nil,
 			func(m *scaletest.MockConfigurations) {
-				m.On("ValidateAll", mock.Anything).Return(errors.New(""))
+				m.On("ValidateAll", mock.Anything).Return(errors.New("text"))
 			},
-			"unable to validate scale configuration",
+			"text",
 			true,
 			true,
-			"Validation error: unable to validate scale configuration",
+			"Validation error: text",
 		},
 		{
 			"UnableToValidateScaleConfigurationCollection",
@@ -218,12 +218,12 @@ func TestValidationValidate(t *testing.T) {
 			nil,
 			func(m *scaletest.MockConfigurations) {
 				m.On("ValidateAll", mock.Anything).Return(nil)
-				m.On("ValidateCollection", mock.Anything).Return(errors.New(""))
+				m.On("ValidateCollection", mock.Anything).Return(errors.New("text"))
 			},
-			"unable to validate scale configuration collection",
+			"text",
 			true,
 			true,
-			"Validation error: unable to validate scale configuration collection",
+			"Validation error: text",
 		},
 		{
 			"Ok",

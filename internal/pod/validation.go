@@ -105,11 +105,11 @@ func (v *validation) Validate(
 	}
 
 	if err = scaleConfigs.ValidateAll(ctr); err != nil {
-		return nil, v.updateStatusAndGetError(ctx, pod, "unable to validate scale configuration", err, scaleConfigs)
+		return nil, v.updateStatusAndGetError(ctx, pod, err.Error(), nil, scaleConfigs)
 	}
 
 	if err = scaleConfigs.ValidateCollection(); err != nil {
-		return nil, v.updateStatusAndGetError(ctx, pod, "unable to validate scale configuration collection", err, scaleConfigs)
+		return nil, v.updateStatusAndGetError(ctx, pod, err.Error(), nil, scaleConfigs)
 	}
 
 	return ctr, nil

@@ -34,7 +34,9 @@ func assertStartupEnacted(
 	podStatusAnn map[*v1.Pod]pod.StatusAnnotation,
 	expectStartupProbe bool,
 	expectReadinessProbe bool,
-	expectStatusCommandedEnactedEmpty bool,
+	//expectStatusCommandedEnactedEmpty bool, // TODO(wt)
+	expectStatusScaleCommanded bool,
+	expectStatusScaleEnacted bool,
 ) {
 	if (!expectStartupProbe && !expectReadinessProbe) || (expectStartupProbe && expectReadinessProbe) {
 		panic(errors.New("only one of expectStartupProbe/expectReadinessProbe must be true"))
@@ -121,14 +123,29 @@ func assertStartupEnacted(
 		require.Equal(t, podcommon.StateResourcesStartup, statusAnn.States.Resources)
 		require.Equal(t, podcommon.StateStatusResourcesContainerResourcesMatch, statusAnn.States.StatusResources)
 
-		if expectStatusCommandedEnactedEmpty {
-			require.Empty(t, statusAnn.Scale.LastCommanded)
-			require.Empty(t, statusAnn.Scale.LastEnacted)
-		} else {
+		if expectStatusScaleCommanded {
 			require.NotEmpty(t, statusAnn.Scale.LastCommanded)
-			require.NotEmpty(t, statusAnn.Scale.LastEnacted)
+		} else {
+			require.Empty(t, statusAnn.Scale.LastCommanded)
 		}
+
+		if expectStatusScaleEnacted {
+			require.NotEmpty(t, statusAnn.Scale.LastEnacted)
+		} else {
+			require.Empty(t, statusAnn.Scale.LastEnacted)
+		}
+
 		require.Empty(t, statusAnn.Scale.LastFailed)
+
+		// TODO(wt)
+		//if expectStatusCommandedEnactedEmpty {
+		//	require.Empty(t, statusAnn.Scale.LastCommanded)
+		//	require.Empty(t, statusAnn.Scale.LastEnacted)
+		//} else {
+		//	require.NotEmpty(t, statusAnn.Scale.LastCommanded)
+		//	require.NotEmpty(t, statusAnn.Scale.LastEnacted)
+		//}
+		//require.Empty(t, statusAnn.Scale.LastFailed)
 	}
 }
 

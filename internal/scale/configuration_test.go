@@ -61,9 +61,8 @@ func TestConfigurationResourceName(t *testing.T) {
 
 func TestConfigurationIsEnabled(t *testing.T) {
 	type fields struct {
-		csaEnabled   bool
-		hasStored    bool
-		hasValidated bool
+		csaEnabled bool
+		hasStored  bool
 	}
 	tests := []struct {
 		name         string
@@ -76,25 +75,13 @@ func TestConfigurationIsEnabled(t *testing.T) {
 			fields{
 				false,
 				false,
-				false,
 			},
 			"StoreFromAnnotations() hasn't been invoked first",
 			false,
 		},
 		{
-			"PanicValidate",
-			fields{
-				false,
-				true,
-				false,
-			},
-			"Validate() hasn't been invoked first",
-			false,
-		},
-		{
 			"True",
 			fields{
-				true,
 				true,
 				true,
 			},
@@ -106,7 +93,6 @@ func TestConfigurationIsEnabled(t *testing.T) {
 			fields{
 				false,
 				true,
-				true,
 			},
 			"",
 			false,
@@ -115,10 +101,9 @@ func TestConfigurationIsEnabled(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &configuration{
-				csaEnabled:   tt.fields.csaEnabled,
-				hasStored:    tt.fields.hasStored,
-				hasValidated: tt.fields.hasValidated,
-				userEnabled:  true,
+				csaEnabled:  tt.fields.csaEnabled,
+				hasStored:   tt.fields.hasStored,
+				userEnabled: true,
 			}
 			if tt.wantPanicMsg != "" {
 				assert.PanicsWithError(t, tt.wantPanicMsg, func() { config.IsEnabled() })
@@ -207,6 +192,7 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 		fields           fields
 		wantErrMsg       string
 		wantHasStored    bool
+		wantUserEnabled  bool
 		wantRawResources scalecommon.RawResources
 	}{
 		{
@@ -220,6 +206,23 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 			},
 			"",
 			true,
+			false,
+			scalecommon.RawResources{},
+		},
+		{
+			"NotCsaEnabled",
+			fields{
+				"",
+				"",
+				"",
+				true,
+				kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
+					m.On("HasAnnotation", mock.Anything, mock.Anything).Return(false, "")
+				}),
+			},
+			"",
+			true,
+			false,
 			scalecommon.RawResources{},
 		},
 		{
@@ -236,6 +239,7 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 				}),
 			},
 			"unable to get '" + scalecommon.AnnotationCpuStartup + "' annotation value",
+			false,
 			false,
 			scalecommon.RawResources{},
 		},
@@ -263,6 +267,7 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 				}),
 			},
 			"unable to get '" + scalecommon.AnnotationCpuPostStartupRequests + "' annotation value",
+			false,
 			false,
 			scalecommon.RawResources{},
 		},
@@ -297,6 +302,7 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 			},
 			"unable to get '" + scalecommon.AnnotationCpuPostStartupLimits + "' annotation value",
 			false,
+			false,
 			scalecommon.RawResources{},
 		},
 		{
@@ -309,6 +315,7 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 				kubetest.NewMockPodHelper(nil),
 			},
 			"",
+			true,
 			true,
 			scaletest.RawResourcesCpuEnabled,
 		},
@@ -329,6 +336,7 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.wantHasStored, config.hasStored)
+			assert.Equal(t, tt.wantUserEnabled, config.userEnabled)
 			assert.Equal(t, tt.wantRawResources, config.rawResources)
 		})
 	}
@@ -346,21 +354,24 @@ func TestConfigurationValidate(t *testing.T) {
 		fields           fields
 		wantPanicMsg     string
 		wantErrMsg       string
-		wantUserEnabled  bool
 		wantHasValidated bool
 		wantResources    scalecommon.Resources
 	}{
 		{
 			"PanicStoreFromAnnotations",
-			fields{},
+			fields{
+				csaEnabled:      false,
+				containerHelper: nil,
+				hasStored:       false,
+				rawResources:    scalecommon.RawResources{},
+			},
 			"StoreFromAnnotations() hasn't been invoked first",
 			"",
-			false,
 			false,
 			scalecommon.Resources{},
 		},
 		{
-			"NotCsaEnabled",
+			"NotEnabled",
 			fields{
 				false,
 				nil,
@@ -369,21 +380,6 @@ func TestConfigurationValidate(t *testing.T) {
 			},
 			"",
 			"",
-			false,
-			true,
-			scalecommon.Resources{},
-		},
-		{
-			"NotUserEnabled",
-			fields{
-				true,
-				nil,
-				true,
-				scalecommon.RawResources{},
-			},
-			"",
-			"",
-			false,
 			true,
 			scalecommon.Resources{},
 		},
@@ -398,7 +394,6 @@ func TestConfigurationValidate(t *testing.T) {
 			"",
 			"annotation 'annotationStartupName' not present",
 			false,
-			false,
 			scalecommon.Resources{},
 		},
 		{
@@ -411,7 +406,6 @@ func TestConfigurationValidate(t *testing.T) {
 			},
 			"",
 			"annotation 'annotationPostStartupRequestsName' not present",
-			false,
 			false,
 			scalecommon.Resources{},
 		},
@@ -428,7 +422,6 @@ func TestConfigurationValidate(t *testing.T) {
 			},
 			"",
 			"annotation 'annotationPostStartupLimitsName' not present",
-			false,
 			false,
 			scalecommon.Resources{},
 		},
@@ -447,7 +440,6 @@ func TestConfigurationValidate(t *testing.T) {
 			"",
 			"unable to parse 'annotationStartupName' annotation value ('invalid')",
 			false,
-			false,
 			scalecommon.Resources{},
 		},
 		{
@@ -464,7 +456,6 @@ func TestConfigurationValidate(t *testing.T) {
 			},
 			"",
 			"unable to parse 'annotationPostStartupRequestsName' annotation value ('invalid')",
-			false,
 			false,
 			scalecommon.Resources{},
 		},
@@ -483,7 +474,6 @@ func TestConfigurationValidate(t *testing.T) {
 			"",
 			"unable to parse 'annotationPostStartupLimitsName' annotation value ('invalid')",
 			false,
-			false,
 			scalecommon.Resources{},
 		},
 		{
@@ -501,7 +491,6 @@ func TestConfigurationValidate(t *testing.T) {
 			"",
 			"cpu post-startup requests (1m) must equal post-startup limits (2m)",
 			false,
-			false,
 			scalecommon.Resources{},
 		},
 		{
@@ -518,7 +507,6 @@ func TestConfigurationValidate(t *testing.T) {
 			},
 			"",
 			"cpu post-startup requests (2m) is greater than startup value (1m)",
-			false,
 			false,
 			scalecommon.Resources{},
 		},
@@ -538,7 +526,6 @@ func TestConfigurationValidate(t *testing.T) {
 			},
 			"",
 			"target container does not specify cpu requests",
-			false,
 			false,
 			scalecommon.Resources{},
 		},
@@ -560,7 +547,6 @@ func TestConfigurationValidate(t *testing.T) {
 			"",
 			"target container does not specify cpu limits",
 			false,
-			false,
 			scalecommon.Resources{},
 		},
 		{
@@ -580,7 +566,6 @@ func TestConfigurationValidate(t *testing.T) {
 			},
 			"",
 			"target container cpu requests (1m) must equal limits (2m)",
-			false,
 			false,
 			scalecommon.Resources{},
 		},
@@ -604,7 +589,6 @@ func TestConfigurationValidate(t *testing.T) {
 			"",
 			"unable to get target container cpu resize policy",
 			false,
-			false,
 			scalecommon.Resources{},
 		},
 		{
@@ -627,7 +611,6 @@ func TestConfigurationValidate(t *testing.T) {
 			"",
 			"target container cpu resize policy is not 'NotRequired' ('RestartContainer')",
 			false,
-			false,
 			scalecommon.Resources{},
 		},
 		{
@@ -644,7 +627,6 @@ func TestConfigurationValidate(t *testing.T) {
 			},
 			"",
 			"",
-			true,
 			true,
 			scalecommon.Resources{
 				Startup:             resource.MustParse("2m"),
@@ -663,6 +645,7 @@ func TestConfigurationValidate(t *testing.T) {
 				csaEnabled:                        tt.fields.csaEnabled,
 				containerHelper:                   tt.fields.containerHelper,
 				hasStored:                         tt.fields.hasStored,
+				userEnabled:                       true,
 				rawResources:                      tt.fields.rawResources,
 			}
 			if tt.wantPanicMsg != "" {
@@ -674,7 +657,6 @@ func TestConfigurationValidate(t *testing.T) {
 				} else {
 					assert.NoError(t, err)
 				}
-				assert.Equal(t, tt.wantUserEnabled, config.userEnabled)
 				assert.Equal(t, tt.wantHasValidated, config.hasValidated)
 				assert.Equal(t, tt.wantResources, config.resources)
 			}
@@ -687,7 +669,7 @@ func TestConfigurationString(t *testing.T) {
 		csaEnabled   bool
 		hasStored    bool
 		hasValidated bool
-		resources    scalecommon.Resources
+		rawResources scalecommon.RawResources
 	}
 	tests := []struct {
 		name         string
@@ -701,20 +683,9 @@ func TestConfigurationString(t *testing.T) {
 				false,
 				false,
 				false,
-				scalecommon.Resources{},
+				scalecommon.RawResources{},
 			},
 			"StoreFromAnnotations() hasn't been invoked first",
-			"",
-		},
-		{
-			"PanicValidate",
-			fields{
-				false,
-				true,
-				false,
-				scalecommon.Resources{},
-			},
-			"Validate() hasn't been invoked first",
 			"",
 		},
 		{
@@ -723,7 +694,7 @@ func TestConfigurationString(t *testing.T) {
 				false,
 				true,
 				true,
-				scalecommon.Resources{},
+				scalecommon.RawResources{},
 			},
 			"",
 			"(cpu) not enabled",
@@ -734,7 +705,7 @@ func TestConfigurationString(t *testing.T) {
 				true,
 				true,
 				true,
-				scaletest.ResourcesCpuEnabled,
+				scaletest.RawResourcesCpuEnabled,
 			},
 			"",
 			"(cpu) startup: " + kubetest.PodAnnotationCpuStartup +
@@ -750,7 +721,7 @@ func TestConfigurationString(t *testing.T) {
 				userEnabled:  true,
 				hasStored:    tt.fields.hasStored,
 				hasValidated: tt.fields.hasValidated,
-				resources:    tt.fields.resources,
+				rawResources: tt.fields.rawResources,
 			}
 			if tt.wantPanicMsg != "" {
 				assert.PanicsWithError(t, tt.wantPanicMsg, func() { _ = config.String() })
