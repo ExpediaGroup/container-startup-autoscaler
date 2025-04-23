@@ -228,19 +228,16 @@ func (a *targetContainerAction) notStartedWithPostStartupResAction(
 	scaleConfigs scalecommon.Configurations,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).StartupPodMutationFuncAll(targetContainer)
-	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
+	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
 	}
 
 	msg := "startup resources commanded"
 
-	statusFuncs := []func(pod *v1.Pod) error{
-		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUpCommanded, scaleConfigs),
-	}
-	_, err = a.podHelper.Patch(ctx, pod, statusFuncs, false, true)
+	_, err = a.status.Update(ctx, newPod, msg, states, podcommon.StatusScaleStateUpCommanded, scaleConfigs)
 	if err != nil {
-		return common.WrapErrorf(err, "unable to patch status")
+		return common.WrapErrorf(err, "unable to update status")
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
@@ -257,19 +254,16 @@ func (a *targetContainerAction) startedWithStartupResAction(
 	scaleConfigs scalecommon.Configurations,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).PostStartupPodMutationFuncAll(targetContainer)
-	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
+	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
 	}
 
 	msg := "post-startup resources commanded"
 
-	statusFuncs := []func(pod *v1.Pod) error{
-		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateDownCommanded, scaleConfigs),
-	}
-	_, err = a.podHelper.Patch(ctx, pod, statusFuncs, false, true)
+	_, err = a.status.Update(ctx, newPod, msg, states, podcommon.StatusScaleStateDownCommanded, scaleConfigs)
 	if err != nil {
-		return common.WrapErrorf(err, "unable to patch status")
+		return common.WrapErrorf(err, "unable to update status")
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
@@ -299,19 +293,16 @@ func (a *targetContainerAction) notStartedWithUnknownResAction(
 	scaleConfigs scalecommon.Configurations,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).StartupPodMutationFuncAll(targetContainer)
-	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
+	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
 	}
 
 	msg := "startup resources commanded (unknown resources applied)"
 
-	statusFuncs := []func(pod *v1.Pod) error{
-		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded, scaleConfigs),
-	}
-	_, err = a.podHelper.Patch(ctx, pod, statusFuncs, false, true)
+	_, err = a.status.Update(ctx, newPod, msg, states, podcommon.StatusScaleStateUnknownCommanded, scaleConfigs)
 	if err != nil {
-		return common.WrapErrorf(err, "unable to patch status")
+		return common.WrapErrorf(err, "unable to update status")
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
@@ -329,19 +320,16 @@ func (a *targetContainerAction) startedWithUnknownResAction(
 	scaleConfigs scalecommon.Configurations,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).PostStartupPodMutationFuncAll(targetContainer)
-	_, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
+	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
 	}
 
 	msg := "post-startup resources commanded (unknown resources applied)"
 
-	statusFuncs := []func(pod *v1.Pod) error{
-		a.status.PodMutationFunc(ctx, msg, states, podcommon.StatusScaleStateUnknownCommanded, scaleConfigs),
-	}
-	_, err = a.podHelper.Patch(ctx, pod, statusFuncs, false, true)
+	_, err = a.status.Update(ctx, newPod, msg, states, podcommon.StatusScaleStateUnknownCommanded, scaleConfigs)
 	if err != nil {
-		return common.WrapErrorf(err, "unable to patch status")
+		return common.WrapErrorf(err, "unable to update status")
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)

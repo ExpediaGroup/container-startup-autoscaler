@@ -71,12 +71,4 @@ type Status interface {
 		statusScaleState StatusScaleState,
 		scaleConfigs scalecommon.Configurations,
 	) (*v1.Pod, error)
-
-	PodMutationFunc(
-		ctx context.Context,
-		status string,
-		states States,
-		statusScaleState StatusScaleState,
-		scaleConfigs scalecommon.Configurations,
-	) func(pod *v1.Pod) error
 }

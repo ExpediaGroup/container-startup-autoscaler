@@ -33,8 +33,9 @@ import (
 )
 
 const (
-	timeFormatSecs  = "2006-01-02T15:04:05-0700"
-	timeFormatMilli = "2006-01-02T15:04:05.000-0700"
+	postPatchPauseSecs = 3
+	timeFormatSecs     = "2006-01-02T15:04:05-0700"
+	timeFormatMilli    = "2006-01-02T15:04:05.000-0700"
 )
 
 // status is the default implementation of podcommon.Status.
@@ -54,7 +55,8 @@ func newStatus(
 }
 
 // Update updates controller status by applying mutations to the supplied pod. The supplied pod is never mutated.
-// Returns the new server representation of the pod.
+// Under specific circumstances, a pause is observed after the patch is applied to allow Kubelet time to react. Returns
+// the new server representation of the pod.
 func (s *status) Update(
 	ctx context.Context,
 	pod *v1.Pod,
@@ -63,23 +65,31 @@ func (s *status) Update(
 	statusScaleState podcommon.StatusScaleState,
 	scaleConfigs scalecommon.Configurations,
 ) (*v1.Pod, error) {
-	mutatePodFunc := s.PodMutationFunc(ctx, status, states, statusScaleState, scaleConfigs)
+	shouldPause := false
+	postPatchPauseCallback := func(pause bool) { shouldPause = pause }
+	mutatePodFunc := s.podMutationFunc(ctx, status, states, statusScaleState, scaleConfigs, postPatchPauseCallback)
 
 	newPod, err := s.podHelper.Patch(ctx, pod, []func(*v1.Pod) error{mutatePodFunc}, false, true)
 	if err != nil {
 		return nil, common.WrapErrorf(err, "unable to patch pod")
 	}
 
+	if shouldPause {
+		logging.Infof(ctx, logging.VDebug, "pausing for %d seconds after status patch", postPatchPauseSecs)
+		time.Sleep(postPatchPauseSecs * time.Second)
+	}
+
 	return newPod, nil
 }
 
-// PodMutationFunc returns a function that performs the actual work of updating controller status.
-func (s *status) PodMutationFunc(
+// podMutationFunc returns a function that performs the actual work of updating controller status.
+func (s *status) podMutationFunc(
 	ctx context.Context,
 	status string,
 	states podcommon.States,
 	statusScaleState podcommon.StatusScaleState,
 	scaleConfigs scalecommon.Configurations,
+	postPatchPauseCallback func(pause bool),
 ) func(pod *v1.Pod) error {
 	return func(pod *v1.Pod) error {
 		var currentStat StatusAnnotation
@@ -93,6 +103,7 @@ func (s *status) PodMutationFunc(
 		}
 
 		statScale := NewEmptyStatusAnnotationScale(scaleConfigs.AllEnabledConfigurationsResourceNames())
+		shouldPause := false
 
 		switch statusScaleState {
 		case podcommon.StatusScaleStateNotApplicable:
@@ -102,26 +113,30 @@ func (s *status) PodMutationFunc(
 				statScale.LastEnacted = currentStat.Scale.LastEnacted
 				statScale.LastFailed = currentStat.Scale.LastFailed
 			}
-			// TODO(wt) no pause needed.
 		case podcommon.StatusScaleStateDownCommanded, podcommon.StatusScaleStateUpCommanded:
 			statScale.LastCommanded = s.formattedNow(timeFormatMilli)
 			statScale.LastEnacted = ""
 			statScale.LastFailed = ""
 
+			// Indicate a pause should be observed if commanding a scale after a previously failed scale. This is to
+			// ensure Kubelet has time to update pod conditions which could otherwise lead to spurious Kube events
+			// being emitted.
+			if currentStat.Scale.LastFailed != "" {
+				shouldPause = true
+			}
+
 			s.normalEvent(pod, eventReasonScaling, status)
-			// TODO(wt) only if currentStat.Scale.LastFailed is not empty, signal short-ish pause through new return
-			//  value (which is done by targetcontaineraction after applying the status patch) to allow kubelet time
-			//  to update conditions (to avoid spurious events).
 		case podcommon.StatusScaleStateUnknownCommanded:
 			statScale.LastCommanded = s.formattedNow(timeFormatMilli)
 			statScale.LastEnacted = ""
 			statScale.LastFailed = ""
 
+			if currentStat.Scale.LastFailed != "" {
+				shouldPause = true
+			}
+
 			metricsscale.CommandedUnknownRes().Inc()
 			s.normalEvent(pod, eventReasonScaling, status)
-			// TODO(wt) only if currentStat.Scale.LastFailed is not empty, signal short-ish pause through new return
-			//  value (which is done by targetcontaineraction after applying the status patch) to allow kubelet time
-			//  to update conditions (to avoid spurious events).
 		case podcommon.StatusScaleStateDownEnacted, podcommon.StatusScaleStateUpEnacted:
 			statScale.LastCommanded = currentStat.Scale.LastCommanded
 			statScale.LastEnacted = currentStat.Scale.LastEnacted
@@ -138,7 +153,6 @@ func (s *status) PodMutationFunc(
 				)
 				s.normalEvent(pod, eventReasonScaling, status)
 			}
-			// TODO(wt) no pause needed.
 		case podcommon.StatusScaleStateDownFailed, podcommon.StatusScaleStateUpFailed:
 			statScale.LastCommanded = currentStat.Scale.LastCommanded
 			statScale.LastEnacted = "" // Assumes can't fail after enacted.
@@ -155,7 +169,6 @@ func (s *status) PodMutationFunc(
 				)
 				s.warningEvent(pod, eventReasonScaling, status)
 			}
-			// TODO(wt) no pause needed.
 		default:
 			panic(fmt.Errorf("statusScaleState '%s' not supported", statusScaleState))
 		}
@@ -166,6 +179,8 @@ func (s *status) PodMutationFunc(
 		}
 
 		pod.Annotations[kubecommon.AnnotationStatus] = newStat.Json()
+
+		postPatchPauseCallback(shouldPause)
 		return nil
 	}
 }

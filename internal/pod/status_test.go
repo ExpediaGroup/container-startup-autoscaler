@@ -164,6 +164,7 @@ func TestStatusUpdateCore(t *testing.T) {
 	})
 }
 
+// TODO(wt) test metrics here
 func TestStatusUpdateScaleStatus(t *testing.T) {
 	type args struct {
 		pod        *v1.Pod
@@ -177,6 +178,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 		wantLastScaleEnacted   bool
 		wantLastScaleFailed    bool
 		wantEventMsg           string
+		wantPause              bool
 	}{
 		{
 			"StatusScaleStateNotApplicablePrevious",
@@ -191,9 +193,10 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			true,
 			true,
 			"",
+			false,
 		},
 		{
-			"StatusScaleStateCommanded",
+			"StatusScaleStateCommandedNoPreviousFail",
 			args{
 				kubetest.NewPodBuilder().Build(),
 				podcommon.StatusScaleStateUpCommanded,
@@ -203,9 +206,25 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			false,
 			"Normal Scaling Test",
+			false,
 		},
 		{
-			"StatusScaleStateUnknownCommanded",
+			"StatusScaleStateCommandedPreviousFail",
+			args{
+				kubetest.NewPodBuilder().
+					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
+					Build(),
+				podcommon.StatusScaleStateUpCommanded,
+			},
+			"",
+			true,
+			false,
+			false,
+			"Normal Scaling Test",
+			true,
+		},
+		{
+			"StatusScaleStateUnknownCommandedNoPreviousFail",
 			args{
 				kubetest.NewPodBuilder().Build(),
 				podcommon.StatusScaleStateUnknownCommanded,
@@ -215,6 +234,22 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			false,
 			"Normal Scaling Test",
+			false,
+		},
+		{
+			"StatusScaleStateUnknownCommandedPreviousFail",
+			args{
+				kubetest.NewPodBuilder().
+					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
+					Build(),
+				podcommon.StatusScaleStateUnknownCommanded,
+			},
+			"",
+			true,
+			false,
+			false,
+			"Normal Scaling Test",
+			true,
 		},
 		{
 			"StatusScaleStateEnactedNoPrevious",
@@ -227,6 +262,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			true,
 			false,
 			"Normal Scaling Test",
+			false,
 		},
 		{
 			"StatusScaleStateEnactedPrevious",
@@ -241,6 +277,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			true,
 			false,
 			"",
+			false,
 		},
 		{
 			"StatusScaleStateFailedNoPrevious",
@@ -253,6 +290,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			true,
 			"Warning Scaling Test",
+			false,
 		},
 		{
 			"StatusScaleStateFailedPrevious",
@@ -267,6 +305,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			true,
 			"",
+			false,
 		},
 		{
 			"StatusScaleStateNotSupported",
@@ -279,6 +318,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			false,
 			"",
+			false,
 		},
 	}
 	for _, tt := range tests {
@@ -309,6 +349,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 				return
 			}
 
+			currentTimeMillis := time.Now().UnixMilli()
 			got, err := s.Update(
 				ctx,
 				tt.args.pod,
@@ -317,6 +358,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 				tt.args.scaleState,
 				scaletest.NewMockConfigurations(nil),
 			)
+			durationMillis := time.Now().UnixMilli() - currentTimeMillis
 			assert.NoError(t, err)
 
 			stat := &StatusAnnotation{}
@@ -349,6 +391,11 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 					t.Fatalf("event unexpectedly generated")
 				case <-time.After(1 * time.Second):
 				}
+			}
+			if tt.wantPause {
+				assert.GreaterOrEqual(t, durationMillis, int64(postPatchPauseSecs*1000))
+			} else {
+				assert.Less(t, durationMillis, int64(postPatchPauseSecs*1000))
 			}
 		})
 	}

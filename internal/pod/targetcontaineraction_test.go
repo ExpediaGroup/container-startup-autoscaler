@@ -221,7 +221,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			"StartedWithStartupResAction",
 			false,
 			func(m *podtest.MockStatus, run func()) {
-				m.PodMutationFuncDefaultAndRun(run)
+				m.UpdateDefaultAndRun(run)
 			},
 			podcommon.States{
 				StartupProbe:   podcommon.StateBoolTrue,
@@ -240,7 +240,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			"NotStartedWithPostStartupResAction",
 			false,
 			func(m *podtest.MockStatus, run func()) {
-				m.PodMutationFuncDefaultAndRun(run)
+				m.UpdateDefaultAndRun(run)
 			},
 			podcommon.States{
 				StartupProbe:   podcommon.StateBoolTrue,
@@ -280,7 +280,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			"NotStartedWithUnknownResAction",
 			true,
 			func(m *podtest.MockStatus, run func()) {
-				m.PodMutationFuncDefaultAndRun(run)
+				m.UpdateDefaultAndRun(run)
 			},
 			podcommon.States{
 				StartupProbe:   podcommon.StateBoolTrue,
@@ -299,7 +299,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			"StartedWithUnknownResAction",
 			true,
 			func(m *podtest.MockStatus, run func()) {
-				m.PodMutationFuncDefaultAndRun(run)
+				m.UpdateDefaultAndRun(run)
 			},
 			podcommon.States{
 				StartupProbe:   podcommon.StateBoolTrue,
@@ -545,7 +545,7 @@ func TestTargetContainerActionNotStartedWithPostStartupResAction(t *testing.T) {
 			a := newTargetContainerAction(
 				controllercommon.ControllerConfig{},
 				podtest.NewMockStatusWithRun(
-					func(m *podtest.MockStatus, run func()) { m.PodMutationFuncDefaultAndRun(run) },
+					func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
 					func() { statusUpdated = true },
 				),
 				kubetest.NewMockPodHelper(tt.configPodHelperMockFunc),
@@ -601,7 +601,7 @@ func TestTargetContainerActionStartedWithStartupResAction(t *testing.T) {
 			a := newTargetContainerAction(
 				controllercommon.ControllerConfig{},
 				podtest.NewMockStatusWithRun(
-					func(m *podtest.MockStatus, run func()) { m.PodMutationFuncDefaultAndRun(run) },
+					func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
 					func() { statusUpdated = true },
 				),
 				kubetest.NewMockPodHelper(tt.configPodHelperMockFunc),
@@ -707,7 +707,7 @@ func TestTargetContainerActionNotStartedWithUnknownResAction(t *testing.T) {
 			a := newTargetContainerAction(
 				controllercommon.ControllerConfig{},
 				podtest.NewMockStatusWithRun(
-					func(m *podtest.MockStatus, run func()) { m.PodMutationFuncDefaultAndRun(run) },
+					func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
 					func() { statusUpdated = true },
 				),
 				kubetest.NewMockPodHelper(tt.configPodHelperMockFunc),
@@ -763,7 +763,7 @@ func TestTargetContainerActionStartedWithUnknownResAction(t *testing.T) {
 			a := newTargetContainerAction(
 				controllercommon.ControllerConfig{},
 				podtest.NewMockStatusWithRun(
-					func(m *podtest.MockStatus, run func()) { m.PodMutationFuncDefaultAndRun(run) },
+					func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
 					func() { statusUpdated = true },
 				),
 				kubetest.NewMockPodHelper(tt.configPodHelperMockFunc),
