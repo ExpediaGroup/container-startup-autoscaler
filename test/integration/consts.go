@@ -95,7 +95,7 @@ const (
 )
 
 const (
-	echoServerDefaultProbeInitialDelaySeconds = 15
+	echoServerDefaultProbeInitialDelaySeconds = 10
 	echoServerProbePeriodSeconds              = 1
 	echoServerProbeFailureThreshold           = echoServerDefaultProbeInitialDelaySeconds
 )

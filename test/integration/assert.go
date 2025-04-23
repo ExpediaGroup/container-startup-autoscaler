@@ -34,7 +34,6 @@ func assertStartupEnacted(
 	podStatusAnn map[*v1.Pod]pod.StatusAnnotation,
 	expectStartupProbe bool,
 	expectReadinessProbe bool,
-	//expectStatusCommandedEnactedEmpty bool, // TODO(wt)
 	expectStatusScaleCommanded bool,
 	expectStatusScaleEnacted bool,
 ) {
@@ -136,16 +135,6 @@ func assertStartupEnacted(
 		}
 
 		require.Empty(t, statusAnn.Scale.LastFailed)
-
-		// TODO(wt)
-		//if expectStatusCommandedEnactedEmpty {
-		//	require.Empty(t, statusAnn.Scale.LastCommanded)
-		//	require.Empty(t, statusAnn.Scale.LastEnacted)
-		//} else {
-		//	require.NotEmpty(t, statusAnn.Scale.LastCommanded)
-		//	require.NotEmpty(t, statusAnn.Scale.LastEnacted)
-		//}
-		//require.Empty(t, statusAnn.Scale.LastFailed)
 	}
 }
 
