@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
@@ -32,21 +33,32 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	kubefake "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/component-base/metrics/testutil"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestNewStatus(t *testing.T) {
+	recorder := &record.FakeRecorder{}
 	podHelper := kube.NewPodHelper(nil)
-	assert.Equal(t, &status{podHelper: podHelper}, newStatus(podHelper))
+	expected := &status{
+		recorder:  recorder,
+		podHelper: podHelper,
+	}
+	assert.Equal(t, expected, newStatus(recorder, podHelper))
 }
 
 func TestStatusUpdateCore(t *testing.T) {
 	t.Run("UnableToPatchPod", func(t *testing.T) {
-		s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewClientset() },
-			func() interceptor.Funcs { return interceptor.Funcs{Patch: kubetest.InterceptorFuncPatchFail()} },
-		)))
+		s := newStatus(
+			&record.FakeRecorder{},
+			kube.NewPodHelper(
+				kubetest.ControllerRuntimeFakeClientWithKubeFake(
+					func() *kubefake.Clientset { return kubefake.NewClientset() },
+					func() interceptor.Funcs { return interceptor.Funcs{Patch: kubetest.InterceptorFuncPatchFail()} },
+				),
+			),
+		)
 
 		got, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
@@ -61,12 +73,17 @@ func TestStatusUpdateCore(t *testing.T) {
 	})
 
 	t.Run("UnableToGetStatusAnnotationFromString", func(t *testing.T) {
-		s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset {
-				return kubefake.NewClientset(kubetest.NewPodBuilder().Build())
-			},
-			func() interceptor.Funcs { return interceptor.Funcs{} },
-		)))
+		s := newStatus(
+			&record.FakeRecorder{},
+			kube.NewPodHelper(
+				kubetest.ControllerRuntimeFakeClientWithKubeFake(
+					func() *kubefake.Clientset {
+						return kubefake.NewClientset(kubetest.NewPodBuilder().Build())
+					},
+					func() interceptor.Funcs { return interceptor.Funcs{} },
+				),
+			),
+		)
 
 		_, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
@@ -81,10 +98,15 @@ func TestStatusUpdateCore(t *testing.T) {
 
 	t.Run("OkNoPreviousStatus", func(t *testing.T) {
 		pod := kubetest.NewPodBuilder().Build()
-		s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
-			func() interceptor.Funcs { return interceptor.Funcs{} },
-		)))
+		s := newStatus(
+			&record.FakeRecorder{},
+			kube.NewPodHelper(
+				kubetest.ControllerRuntimeFakeClientWithKubeFake(
+					func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
+					func() interceptor.Funcs { return interceptor.Funcs{} },
+				),
+			),
+		)
 
 		got, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
@@ -108,12 +130,17 @@ func TestStatusUpdateCore(t *testing.T) {
 	})
 
 	t.Run("OkPreviousStatusSame", func(t *testing.T) {
-		s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset {
-				return kubefake.NewClientset(kubetest.NewPodBuilder().Build())
-			},
-			func() interceptor.Funcs { return interceptor.Funcs{} },
-		)))
+		s := newStatus(
+			&record.FakeRecorder{},
+			kube.NewPodHelper(
+				kubetest.ControllerRuntimeFakeClientWithKubeFake(
+					func() *kubefake.Clientset {
+						return kubefake.NewClientset(kubetest.NewPodBuilder().Build())
+					},
+					func() interceptor.Funcs { return interceptor.Funcs{} },
+				),
+			),
+		)
 
 		previousStat := NewStatusAnnotation(
 			"Test",
@@ -149,6 +176,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 		wantLastScaleCommanded bool
 		wantLastScaleEnacted   bool
 		wantLastScaleFailed    bool
+		wantEventMsg           string
 	}{
 		{
 			"StatusScaleStateNotApplicablePrevious",
@@ -162,6 +190,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			true,
 			true,
 			true,
+			"",
 		},
 		{
 			"StatusScaleStateCommanded",
@@ -173,6 +202,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			true,
 			false,
 			false,
+			"Normal Scaling Test",
 		},
 		{
 			"StatusScaleStateUnknownCommanded",
@@ -184,6 +214,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			true,
 			false,
 			false,
+			"Normal Scaling Test",
 		},
 		{
 			"StatusScaleStateEnactedNoPrevious",
@@ -195,6 +226,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			true,
 			false,
+			"Normal Scaling Test",
 		},
 		{
 			"StatusScaleStateEnactedPrevious",
@@ -208,6 +240,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			true,
 			true,
 			false,
+			"",
 		},
 		{
 			"StatusScaleStateFailedNoPrevious",
@@ -219,6 +252,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			false,
 			true,
+			"Warning Scaling Test",
 		},
 		{
 			"StatusScaleStateFailedPrevious",
@@ -232,6 +266,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			true,
 			false,
 			true,
+			"",
 		},
 		{
 			"StatusScaleStateNotSupported",
@@ -243,16 +278,21 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			false,
 			false,
+			"",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
-				func() *kubefake.Clientset {
-					return kubefake.NewClientset(kubetest.NewPodBuilder().Build())
-				},
-				func() interceptor.Funcs { return interceptor.Funcs{} },
-			)))
+			eventRecorder := record.NewFakeRecorder(1)
+			s := newStatus(
+				eventRecorder,
+				kube.NewPodHelper(
+					kubetest.ControllerRuntimeFakeClientWithKubeFake(
+						func() *kubefake.Clientset { return kubefake.NewClientset(kubetest.NewPodBuilder().Build()) },
+						func() interceptor.Funcs { return interceptor.Funcs{} },
+					),
+				),
+			)
 			ctx := contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build()
 
 			if tt.wantPanicErrMsg != "" {
@@ -295,6 +335,20 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 				assert.NotEmpty(t, stat.Scale.LastFailed)
 			} else {
 				assert.Empty(t, stat.Scale.LastFailed)
+			}
+			if tt.wantEventMsg != "" {
+				select {
+				case res := <-eventRecorder.Events:
+					assert.Contains(t, res, tt.wantEventMsg)
+				case <-time.After(5 * time.Second):
+					t.Fatalf("event not generated")
+				}
+			} else {
+				select {
+				case <-eventRecorder.Events:
+					t.Fatalf("event unexpectedly generated")
+				case <-time.After(1 * time.Second):
+				}
 			}
 		})
 	}
@@ -362,7 +416,7 @@ func TestStatusUpdateDurationMetric(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newStatus(nil)
+			s := newStatus(&record.FakeRecorder{}, nil)
 			buffer := &bytes.Buffer{}
 			ctx := contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(buffer)).Build()
 			s.updateDurationMetric(
@@ -380,7 +434,7 @@ func TestStatusUpdateDurationMetric(t *testing.T) {
 }
 
 func fullStatusAnnotationString() string {
-	now := newStatus(nil).formattedNow(timeFormatMilli)
+	now := newStatus(&record.FakeRecorder{}, nil).formattedNow(timeFormatMilli)
 
 	return NewStatusAnnotation(
 		"test",

@@ -30,7 +30,6 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/record"
 )
 
 const eventReasonScaling = "Scaling"
@@ -38,20 +37,17 @@ const eventReasonScaling = "Scaling"
 // targetContainerAction is the default implementation of podcommon.TargetContainerAction.
 type targetContainerAction struct {
 	controllerConfig controllercommon.ControllerConfig
-	recorder         record.EventRecorder
 	status           podcommon.Status
 	podHelper        kubecommon.PodHelper
 }
 
 func newTargetContainerAction(
 	controllerConfig controllercommon.ControllerConfig,
-	recorder record.EventRecorder,
 	status podcommon.Status,
 	podHelper kubecommon.PodHelper,
 ) *targetContainerAction {
 	return &targetContainerAction{
 		controllerConfig: controllerConfig,
-		recorder:         recorder,
 		status:           status,
 		podHelper:        podHelper,
 	}
@@ -248,7 +244,6 @@ func (a *targetContainerAction) notStartedWithPostStartupResAction(
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
-	a.normalEvent(pod, eventReasonScaling, msg)
 	return nil
 }
 
@@ -278,7 +273,6 @@ func (a *targetContainerAction) startedWithStartupResAction(
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
-	a.normalEvent(pod, eventReasonScaling, msg)
 	return nil
 }
 
@@ -321,7 +315,6 @@ func (a *targetContainerAction) notStartedWithUnknownResAction(
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
-	a.normalEvent(pod, eventReasonScaling, msg)
 	return nil
 }
 
@@ -352,7 +345,6 @@ func (a *targetContainerAction) startedWithUnknownResAction(
 	}
 
 	logging.Infof(ctx, logging.VInfo, msg)
-	a.normalEvent(pod, eventReasonScaling, msg)
 	return nil
 }
 
@@ -404,7 +396,6 @@ func (a *targetContainerAction) processConfigEnacted(
 		msg := fmt.Sprintf("%s scale failed - infeasible (%s)", states.Resources.HumanReadable(), states.Resize.Message)
 		a.updateStatus(ctx, states, scaleState, pod, msg, scaleConfigs)
 		metricsscale.Failure(states.Resources.Direction(), "infeasible").Inc()
-		a.warningEvent(pod, eventReasonScaling, msg)
 		return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
 
 	case podcommon.StateResizeError:
@@ -420,7 +411,6 @@ func (a *targetContainerAction) processConfigEnacted(
 		msg := fmt.Sprintf("%s scale failed - error (%s)", states.Resources.HumanReadable(), states.Resize.Message)
 		a.updateStatus(ctx, states, scaleState, pod, msg, scaleConfigs)
 		metricsscale.Failure(states.Resources.Direction(), "error").Inc()
-		a.warningEvent(pod, eventReasonScaling, msg)
 		return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
 
 	default:
@@ -486,7 +476,6 @@ func (a *targetContainerAction) processConfigEnacted(
 
 	msg := states.Resources.HumanReadable() + " resources enacted"
 	a.logInfoAndUpdateStatus(ctx, logging.VInfo, states, scaleState, pod, msg, scaleConfigs)
-	a.normalEvent(pod, eventReasonScaling, msg)
 	return nil
 }
 
@@ -530,14 +519,4 @@ func (a *targetContainerAction) logInfoAndUpdateStatus(
 ) {
 	logging.Infof(ctx, v, message)
 	a.updateStatus(ctx, states, scaleState, pod, message, scaleConfigs)
-}
-
-// normalEvent yields a 'normal' Kube event for the supplied pod with the supplied reason and message.
-func (a *targetContainerAction) normalEvent(pod *v1.Pod, reason string, message string) {
-	a.recorder.Event(pod, v1.EventTypeNormal, reason, common.CapitalizeFirstChar(message))
-}
-
-// warningEvent yields a 'warning' Kube event for the supplied pod with the supplied reason and message.
-func (a *targetContainerAction) warningEvent(pod *v1.Pod, reason string, message string) {
-	a.recorder.Event(pod, v1.EventTypeWarning, reason, common.CapitalizeFirstChar(message))
 }

@@ -531,16 +531,10 @@ func TestDeploymentScaleWhenUnknownResourcesCpu(t *testing.T) {
 
 	assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
 
-	assertEvents(
-		t,
-		csaEventReasonScaling,
-		[]string{
-			csaStatusMessageStartupCommandedUnknownRes, csaStatusMessageStartupEnacted,
-			csaStatusMessagePostStartupCommanded, csaStatusMessagePostStartupEnacted,
-		},
-		namespace,
-		names,
-	)
+	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessageStartupCommandedUnknownRes, namespace, names)
+	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessageStartupEnacted, namespace, names)
+	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessagePostStartupCommanded, namespace, names)
+	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessagePostStartupEnacted, namespace, names)
 }
 
 // TODO(wt) temporarily disabled until memory downscaling is permitted.
@@ -726,10 +720,6 @@ func TestDaemonSetFlowReadinessProbeCpu(t *testing.T) {
 
 // Failure -------------------------------------------------------------------------------------------------------------
 
-func TestScaleFailureInfeasible(t *testing.T) {
-	// TODO(wt) implement
-}
-
 func TestValidationFailure(t *testing.T) {
 	t.Parallel()
 	namespace := "validation-failure"
@@ -742,10 +732,6 @@ func TestValidationFailure(t *testing.T) {
 		cpuStartup:             "100m",
 		cpuPostStartupRequests: "150m",
 		cpuPostStartupLimits:   "150m",
-		// TODO(wt) temporarily disabled until memory downscaling is permitted.
-		//memoryStartup:             "150M",
-		//memoryPostStartupRequests: "100M",
-		//memoryPostStartupLimits:   "100M",
 	}
 
 	config := echoDeploymentConfigStandardStartup(namespace, 2, annotations)
@@ -775,8 +761,39 @@ func TestValidationFailure(t *testing.T) {
 		require.Empty(t, statusAnn.Scale.LastEnacted)
 		require.Empty(t, statusAnn.Scale.LastFailed)
 	}
+}
 
-	assertEvents(t, csaEventReasonValidation, []string{csaStatusMessageValidationError}, namespace, names)
+func TestScaleFailureInfeasible(t *testing.T) {
+	t.Parallel()
+	namespace := "scale-failure-infeasible"
+	maybeRegisterCleanup(t, namespace)
+
+	_ = kubeDeleteNamespace(t, namespace)
+	maybeLogErrAndFailNow(t, kubeCreateNamespace(t, namespace))
+
+	annotations := csaQuantityAnnotations{
+		cpuStartup:             "10000",
+		cpuPostStartupRequests: "150m",
+		cpuPostStartupLimits:   "150m",
+	}
+
+	config := echoDeploymentConfigStandardPostStartup(namespace, 2, annotations)
+	maybeLogErrAndFailNow(t, kubeApplyYamlOrJsonResources(t, config.deploymentJson()))
+
+	names, err := kubeGetPodNames(t, namespace, echoServerName)
+	maybeLogErrAndFailNow(t, err)
+
+	podStatusAnn, errs := csaWaitStatusAll(t, namespace, names, csaStatusMessageInfeasible, testsDefaultWaitStatusTimeoutSecs)
+	if len(errs) > 0 {
+		maybeLogErrAndFailNow(t, errs[len(errs)-1])
+	}
+
+	for _, statusAnn := range podStatusAnn {
+		assert.Contains(t, statusAnn.Status, "Startup scale failed - infeasible (")
+		// TODO(wt) more assertions
+	}
+
+	assertEvent(t, kubeEventTypeWarning, csaEventReasonScaling, csaStatusMessageInfeasible, namespace, names)
 }
 
 // Helpers -------------------------------------------------------------------------------------------------------------
@@ -837,16 +854,10 @@ func testWorkflow(
 	}
 	assertPostStartupEnactedRestartFunc(t, annotations, podStatusAnn)
 
-	assertEvents(
-		t,
-		csaEventReasonScaling,
-		[]string{
-			csaStatusMessageStartupCommanded, csaStatusMessageStartupEnacted,
-			csaStatusMessagePostStartupCommanded, csaStatusMessagePostStartupEnacted,
-		},
-		namespace,
-		names,
-	)
+	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessageStartupCommanded, namespace, names)
+	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessageStartupEnacted, namespace, names)
+	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessagePostStartupCommanded, namespace, names)
+	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessagePostStartupEnacted, namespace, names)
 }
 
 func maybeRegisterCleanup(t *testing.T, namespace string) {

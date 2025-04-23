@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
@@ -39,14 +38,13 @@ import (
 )
 
 func TestNewTargetContainerAction(t *testing.T) {
-	config := controllercommon.ControllerConfig{}
 	recorder := &record.FakeRecorder{}
+	config := controllercommon.ControllerConfig{}
 	podHelper := kube.NewPodHelper(nil)
-	stat := newStatus(podHelper)
-	action := newTargetContainerAction(config, recorder, stat, podHelper)
+	stat := newStatus(recorder, podHelper)
+	action := newTargetContainerAction(config, stat, podHelper)
 	expected := &targetContainerAction{
 		controllerConfig: config,
-		recorder:         recorder,
 		status:           stat,
 		podHelper:        podHelper,
 	}
@@ -340,7 +338,6 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			run := func() { statusUpdated = true }
 			a := newTargetContainerAction(
 				controllercommon.ControllerConfig{ScaleWhenUnknownResources: tt.scaleWhenUnknownRes},
-				&record.FakeRecorder{},
 				podtest.NewMockStatusWithRun(tt.configStatusMockFunc, run),
 				kubetest.NewMockPodHelper(nil),
 			)
@@ -385,7 +382,6 @@ func TestTargetContainerActionContainerNotRunningAction(t *testing.T) {
 	)
 	a := newTargetContainerAction(
 		controllercommon.ControllerConfig{},
-		&record.FakeRecorder{},
 		configStatusMock,
 		kubetest.NewMockPodHelper(nil),
 	)
@@ -409,7 +405,6 @@ func TestTargetContainerActionStartedUnknownAction(t *testing.T) {
 	)
 	a := newTargetContainerAction(
 		controllercommon.ControllerConfig{},
-		&record.FakeRecorder{},
 		configStatusMock,
 		kubetest.NewMockPodHelper(nil),
 	)
@@ -433,7 +428,6 @@ func TestTargetContainerActionReadyUnknownAction(t *testing.T) {
 	)
 	a := newTargetContainerAction(
 		controllercommon.ControllerConfig{},
-		&record.FakeRecorder{},
 		configStatusMock,
 		kubetest.NewMockPodHelper(nil),
 	)
@@ -457,7 +451,6 @@ func TestTargetContainerActionResUnknownAction(t *testing.T) {
 	)
 	a := newTargetContainerAction(
 		controllercommon.ControllerConfig{},
-		&record.FakeRecorder{},
 		configStatusMock,
 		kubetest.NewMockPodHelper(nil),
 	)
@@ -495,7 +488,6 @@ func TestTargetContainerActionNotStartedWithStartupResAction(t *testing.T) {
 			statusUpdated := false
 			a := newTargetContainerAction(
 				controllercommon.ControllerConfig{},
-				&record.FakeRecorder{},
 				podtest.NewMockStatusWithRun(
 					func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
 					func() { statusUpdated = true },
@@ -530,7 +522,6 @@ func TestTargetContainerActionNotStartedWithPostStartupResAction(t *testing.T) {
 		configPodHelperMockFunc func(*kubetest.MockPodHelper)
 		wantErrMsg              string
 		wantStatusUpdate        bool
-		wantEventMsg            string
 	}{
 		{
 			"UnableToPatchContainerResources",
@@ -540,23 +531,19 @@ func TestTargetContainerActionNotStartedWithPostStartupResAction(t *testing.T) {
 			},
 			"unable to patch container resources",
 			false,
-			"",
 		},
 		{
 			"Ok",
 			nil,
 			"",
 			true,
-			"Startup resources commanded",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			statusUpdated := false
-			eventRecorder := record.NewFakeRecorder(1)
 			a := newTargetContainerAction(
 				controllercommon.ControllerConfig{},
-				eventRecorder,
 				podtest.NewMockStatusWithRun(
 					func(m *podtest.MockStatus, run func()) { m.PodMutationFuncDefaultAndRun(run) },
 					func() { statusUpdated = true },
@@ -581,14 +568,6 @@ func TestTargetContainerActionNotStartedWithPostStartupResAction(t *testing.T) {
 			} else {
 				assert.False(t, statusUpdated)
 			}
-			if tt.wantEventMsg != "" {
-				select {
-				case res := <-eventRecorder.Events:
-					assert.Contains(t, res, tt.wantEventMsg)
-				case <-time.After(5 * time.Second):
-					t.Fatalf("event not generated")
-				}
-			}
 		})
 	}
 }
@@ -599,7 +578,6 @@ func TestTargetContainerActionStartedWithStartupResAction(t *testing.T) {
 		configPodHelperMockFunc func(*kubetest.MockPodHelper)
 		wantErrMsg              string
 		wantStatusUpdate        bool
-		wantEventMsg            string
 	}{
 		{
 			"UnableToPatchContainerResources",
@@ -609,23 +587,19 @@ func TestTargetContainerActionStartedWithStartupResAction(t *testing.T) {
 			},
 			"unable to patch container resources",
 			false,
-			"",
 		},
 		{
 			"Ok",
 			nil,
 			"",
 			true,
-			"Post-startup resources commanded",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			statusUpdated := false
-			eventRecorder := record.NewFakeRecorder(1)
 			a := newTargetContainerAction(
 				controllercommon.ControllerConfig{},
-				eventRecorder,
 				podtest.NewMockStatusWithRun(
 					func(m *podtest.MockStatus, run func()) { m.PodMutationFuncDefaultAndRun(run) },
 					func() { statusUpdated = true },
@@ -649,14 +623,6 @@ func TestTargetContainerActionStartedWithStartupResAction(t *testing.T) {
 				assert.True(t, statusUpdated)
 			} else {
 				assert.False(t, statusUpdated)
-			}
-			if tt.wantEventMsg != "" {
-				select {
-				case res := <-eventRecorder.Events:
-					assert.Contains(t, res, tt.wantEventMsg)
-				case <-time.After(5 * time.Second):
-					t.Fatalf("event not generated")
-				}
 			}
 		})
 	}
@@ -684,7 +650,6 @@ func TestTargetContainerActionStartedWithPostStartupResAction(t *testing.T) {
 			statusUpdated := false
 			a := newTargetContainerAction(
 				controllercommon.ControllerConfig{},
-				&record.FakeRecorder{},
 				podtest.NewMockStatusWithRun(
 					func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
 					func() { statusUpdated = true },
@@ -719,7 +684,6 @@ func TestTargetContainerActionNotStartedWithUnknownResAction(t *testing.T) {
 		configPodHelperMockFunc func(*kubetest.MockPodHelper)
 		wantErrMsg              string
 		wantStatusUpdate        bool
-		wantEventMsg            string
 	}{
 		{
 			"UnableToPatchContainerResources",
@@ -729,23 +693,19 @@ func TestTargetContainerActionNotStartedWithUnknownResAction(t *testing.T) {
 			},
 			"unable to patch container resources",
 			false,
-			"",
 		},
 		{
 			"Ok",
 			nil,
 			"",
 			true,
-			"Startup resources commanded (unknown resources applied)",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			statusUpdated := false
-			eventRecorder := record.NewFakeRecorder(1)
 			a := newTargetContainerAction(
 				controllercommon.ControllerConfig{},
-				eventRecorder,
 				podtest.NewMockStatusWithRun(
 					func(m *podtest.MockStatus, run func()) { m.PodMutationFuncDefaultAndRun(run) },
 					func() { statusUpdated = true },
@@ -770,14 +730,6 @@ func TestTargetContainerActionNotStartedWithUnknownResAction(t *testing.T) {
 			} else {
 				assert.False(t, statusUpdated)
 			}
-			if tt.wantEventMsg != "" {
-				select {
-				case res := <-eventRecorder.Events:
-					assert.Contains(t, res, tt.wantEventMsg)
-				case <-time.After(5 * time.Second):
-					t.Fatalf("event not generated")
-				}
-			}
 		})
 	}
 }
@@ -788,7 +740,6 @@ func TestTargetContainerActionStartedWithUnknownResAction(t *testing.T) {
 		configPodHelperMockFunc func(*kubetest.MockPodHelper)
 		wantErrMsg              string
 		wantStatusUpdate        bool
-		wantEventMsg            string
 	}{
 		{
 			"UnableToPatchContainerResources",
@@ -798,23 +749,19 @@ func TestTargetContainerActionStartedWithUnknownResAction(t *testing.T) {
 			},
 			"unable to patch container resources",
 			false,
-			"",
 		},
 		{
 			"Ok",
 			nil,
 			"",
 			true,
-			"Post-startup resources commanded (unknown resources applied)",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			statusUpdated := false
-			eventRecorder := record.NewFakeRecorder(1)
 			a := newTargetContainerAction(
 				controllercommon.ControllerConfig{},
-				eventRecorder,
 				podtest.NewMockStatusWithRun(
 					func(m *podtest.MockStatus, run func()) { m.PodMutationFuncDefaultAndRun(run) },
 					func() { statusUpdated = true },
@@ -839,14 +786,6 @@ func TestTargetContainerActionStartedWithUnknownResAction(t *testing.T) {
 			} else {
 				assert.False(t, statusUpdated)
 			}
-			if tt.wantEventMsg != "" {
-				select {
-				case res := <-eventRecorder.Events:
-					assert.Contains(t, res, tt.wantEventMsg)
-				case <-time.After(5 * time.Second):
-					t.Fatalf("event not generated")
-				}
-			}
 		})
 	}
 }
@@ -862,7 +801,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		wantErrMsg              string
 		wantStatusUpdate        bool
 		wantLogMsg              string
-		wantEventMsg            string
 	}{
 		{
 			"ScaleNotYetCompletedInProgress",
@@ -876,7 +814,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"",
 			true,
 			"scale not yet completed - in progress",
-			"",
 		},
 		{
 			"ScaleNotYetCompletedDeferred",
@@ -890,7 +827,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"",
 			true,
 			"scale not yet completed - deferred (message)",
-			"",
 		},
 		{
 			"ScaleFailedInfeasibleStateResourcesPostStartup",
@@ -910,7 +846,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"post-startup scale failed - infeasible (message)",
 			true,
 			"",
-			"Post-startup scale failed - infeasible (message)",
 		},
 		{
 			"ScaleFailedInfeasibleStateResourcesStartup",
@@ -930,7 +865,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"startup scale failed - infeasible (message)",
 			true,
 			"",
-			"Startup scale failed - infeasible (message)",
 		},
 		{
 			"ScaleFailedErrorStateResourcesPostStartup",
@@ -948,7 +882,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"post-startup scale failed - error (message)",
 			true,
 			"",
-			"Post-startup scale failed - error (message)",
 		},
 		{
 			"ScaleFailedErrorStateResourcesStartup",
@@ -966,7 +899,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"startup scale failed - error (message)",
 			true,
 			"",
-			"Startup scale failed - error (message)",
 		},
 		{
 			"UnknownResizeStatePanics",
@@ -979,7 +911,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"unknown resize state 'unknown'",
 			"",
 			false,
-			"",
 			"",
 		},
 		{
@@ -995,7 +926,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"",
 			true,
 			"target container current cpu and/or memory resources currently missing",
-			"",
 		},
 		{
 			string(podcommon.StateStatusResourcesContainerResourcesMismatch),
@@ -1010,7 +940,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"",
 			true,
 			"target container current cpu and/or memory resources currently don't match target container's 'requests'",
-			"",
 		},
 		{
 			string(podcommon.StateStatusResourcesUnknown),
@@ -1025,7 +954,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"",
 			true,
 			"target container current cpu and/or memory resources currently unknown",
-			"",
 		},
 		{
 			"UnknownStatusResourcesStatePanics",
@@ -1039,7 +967,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"unknown state 'test'",
 			"",
 			true,
-			"",
 			"",
 		},
 		{
@@ -1056,7 +983,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"",
 			true,
 			"post-startup resources enacted",
-			"Post-startup resources enacted",
 		},
 		{
 			string(podcommon.StateStatusResourcesContainerResourcesMatch) + string(podcommon.StateResourcesStartup),
@@ -1072,16 +998,13 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"",
 			true,
 			"startup resources enacted",
-			"Startup resources enacted",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			statusUpdated := false
-			eventRecorder := record.NewFakeRecorder(1)
 			a := newTargetContainerAction(
 				controllercommon.ControllerConfig{},
-				eventRecorder,
 				podtest.NewMockStatusWithRun(tt.configStatusMockFunc, func() { statusUpdated = true }),
 				nil,
 			)
@@ -1121,14 +1044,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			if tt.configMetricAssertsFunc != nil {
 				tt.configMetricAssertsFunc(t)
 			}
-			if tt.wantEventMsg != "" {
-				select {
-				case res := <-eventRecorder.Events:
-					assert.Contains(t, res, tt.wantEventMsg)
-				case <-time.After(5 * time.Second):
-					t.Fatalf("event not generated")
-				}
-			}
 		})
 	}
 }
@@ -1136,7 +1051,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 func TestTargetContainerActionContainerResourceConfig(t *testing.T) {
 	a := newTargetContainerAction(
 		controllercommon.ControllerConfig{},
-		&record.FakeRecorder{},
 		nil,
 		nil,
 	)
@@ -1158,7 +1072,6 @@ func TestTargetContainerActionUpdateStatus(t *testing.T) {
 		})
 		a := newTargetContainerAction(
 			controllercommon.ControllerConfig{},
-			&record.FakeRecorder{},
 			mockStatus,
 			nil,
 		)

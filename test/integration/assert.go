@@ -224,21 +224,18 @@ func assertPostStartupEnacted(
 	}
 }
 
-func assertEvents(t *testing.T, reason string, substrs []string, namespace string, names []string) {
+func assertEvent(t *testing.T, eType string, reason string, messageSubstr string, namespace string, names []string) {
 	for _, name := range names {
-		messages, err := kubeGetEventMessages(t, namespace, name, reason)
+		messages, err := kubeGetEventMessages(t, namespace, name, eType, reason)
 		maybeLogErrAndFailNow(t, err)
 
-		for _, substr := range substrs {
-			gotMessage := false
-			for _, message := range messages {
-				if strings.Contains(message, substr) {
-					gotMessage = true
-					break
-				}
+		gotMessage := false
+		for _, message := range messages {
+			if strings.Contains(message, messageSubstr) {
+				gotMessage = true
+				break
 			}
-
-			assert.True(t, gotMessage)
 		}
+		assert.True(t, gotMessage)
 	}
 }

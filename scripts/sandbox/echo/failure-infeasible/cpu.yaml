@@ -34,12 +34,9 @@ spec:
         csa.expediagroup.com/enabled: "true"
       annotations:
         csa.expediagroup.com/target-container-name: "echo-server"
-        csa.expediagroup.com/cpu-startup: "100m"
+        csa.expediagroup.com/cpu-startup: "10000"
         csa.expediagroup.com/cpu-post-startup-requests: "150m"
         csa.expediagroup.com/cpu-post-startup-limits: "150m"
-        csa.expediagroup.com/memory-startup: "150M"
-        csa.expediagroup.com/memory-post-startup-requests: "100M"
-        csa.expediagroup.com/memory-post-startup-limits: "100M"
     spec:
       containers:
       - image: ealen/echo-server:0.7.0

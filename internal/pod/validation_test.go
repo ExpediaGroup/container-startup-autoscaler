@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
@@ -35,13 +34,11 @@ import (
 )
 
 func TestNewValidation(t *testing.T) {
-	recorder := &record.FakeRecorder{}
 	podHelper := kube.NewPodHelper(nil)
 	containerHelper := kube.NewContainerHelper()
-	stat := newStatus(podHelper)
-	val := newValidation(recorder, stat, podHelper, containerHelper)
+	stat := newStatus(&record.FakeRecorder{}, podHelper)
+	val := newValidation(stat, podHelper, containerHelper)
 	expected := &validation{
-		recorder:        recorder,
 		status:          stat,
 		podHelper:       podHelper,
 		containerHelper: containerHelper,
@@ -59,7 +56,6 @@ func TestValidationValidate(t *testing.T) {
 		wantErrMsg                 string
 		wantNilContainer           bool
 		wantStatusUpdate           bool
-		wantEventMsg               string
 	}{
 		{
 			"UnableToGetEnabledLabelValue",
@@ -75,7 +71,6 @@ func TestValidationValidate(t *testing.T) {
 			"unable to get pod enabled label value",
 			true,
 			true,
-			"Validation error: unable to get pod enabled label value",
 		},
 		{
 			"EnabledLabelFalse",
@@ -91,7 +86,6 @@ func TestValidationValidate(t *testing.T) {
 			"pod enabled label value is unexpectedly 'false'",
 			true,
 			true,
-			"Validation error: pod enabled label value is unexpectedly 'false'",
 		},
 		{
 			"VpaNotSupported",
@@ -107,7 +101,6 @@ func TestValidationValidate(t *testing.T) {
 			"vpa not supported",
 			true,
 			true,
-			"Validation error: vpa not supported",
 		},
 		{
 			"TargetContainerNotInPodSpec",
@@ -124,7 +117,6 @@ func TestValidationValidate(t *testing.T) {
 			"target container not in pod spec",
 			true,
 			true,
-			"Validation error: target container not in pod spec",
 		},
 		{
 			"TargetContainerNoProbes",
@@ -145,7 +137,6 @@ func TestValidationValidate(t *testing.T) {
 			"target container does not specify startup probe or readiness probe",
 			true,
 			true,
-			"Validation error: target container does not specify startup probe or readiness probe",
 		},
 		{
 			"UnableToDeterminePodQosClass",
@@ -164,7 +155,6 @@ func TestValidationValidate(t *testing.T) {
 			"unable to determine pod qos class",
 			true,
 			true,
-			"Validation error: unable to determine pod qos class",
 		},
 		{
 			"PodQosClassIsNotGuaranteed",
@@ -182,7 +172,6 @@ func TestValidationValidate(t *testing.T) {
 			"pod qos class is not guaranteed",
 			true,
 			true,
-			"Validation error: pod qos class is not guaranteed",
 		},
 		{
 			"UnableToValidateScaleConfiguration",
@@ -202,7 +191,6 @@ func TestValidationValidate(t *testing.T) {
 			"text",
 			true,
 			true,
-			"Validation error: text",
 		},
 		{
 			"UnableToValidateScaleConfigurationCollection",
@@ -223,7 +211,6 @@ func TestValidationValidate(t *testing.T) {
 			"text",
 			true,
 			true,
-			"Validation error: text",
 		},
 		{
 			"Ok",
@@ -241,16 +228,13 @@ func TestValidationValidate(t *testing.T) {
 			"",
 			false,
 			false,
-			"",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			statusUpdated := false
 			run := func() { statusUpdated = true }
-			eventRecorder := record.NewFakeRecorder(1)
 			v := newValidation(
-				eventRecorder,
 				podtest.NewMockStatusWithRun(tt.configStatusMockFunc, run),
 				kubetest.NewMockPodHelper(tt.configPodHelperMockFunc),
 				kubetest.NewMockContainerHelper(tt.configContHelperMockFunc),
@@ -279,14 +263,6 @@ func TestValidationValidate(t *testing.T) {
 			} else {
 				assert.False(t, statusUpdated)
 			}
-			if tt.wantEventMsg != "" {
-				select {
-				case res := <-eventRecorder.Events:
-					assert.Contains(t, res, tt.wantEventMsg)
-				case <-time.After(5 * time.Second):
-					t.Fatalf("event not generated")
-				}
-			}
 		})
 	}
 }
@@ -298,7 +274,6 @@ func TestValidationUpdateStatusAndGetError(t *testing.T) {
 				Return(&v1.Pod{}, errors.New(""))
 		}
 		v := newValidation(
-			&record.FakeRecorder{},
 			podtest.NewMockStatus(configStatusMockFunc),
 			nil,
 			nil,

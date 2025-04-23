@@ -310,7 +310,6 @@ The following Kube events for the pod that houses the target container are gener
 ### Warning Events
 | Trigger                                           | Reason       |
 |---------------------------------------------------|--------------|
-| Validation failure.                               | `Validation` |
 | Failed to scale commanded startup resources.      | `Scaling`    |
 | Failed to scale commanded post-startup resources. | `Scaling`    |
 
@@ -663,8 +662,10 @@ To simulate workload startup/readiness, `initialDelaySeconds` is set as follows 
 | `echo/*/readiness-probe.yaml` | N/A           | `15`            |
 | `echo/*/both-probes.yaml`     | `15`          | `30`            |
 
-You can also cause a validation failure by executing `echo-reinstall.sh echo/validation-failure/cpu-config.yaml`. This
+You can also cause a validation failure by executing `echo-reinstall.sh echo/failure-validation/cpu-config.yaml`. This
 will yield the `cpu post-startup requests (...) is greater than startup value (...)` status message.
+
+TODO(wt) failure-infeasible
 
 ### Causing an echo-server Container Restart
 Execute `echo-cause-container-restart.sh` to cause the echo-service container to restart. Note: `CrashLoopBackoff`

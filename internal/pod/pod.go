@@ -44,13 +44,13 @@ func NewPod(
 ) *Pod {
 	podHelper := kube.NewPodHelper(client)
 	containerHelper := kube.NewContainerHelper()
-	stat := newStatus(podHelper)
+	stat := newStatus(recorder, podHelper)
 
 	return &Pod{
 		Configuration:         newConfiguration(podHelper, containerHelper),
-		Validation:            newValidation(recorder, stat, podHelper, containerHelper),
+		Validation:            newValidation(stat, podHelper, containerHelper),
 		TargetContainerState:  newTargetContainerState(podHelper, containerHelper),
-		TargetContainerAction: newTargetContainerAction(controllerConfig, recorder, stat, podHelper),
+		TargetContainerAction: newTargetContainerAction(controllerConfig, stat, podHelper),
 		Status:                stat,
 		PodHelper:             podHelper,
 		ContainerHelper:       containerHelper,

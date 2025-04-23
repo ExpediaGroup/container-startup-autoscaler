@@ -212,26 +212,34 @@ func kubeWaitResourceCondition(
 	return err
 }
 
-func kubeGetEventMessages(t *testing.T, namespace string, podName string, reason string) ([]string, error) {
+func kubeGetEventMessages(t *testing.T, namespace string, podName string, eType string, reason string) ([]string, error) {
 	output, err := cmdRun(
 		t,
 		exec.Command(
 			"kubectl", "get", "events",
 			"-n", namespace,
-			fmt.Sprintf("--field-selector=involvedObject.name=%s,reason=%s", podName, reason),
+			fmt.Sprintf("--field-selector=involvedObject.name=%s,type=%s,reason=%s", podName, eType, reason),
 			"--no-headers=true",
 			"--output=custom-columns=MESSAGE:.message",
 			"--kubeconfig", kindKubeconfig,
 		),
-		fmt.Sprintf("getting '%s' events for pod '%s' in namespace '%s'...", reason, podName, namespace),
-		fmt.Sprintf("unable to get '%s' events for pod '%s' in namespace '%s'...", reason, podName, namespace),
+		fmt.Sprintf("getting '%s'/'%s' events for pod '%s' in namespace '%s'...", eType, reason, podName, namespace),
+		fmt.Sprintf("unable to get '%s'/'%s' events for pod '%s' in namespace '%s'...", eType, reason, podName, namespace),
 		false,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return strings.Split(output, "\n"), nil
+	splitOutput := strings.Split(output, "\n")
+	for _, line := range splitOutput {
+		logMessage(
+			t,
+			fmt.Sprintf("got '%s/%s' event message for pod '%s' in namespace '%s': %s", eType, reason, podName, namespace, line),
+		)
+	}
+
+	return splitOutput, nil
 }
 
 func kubeCauseContainerRestart(t *testing.T, containerId string) error {

@@ -46,7 +46,7 @@ const (
 	StateContainerUnknown    StateContainer = "unknown"
 )
 
-// StateResources indicates what Kube container resources are set.
+// StateResources indicates what Kube container resources are set in the spec.
 type StateResources string
 
 const (

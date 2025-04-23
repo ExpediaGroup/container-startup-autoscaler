@@ -66,11 +66,16 @@ const (
 	csaStatusMessageStartupEnacted                 = "Startup resources enacted"
 	csaStatusMessagePostStartupEnacted             = "Post-startup resources enacted"
 	csaStatusMessageValidationError                = "Validation error"
+	csaStatusMessageInfeasible                     = "scale failed - infeasible"
 )
 
 const (
-	csaEventReasonScaling    = "Scaling"
-	csaEventReasonValidation = "Validation"
+	kubeEventTypeNormal  = "Normal"
+	kubeEventTypeWarning = "Warning"
+)
+
+const (
+	csaEventReasonScaling = "Scaling"
 )
 
 // echo-server ---------------------------------------------------------------------------------------------------------

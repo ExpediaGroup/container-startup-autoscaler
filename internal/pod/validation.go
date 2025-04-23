@@ -20,33 +20,26 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/record"
 )
-
-const eventReasonValidation = "Validation"
 
 // validation is the default implementation of podcommon.Validation.
 type validation struct {
-	recorder        record.EventRecorder
 	status          podcommon.Status
 	podHelper       kubecommon.PodHelper
 	containerHelper kubecommon.ContainerHelper
 }
 
 func newValidation(
-	recorder record.EventRecorder,
 	status podcommon.Status,
 	podHelper kubecommon.PodHelper,
 	containerHelper kubecommon.ContainerHelper,
 ) *validation {
 	return &validation{
-		recorder:        recorder,
 		status:          status,
 		podHelper:       podHelper,
 		containerHelper: containerHelper,
@@ -137,8 +130,6 @@ func (v *validation) updateStatusAndGetError(
 	if err != nil {
 		logging.Errorf(ctx, err, "unable to update status (will continue)")
 	}
-
-	v.recorder.Event(pod, v1.EventTypeWarning, eventReasonValidation, common.CapitalizeFirstChar(ret.Error()))
 
 	return ret
 }

@@ -29,6 +29,7 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
+	"k8s.io/client-go/tools/record"
 )
 
 const (
@@ -38,11 +39,18 @@ const (
 
 // status is the default implementation of podcommon.Status.
 type status struct {
+	recorder  record.EventRecorder
 	podHelper kubecommon.PodHelper
 }
 
-func newStatus(podHelper kubecommon.PodHelper) *status {
-	return &status{podHelper: podHelper}
+func newStatus(
+	recorder record.EventRecorder,
+	podHelper kubecommon.PodHelper,
+) *status {
+	return &status{
+		recorder:  recorder,
+		podHelper: podHelper,
+	}
 }
 
 // Update updates controller status by applying mutations to the supplied pod. The supplied pod is never mutated.
@@ -94,15 +102,26 @@ func (s *status) PodMutationFunc(
 				statScale.LastEnacted = currentStat.Scale.LastEnacted
 				statScale.LastFailed = currentStat.Scale.LastFailed
 			}
+			// TODO(wt) no pause needed.
 		case podcommon.StatusScaleStateDownCommanded, podcommon.StatusScaleStateUpCommanded:
 			statScale.LastCommanded = s.formattedNow(timeFormatMilli)
 			statScale.LastEnacted = ""
 			statScale.LastFailed = ""
+
+			s.normalEvent(pod, eventReasonScaling, status)
+			// TODO(wt) only if currentStat.Scale.LastFailed is not empty, signal short-ish pause through new return
+			//  value (which is done by targetcontaineraction after applying the status patch) to allow kubelet time
+			//  to update conditions (to avoid spurious events).
 		case podcommon.StatusScaleStateUnknownCommanded:
 			statScale.LastCommanded = s.formattedNow(timeFormatMilli)
 			statScale.LastEnacted = ""
 			statScale.LastFailed = ""
+
 			metricsscale.CommandedUnknownRes().Inc()
+			s.normalEvent(pod, eventReasonScaling, status)
+			// TODO(wt) only if currentStat.Scale.LastFailed is not empty, signal short-ish pause through new return
+			//  value (which is done by targetcontaineraction after applying the status patch) to allow kubelet time
+			//  to update conditions (to avoid spurious events).
 		case podcommon.StatusScaleStateDownEnacted, podcommon.StatusScaleStateUpEnacted:
 			statScale.LastCommanded = currentStat.Scale.LastCommanded
 			statScale.LastEnacted = currentStat.Scale.LastEnacted
@@ -117,10 +136,12 @@ func (s *status) PodMutationFunc(
 					statusScaleState.Direction(), metricscommon.OutcomeSuccess,
 					statScale.LastCommanded, now,
 				)
+				s.normalEvent(pod, eventReasonScaling, status)
 			}
+			// TODO(wt) no pause needed.
 		case podcommon.StatusScaleStateDownFailed, podcommon.StatusScaleStateUpFailed:
 			statScale.LastCommanded = currentStat.Scale.LastCommanded
-			statScale.LastEnacted = ""
+			statScale.LastEnacted = "" // Assumes can't fail after enacted.
 			statScale.LastFailed = currentStat.Scale.LastFailed
 
 			// Only update if not already set.
@@ -132,7 +153,9 @@ func (s *status) PodMutationFunc(
 					statusScaleState.Direction(), metricscommon.OutcomeFailure,
 					statScale.LastCommanded, now,
 				)
+				s.warningEvent(pod, eventReasonScaling, status)
 			}
+			// TODO(wt) no pause needed.
 		default:
 			panic(fmt.Errorf("statusScaleState '%s' not supported", statusScaleState))
 		}
@@ -183,4 +206,14 @@ func (s *status) updateDurationMetric(
 	}
 
 	metricsscale.Duration(direction, outcome).Observe(diffSecs)
+}
+
+// normalEvent yields a 'normal' Kube event for the supplied pod with the supplied reason and message.
+func (s *status) normalEvent(pod *v1.Pod, reason string, message string) {
+	s.recorder.Event(pod, v1.EventTypeNormal, reason, common.CapitalizeFirstChar(message))
+}
+
+// warningEvent yields a 'warning' Kube event for the supplied pod with the supplied reason and message.
+func (s *status) warningEvent(pod *v1.Pod, reason string, message string) {
+	s.recorder.Event(pod, v1.EventTypeWarning, reason, common.CapitalizeFirstChar(message))
 }
