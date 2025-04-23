@@ -29,9 +29,12 @@ import (
 )
 
 func TestNewUpdate(t *testing.T) {
-	resourceName := v1.ResourceCPU
-	update := NewUpdate(resourceName, nil)
-	assert.Equal(t, resourceName, update.ResourceName())
+	u := NewUpdate(v1.ResourceCPU, nil)
+	expected := &update{
+		resourceName: v1.ResourceCPU,
+		config:       nil,
+	}
+	assert.Equal(t, expected, u)
 }
 
 func TestUpdateResourceName(t *testing.T) {
@@ -111,9 +114,9 @@ func TestStartupPodMutationFunc(t *testing.T) {
 			mutationFunc := update.StartupPodMutationFunc(tt.args.container)
 			err := mutationFunc(tt.args.funcPod)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.wantRequests, tt.args.funcPod.Spec.Containers[0].Resources.Requests[tt.fields.resourceName])
 			assert.Equal(t, tt.wantLimits, tt.args.funcPod.Spec.Containers[0].Resources.Limits[tt.fields.resourceName])
@@ -192,9 +195,9 @@ func TestPostStartupPodMutationFunc(t *testing.T) {
 			mutationFunc := update.PostStartupPodMutationFunc(tt.args.container)
 			err := mutationFunc(tt.args.funcPod)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.wantRequests, tt.args.funcPod.Spec.Containers[0].Resources.Requests[tt.fields.resourceName])
 			assert.Equal(t, tt.wantLimits, tt.args.funcPod.Spec.Containers[0].Resources.Limits[tt.fields.resourceName])

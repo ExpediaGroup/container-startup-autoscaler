@@ -44,7 +44,7 @@ import (
 
 func TestNewPodHelper(t *testing.T) {
 	c := fake.NewClientBuilder().Build()
-	assert.NotNil(t, NewPodHelper(c))
+	assert.Equal(t, &podHelper{client: c}, NewPodHelper(c))
 }
 
 func TestPodHelperGet(t *testing.T) {
@@ -109,9 +109,9 @@ func TestPodHelperGet(t *testing.T) {
 
 			gotFound, gotPod, err := h.Get(tt.args.ctx, tt.args.name)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.wantFound, gotFound)
 			assert.Equal(t, tt.wantPod, gotPod)
@@ -134,7 +134,7 @@ func TestPodHelperPatch(t *testing.T) {
 			false,
 		)
 		assert.Nil(t, got)
-		assert.Contains(t, err.Error(), "unable to mutate pod")
+		assert.ErrorContains(t, err, "unable to mutate pod")
 	})
 
 	t.Run("UnableToPatchPod", func(t *testing.T) {
@@ -151,7 +151,7 @@ func TestPodHelperPatch(t *testing.T) {
 			false,
 		)
 		assert.Nil(t, got)
-		assert.Contains(t, err.Error(), "unable to patch pod")
+		assert.ErrorContains(t, err, "unable to patch pod")
 	})
 
 	t.Run("ConflictUnableToGetPod", func(t *testing.T) {
@@ -174,7 +174,7 @@ func TestPodHelperPatch(t *testing.T) {
 			false,
 		)
 		assert.Nil(t, got)
-		assert.Contains(t, err.Error(), "unable to get pod when resolving conflict")
+		assert.ErrorContains(t, err, "unable to get pod when resolving conflict")
 	})
 
 	t.Run("ConflictPodDoesntExist", func(t *testing.T) {
@@ -198,7 +198,7 @@ func TestPodHelperPatch(t *testing.T) {
 			false,
 		)
 		assert.Nil(t, got)
-		assert.Contains(t, err.Error(), "pod doesn't exist when resolving conflict")
+		assert.ErrorContains(t, err, "pod doesn't exist when resolving conflict")
 	})
 
 	t.Run("OkNoPatchResizeTrue", func(t *testing.T) {
@@ -225,7 +225,7 @@ func TestPodHelperPatch(t *testing.T) {
 			true,
 			true,
 		)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupRequestsEnabled))
 		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupLimitsEnabled))
 		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(kubetest.PodMemoryPostStartupRequestsEnabled))
@@ -266,7 +266,7 @@ func TestPodHelperPatch(t *testing.T) {
 			true,
 			true,
 		)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupRequestsEnabled))
 		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupLimitsEnabled))
 		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(kubetest.PodMemoryPostStartupRequestsEnabled))
@@ -299,7 +299,7 @@ func TestPodHelperPatch(t *testing.T) {
 			true,
 			true,
 		)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupRequestsEnabled))
 		assert.True(t, got.Spec.Containers[0].Resources.Limits[v1.ResourceCPU].Equal(kubetest.PodCpuPostStartupLimitsEnabled))
 		assert.True(t, got.Spec.Containers[0].Resources.Requests[v1.ResourceMemory].Equal(kubetest.PodMemoryPostStartupRequestsEnabled))
@@ -330,7 +330,7 @@ func TestPodHelperPatch(t *testing.T) {
 			false,
 			true,
 		)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, "test", got.Annotations["test"])
 
 		// Ensure original pod isn't mutated
@@ -443,9 +443,9 @@ func TestPodHelperExpectedLabelValueAs(t *testing.T) {
 
 			got, err := h.ExpectedLabelValueAs(tt.args.pod, tt.args.name, tt.args.as)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -486,9 +486,9 @@ func TestPodHelperExpectedAnnotationValueAs(t *testing.T) {
 
 			got, err := h.ExpectedAnnotationValueAs(tt.args.pod, tt.args.name, tt.args.as)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})

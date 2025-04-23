@@ -66,9 +66,9 @@ func TestContainerHelperGet(t *testing.T) {
 
 			got, err := h.Get(tt.args.pod, tt.args.name)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.wantName, got.Name)
 		})
@@ -174,9 +174,9 @@ func TestContainerHelperState(t *testing.T) {
 
 			got, err := h.State(tt.args.pod, tt.args.container)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -234,9 +234,9 @@ func TestContainerHelperIsStarted(t *testing.T) {
 
 			got, err := h.IsStarted(tt.args.pod, tt.args.container)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -286,9 +286,9 @@ func TestContainerHelperIsReady(t *testing.T) {
 
 			got, err := h.IsReady(tt.args.pod, tt.args.container)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -462,9 +462,9 @@ func TestContainerHelperResizePolicy(t *testing.T) {
 
 			got, err := h.ResizePolicy(tt.args.container, tt.args.resourceName)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -545,9 +545,9 @@ func TestContainerHelperCurrentRequests(t *testing.T) {
 
 			got, err := h.CurrentRequests(tt.args.pod, tt.args.container, tt.args.resourceName)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -628,9 +628,9 @@ func TestContainerHelperCurrentLimits(t *testing.T) {
 
 			got, err := h.CurrentLimits(tt.args.pod, tt.args.container, tt.args.resourceName)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})

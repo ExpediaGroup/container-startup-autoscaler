@@ -31,10 +31,13 @@ func TestNewStatusAnnotation(t *testing.T) {
 		StatusAnnotationScale{},
 		"lastUpdated",
 	)
-	assert.Equal(t, "status", statAnn.Status)
-	assert.Equal(t, podcommon.States{}, statAnn.States)
-	assert.Equal(t, StatusAnnotationScale{}, statAnn.Scale)
-	assert.Equal(t, "lastUpdated", statAnn.LastUpdated)
+	expected := StatusAnnotation{
+		Status:      "status",
+		States:      podcommon.States{},
+		Scale:       StatusAnnotationScale{},
+		LastUpdated: "lastUpdated",
+	}
+	assert.Equal(t, expected, statAnn)
 }
 
 func TestStatusAnnotationJson(t *testing.T) {
@@ -100,7 +103,7 @@ func TestStatusAnnotationEqual(t *testing.T) {
 func TestStatusAnnotationFromString(t *testing.T) {
 	t.Run("UnableToUnmarshal", func(t *testing.T) {
 		got, err := StatusAnnotationFromString("test")
-		assert.Contains(t, err.Error(), "unable to unmarshal")
+		assert.ErrorContains(t, err, "unable to unmarshal")
 		assert.Equal(t, StatusAnnotation{}, got)
 	})
 
@@ -111,7 +114,7 @@ func TestStatusAnnotationFromString(t *testing.T) {
 				`"scale":{"enabledForResources":["cpu"],"lastCommanded":"10","lastEnacted":"11","lastFailed":"12"},` +
 				`"lastUpdated":"13"}`,
 		)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(
 			t,
 			NewStatusAnnotation(
@@ -126,19 +129,30 @@ func TestStatusAnnotationFromString(t *testing.T) {
 }
 
 func TestNewStatusAnnotationScale(t *testing.T) {
-	statAnn := NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, "lastCommanded", "lastEnacted", "lastFailed")
-	assert.Equal(t, []v1.ResourceName{v1.ResourceCPU}, statAnn.EnabledForResources)
-	assert.Equal(t, "lastCommanded", statAnn.LastCommanded)
-	assert.Equal(t, "lastEnacted", statAnn.LastEnacted)
-	assert.Equal(t, "lastFailed", statAnn.LastFailed)
+	statAnn := NewStatusAnnotationScale(
+		[]v1.ResourceName{v1.ResourceCPU},
+		"lastCommanded",
+		"lastEnacted",
+		"lastFailed",
+	)
+	expected := StatusAnnotationScale{
+		EnabledForResources: []v1.ResourceName{v1.ResourceCPU},
+		LastCommanded:       "lastCommanded",
+		LastEnacted:         "lastEnacted",
+		LastFailed:          "lastFailed",
+	}
+	assert.Equal(t, expected, statAnn)
 }
 
 func TestNewEmptyStatusAnnotationScale(t *testing.T) {
 	statAnn := NewEmptyStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU})
-	assert.Equal(t, []v1.ResourceName{v1.ResourceCPU}, statAnn.EnabledForResources)
-	assert.Empty(t, statAnn.LastCommanded)
-	assert.Empty(t, statAnn.LastEnacted)
-	assert.Empty(t, statAnn.LastFailed)
+	expected := StatusAnnotationScale{
+		EnabledForResources: []v1.ResourceName{v1.ResourceCPU},
+		LastCommanded:       "",
+		LastEnacted:         "",
+		LastFailed:          "",
+	}
+	assert.Equal(t, expected, statAnn)
 }
 
 func TestFixedEnabledForResources(t *testing.T) {

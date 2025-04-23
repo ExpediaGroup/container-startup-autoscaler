@@ -285,9 +285,9 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			got, err := r.Reconcile(ctx, reconcile.Request{NamespacedName: namespacedName})
 
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 			assert.Equal(t, tt.wantEmptyMap, c.IsEmpty())

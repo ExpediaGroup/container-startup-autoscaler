@@ -31,9 +31,13 @@ import (
 )
 
 func TestNewState(t *testing.T) {
-	resourceName := v1.ResourceCPU
-	state := NewState(resourceName, nil, nil)
-	assert.Equal(t, resourceName, state.ResourceName())
+	s := NewState(v1.ResourceCPU, nil, nil)
+	expected := &state{
+		resourceName:    v1.ResourceCPU,
+		config:          nil,
+		containerHelper: nil,
+	}
+	assert.Equal(t, expected, s)
 }
 
 func TestStateResourceName(t *testing.T) {
@@ -277,9 +281,9 @@ func TestStateIsAnyCurrentZero(t *testing.T) {
 			}
 			got, err := s.IsAnyCurrentZero(&v1.Pod{}, &v1.Container{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -373,9 +377,9 @@ func TestStateDoesRequestsCurrentMatchSpec(t *testing.T) {
 			}
 			got, err := s.DoesRequestsCurrentMatchSpec(&v1.Pod{}, &v1.Container{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -469,9 +473,9 @@ func TestStateDoesLimitsCurrentMatchSpec(t *testing.T) {
 			}
 			got, err := s.DoesLimitsCurrentMatchSpec(&v1.Pod{}, &v1.Container{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})

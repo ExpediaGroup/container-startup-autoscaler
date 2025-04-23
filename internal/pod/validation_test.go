@@ -40,10 +40,13 @@ func TestNewValidation(t *testing.T) {
 	containerHelper := kube.NewContainerHelper()
 	stat := newStatus(podHelper)
 	val := newValidation(recorder, stat, podHelper, containerHelper)
-	assert.Equal(t, recorder, val.recorder)
-	assert.Equal(t, stat, val.status)
-	assert.Equal(t, podHelper, val.podHelper)
-	assert.Equal(t, containerHelper, val.containerHelper)
+	expected := &validation{
+		recorder:        recorder,
+		status:          stat,
+		podHelper:       podHelper,
+		containerHelper: containerHelper,
+	}
+	assert.Equal(t, expected, val)
 }
 
 func TestValidationValidate(t *testing.T) {
@@ -241,9 +244,9 @@ func TestValidationValidate(t *testing.T) {
 			)
 			if tt.wantErrMsg != "" {
 				assert.True(t, errors.As(err, &ValidationError{}))
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			if tt.wantNilContainer {
 				assert.Nil(t, container)

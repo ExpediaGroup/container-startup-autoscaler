@@ -32,17 +32,25 @@ import (
 )
 
 func TestNewConfiguration(t *testing.T) {
-	resourceName := v1.ResourceCPU
 	config := NewConfiguration(
-		resourceName,
-		"",
-		"",
-		"",
+		v1.ResourceCPU,
+		"annotationStartupName",
+		"annotationPostStartupRequestsName",
+		"annotationPostStartupLimitsName",
 		true,
 		nil,
 		nil,
 	)
-	assert.Equal(t, resourceName, config.ResourceName())
+	expected := &configuration{
+		resourceName:                      v1.ResourceCPU,
+		annotationStartupName:             "annotationStartupName",
+		annotationPostStartupRequestsName: "annotationPostStartupRequestsName",
+		annotationPostStartupLimitsName:   "annotationPostStartupLimitsName",
+		csaEnabled:                        true,
+		podHelper:                         nil,
+		containerHelper:                   nil,
+	}
+	assert.Equal(t, expected, config)
 }
 
 func TestConfigurationResourceName(t *testing.T) {
@@ -291,9 +299,9 @@ func TestConfigurationStoreFromAnnotations(t *testing.T) {
 			}
 			err := config.StoreFromAnnotations(&v1.Pod{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.wantHasStored, config.hasStored)
 			assert.Equal(t, tt.wantRawResources, config.rawResources)
@@ -562,9 +570,9 @@ func TestConfigurationValidate(t *testing.T) {
 			} else {
 				err := config.Validate(&v1.Container{})
 				if tt.wantErrMsg != "" {
-					assert.Contains(t, err.Error(), tt.wantErrMsg)
+					assert.ErrorContains(t, err, tt.wantErrMsg)
 				} else {
-					assert.Nil(t, err)
+					assert.NoError(t, err)
 				}
 				assert.Equal(t, tt.wantUserEnabled, config.userEnabled)
 				assert.Equal(t, tt.wantHasValidated, config.hasValidated)

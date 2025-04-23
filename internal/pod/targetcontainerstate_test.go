@@ -35,9 +35,12 @@ import (
 func TestNewTargetContainerState(t *testing.T) {
 	pHelper := kube.NewPodHelper(nil)
 	cHelper := kube.NewContainerHelper()
-	s := newTargetContainerState(pHelper, cHelper)
-	assert.Equal(t, pHelper, s.podHelper)
-	assert.Equal(t, cHelper, s.containerHelper)
+	state := newTargetContainerState(pHelper, cHelper)
+	expected := targetContainerState{
+		podHelper:       pHelper,
+		containerHelper: cHelper,
+	}
+	assert.Equal(t, expected, state)
 }
 
 func TestTargetContainerStateStates(t *testing.T) {
@@ -323,9 +326,9 @@ func TestTargetContainerStateStates(t *testing.T) {
 				configs,
 			)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			if tt.wantStates != (podcommon.States{}) {
 				assert.Equal(t, tt.wantStates, got)
@@ -451,9 +454,9 @@ func TestTargetContainerStateStateContainer(t *testing.T) {
 
 			got, err := s.stateContainer(&v1.Pod{}, &v1.Container{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -496,9 +499,9 @@ func TestTargetContainerStateStateStarted(t *testing.T) {
 
 			got, err := s.stateStarted(&v1.Pod{}, &v1.Container{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -541,9 +544,9 @@ func TestTargetContainerStateStateReady(t *testing.T) {
 
 			got, err := s.stateReady(&v1.Pod{}, &v1.Container{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -616,9 +619,9 @@ func TestTargetContainerStateStateStatusResources(t *testing.T) {
 
 			got, err := s.stateStatusResources(&v1.Pod{}, &v1.Container{}, scaletest.NewMockStates(tt.configMockFunc))
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -715,9 +718,9 @@ func TestTargetContainerStateStateResize(t *testing.T) {
 
 			got, err := s.stateResize(&v1.Pod{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})

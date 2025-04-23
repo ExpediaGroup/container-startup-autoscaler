@@ -170,8 +170,11 @@ func TestNewController(t *testing.T) {
 		conf := controllercommon.ControllerConfig{KubeConfig: "test1"}
 		runtimeManager := newMockRuntimeManager(func(*mockRuntimeManager) {})
 		cont := NewController(conf, runtimeManager)
-		assert.Equal(t, conf, cont.controllerConfig)
-		assert.Equal(t, runtimeManager, cont.runtimeManager)
+		expected := &controller{
+			controllerConfig: conf,
+			runtimeManager:   runtimeManager,
+		}
+		assert.Equal(t, expected, cont)
 
 		conf = controllercommon.ControllerConfig{KubeConfig: "test2"}
 		cont = NewController(conf, runtimeManager)
@@ -220,9 +223,9 @@ func TestControllerInitialize(t *testing.T) {
 
 			err := c.Initialize(newMockController(tt.configControllerMockFunc))
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}

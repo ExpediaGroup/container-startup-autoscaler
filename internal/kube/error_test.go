@@ -17,14 +17,13 @@ limitations under the License.
 package kube
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewContainerStatusNotPresentError(t *testing.T) {
-	assert.True(t, errors.As(NewContainerStatusNotPresentError(), &ContainerStatusNotPresentError{}))
+	assert.Equal(t, ContainerStatusNotPresentError{}, NewContainerStatusNotPresentError())
 }
 
 func TestContainerStatusNotPresentErrorError(t *testing.T) {
@@ -33,7 +32,7 @@ func TestContainerStatusNotPresentErrorError(t *testing.T) {
 }
 
 func TestNewContainerStatusResourcesNotPresentError(t *testing.T) {
-	assert.True(t, errors.As(NewContainerStatusResourcesNotPresentError(), &ContainerStatusResourcesNotPresentError{}))
+	assert.Equal(t, ContainerStatusResourcesNotPresentError{}, NewContainerStatusResourcesNotPresentError())
 }
 
 func TestContainerStatusResourcesNotPresentErrorError(t *testing.T) {

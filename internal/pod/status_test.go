@@ -38,8 +38,7 @@ import (
 
 func TestNewStatus(t *testing.T) {
 	podHelper := kube.NewPodHelper(nil)
-	status := newStatus(podHelper)
-	assert.Equal(t, podHelper, status.podHelper)
+	assert.Equal(t, &status{podHelper: podHelper}, newStatus(podHelper))
 }
 
 func TestStatusUpdateCore(t *testing.T) {
@@ -58,7 +57,7 @@ func TestStatusUpdateCore(t *testing.T) {
 			scaletest.NewMockConfigurations(nil),
 		)
 		assert.Nil(t, got)
-		assert.Contains(t, err.Error(), "unable to patch pod")
+		assert.ErrorContains(t, err, "unable to patch pod")
 	})
 
 	t.Run("UnableToGetStatusAnnotationFromString", func(t *testing.T) {
@@ -77,7 +76,7 @@ func TestStatusUpdateCore(t *testing.T) {
 			podcommon.StatusScaleStateNotApplicable,
 			scaletest.NewMockConfigurations(nil),
 		)
-		assert.Contains(t, err.Error(), "unable to get status annotation from string")
+		assert.ErrorContains(t, err, "unable to get status annotation from string")
 	})
 
 	t.Run("OkNoPreviousStatus", func(t *testing.T) {
@@ -95,7 +94,7 @@ func TestStatusUpdateCore(t *testing.T) {
 			podcommon.StatusScaleStateNotApplicable,
 			scaletest.NewMockConfigurations(nil),
 		)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		ann, gotAnn := got.Annotations[kubecommon.AnnotationStatus]
 		assert.True(t, gotAnn)
 		stat := &StatusAnnotation{}
@@ -130,7 +129,7 @@ func TestStatusUpdateCore(t *testing.T) {
 			podcommon.StatusScaleStateNotApplicable,
 			scaletest.NewMockConfigurations(nil),
 		)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		stat := &StatusAnnotation{}
 		_ = json.Unmarshal([]byte(got.Annotations[kubecommon.AnnotationStatus]), stat)
@@ -268,7 +267,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 				tt.args.scaleState,
 				scaletest.NewMockConfigurations(nil),
 			)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			stat := &StatusAnnotation{}
 			_ = json.Unmarshal([]byte(got.Annotations[kubecommon.AnnotationStatus]), stat)

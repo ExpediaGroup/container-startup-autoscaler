@@ -206,9 +206,9 @@ func TestStatesIsAnyCurrentZeroAll(t *testing.T) {
 			}
 			got, err := s.IsAnyCurrentZeroAll(&v1.Pod{}, &v1.Container{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -283,9 +283,9 @@ func TestStatesDoesRequestsCurrentMatchSpecAll(t *testing.T) {
 			}
 			got, err := s.DoesRequestsCurrentMatchSpecAll(&v1.Pod{}, &v1.Container{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -360,9 +360,9 @@ func TestStatesDoesLimitsCurrentMatchSpecAll(t *testing.T) {
 			}
 			got, err := s.DoesLimitsCurrentMatchSpecAll(&v1.Pod{}, &v1.Container{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})

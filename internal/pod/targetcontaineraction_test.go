@@ -43,11 +43,14 @@ func TestNewTargetContainerAction(t *testing.T) {
 	recorder := &record.FakeRecorder{}
 	podHelper := kube.NewPodHelper(nil)
 	stat := newStatus(podHelper)
-	s := newTargetContainerAction(config, recorder, stat, podHelper)
-	assert.Equal(t, config, s.controllerConfig)
-	assert.Equal(t, recorder, s.recorder)
-	assert.Equal(t, stat, s.status)
-	assert.Equal(t, podHelper, s.podHelper)
+	action := newTargetContainerAction(config, recorder, stat, podHelper)
+	expected := &targetContainerAction{
+		controllerConfig: config,
+		recorder:         recorder,
+		status:           stat,
+		podHelper:        podHelper,
+	}
+	assert.Equal(t, expected, action)
 }
 
 func TestTargetContainerActionExecute(t *testing.T) {
@@ -312,9 +315,9 @@ func TestTargetContainerActionExecute(t *testing.T) {
 				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			if tt.wantLogMsg != "" {
 				assert.Contains(t, buffer.String(), tt.wantLogMsg)
@@ -420,7 +423,7 @@ func TestTargetContainerActionResUnknownAction(t *testing.T) {
 		&v1.Container{},
 		scaletest.NewMockConfigurations(nil),
 	)
-	assert.Contains(t, err.Error(), "unknown resources applied")
+	assert.ErrorContains(t, err, "unknown resources applied")
 	assert.True(t, statusUpdated)
 }
 
@@ -464,7 +467,7 @@ func TestTargetContainerActionNotStartedWithStartupResAction(t *testing.T) {
 			if tt.wantErr {
 				assert.NotNil(t, err)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			if tt.wantStatusUpdate {
 				assert.True(t, statusUpdated)
@@ -521,9 +524,9 @@ func TestTargetContainerActionNotStartedWithPostStartupResAction(t *testing.T) {
 				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			if tt.wantStatusUpdate {
 				assert.True(t, statusUpdated)
@@ -588,9 +591,9 @@ func TestTargetContainerActionStartedWithStartupResAction(t *testing.T) {
 				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			if tt.wantStatusUpdate {
 				assert.True(t, statusUpdated)
@@ -649,7 +652,7 @@ func TestTargetContainerActionStartedWithPostStartupResAction(t *testing.T) {
 			if tt.wantErr {
 				assert.NotNil(t, err)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			if tt.wantStatusUpdate {
 				assert.True(t, statusUpdated)
@@ -706,9 +709,9 @@ func TestTargetContainerActionNotStartedWithUnknownResAction(t *testing.T) {
 				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			if tt.wantStatusUpdate {
 				assert.True(t, statusUpdated)
@@ -773,9 +776,9 @@ func TestTargetContainerActionStartedWithUnknownResAction(t *testing.T) {
 				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			if tt.wantStatusUpdate {
 				assert.True(t, statusUpdated)
@@ -996,9 +999,9 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 				scaletest.NewMockConfigurations(nil),
 			)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			if tt.wantStatusUpdate {
 				assert.True(t, statusUpdated)

@@ -33,26 +33,32 @@ func TestNewStates(t *testing.T) {
 		StateStatusResourcesUnknown,
 		NewResizeState(StateResizeNotStartedOrCompleted, ""),
 	)
-	assert.Equal(t, StateBoolUnknown, s.StartupProbe)
-	assert.Equal(t, StateBoolUnknown, s.ReadinessProbe)
-	assert.Equal(t, StateContainerUnknown, s.Container)
-	assert.Equal(t, StateBoolUnknown, s.Started)
-	assert.Equal(t, StateBoolUnknown, s.Ready)
-	assert.Equal(t, StateResourcesUnknown, s.Resources)
-	assert.Equal(t, StateStatusResourcesUnknown, s.StatusResources)
-	assert.Equal(t, NewResizeState(StateResizeNotStartedOrCompleted, ""), s.Resize)
+	expected := States{
+		StartupProbe:    StateBoolUnknown,
+		ReadinessProbe:  StateBoolUnknown,
+		Container:       StateContainerUnknown,
+		Started:         StateBoolUnknown,
+		Ready:           StateBoolUnknown,
+		Resources:       StateResourcesUnknown,
+		StatusResources: StateStatusResourcesUnknown,
+		Resize:          NewResizeState(StateResizeNotStartedOrCompleted, ""),
+	}
+	assert.Equal(t, expected, s)
 }
 
 func TestNewStatesAllUnknown(t *testing.T) {
 	s := NewStatesAllUnknown()
-	assert.Equal(t, StateBoolUnknown, s.StartupProbe)
-	assert.Equal(t, StateBoolUnknown, s.ReadinessProbe)
-	assert.Equal(t, StateContainerUnknown, s.Container)
-	assert.Equal(t, StateBoolUnknown, s.Started)
-	assert.Equal(t, StateBoolUnknown, s.Ready)
-	assert.Equal(t, StateResourcesUnknown, s.Resources)
-	assert.Equal(t, StateStatusResourcesUnknown, s.StatusResources)
-	assert.Equal(t, NewResizeState(StateResizeUnknown, ""), s.Resize)
+	expected := States{
+		StartupProbe:    StateBoolUnknown,
+		ReadinessProbe:  StateBoolUnknown,
+		Container:       StateContainerUnknown,
+		Started:         StateBoolUnknown,
+		Ready:           StateBoolUnknown,
+		Resources:       StateResourcesUnknown,
+		StatusResources: StateStatusResourcesUnknown,
+		Resize:          NewResizeState(StateResizeUnknown, ""),
+	}
+	assert.Equal(t, expected, s)
 }
 
 func TestNewResizeState(t *testing.T) {
@@ -60,6 +66,9 @@ func TestNewResizeState(t *testing.T) {
 		StateResizeUnknown,
 		"test",
 	)
-	assert.Equal(t, StateResizeUnknown, rs.State)
-	assert.Equal(t, "test", rs.Message)
+	expected := ResizeState{
+		State:   StateResizeUnknown,
+		Message: "test",
+	}
+	assert.Equal(t, expected, rs)
 }

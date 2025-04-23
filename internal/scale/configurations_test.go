@@ -74,9 +74,9 @@ func TestConfigurationsTargetContainerName(t *testing.T) {
 			}
 			got, err := configs.TargetContainerName(&v1.Pod{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -122,7 +122,7 @@ func TestConfigurationsStoreFromAnnotationsAll(t *testing.T) {
 			if tt.wantErr {
 				assert.NotNil(t, err)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -167,7 +167,7 @@ func TestConfigurationsValidateAll(t *testing.T) {
 			if tt.wantErr {
 				assert.NotNil(t, err)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -212,9 +212,9 @@ func TestConfigurationsValidateCollection(t *testing.T) {
 			}
 			err := configs.ValidateCollection()
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
