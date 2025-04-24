@@ -290,7 +290,27 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			},
 		},
 		{
-			"StatusScaleStateEnactedNoPrevious",
+			"StatusScaleStateEnactedLastCommandedEmpty",
+			args{
+				kubetest.NewPodBuilder().
+					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: statusAnnotationString(false, false, false)}).
+					Build(),
+				podcommon.StatusScaleStateUpEnacted,
+				"",
+			},
+			"",
+			false,
+			false,
+			false,
+			"",
+			false,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeSuccess))
+				assert.Equal(t, uint64(0), metricVal)
+			},
+		},
+		{
+			"StatusScaleStateEnactedLastCommandedNotEmptyNoPrevious",
 			args{
 				kubetest.NewPodBuilder().
 					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: statusAnnotationString(true, false, false)}).
@@ -310,7 +330,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			},
 		},
 		{
-			"StatusScaleStateEnactedPrevious",
+			"StatusScaleStateEnactedLastCommandedNotEmptyPrevious",
 			args{
 				kubetest.NewPodBuilder().
 					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
@@ -454,7 +474,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 				select {
 				case res := <-eventRecorder.Events:
 					assert.Contains(t, res, tt.wantEventMsg)
-				case <-time.After(5 * time.Second):
+				case <-time.After(1 * time.Second):
 					t.Fatalf("event not generated")
 				}
 			} else {

@@ -132,6 +132,7 @@ func (s *status) podMutationFunc(
 				statScale.LastEnacted = currentStat.Scale.LastEnacted
 				statScale.LastFailed = currentStat.Scale.LastFailed
 			}
+
 		case podcommon.StatusScaleStateDownCommanded, podcommon.StatusScaleStateUpCommanded:
 			statScale.LastCommanded = s.formattedNow(timeFormatMilli)
 			statScale.LastEnacted = ""
@@ -145,6 +146,7 @@ func (s *status) podMutationFunc(
 			}
 
 			s.normalEvent(pod, eventReasonScaling, status)
+
 		case podcommon.StatusScaleStateUnknownCommanded:
 			statScale.LastCommanded = s.formattedNow(timeFormatMilli)
 			statScale.LastEnacted = ""
@@ -156,22 +158,33 @@ func (s *status) podMutationFunc(
 
 			metricsscale.CommandedUnknownRes().Inc()
 			s.normalEvent(pod, eventReasonScaling, status)
-		case podcommon.StatusScaleStateDownEnacted, podcommon.StatusScaleStateUpEnacted:
-			statScale.LastCommanded = currentStat.Scale.LastCommanded
-			statScale.LastEnacted = currentStat.Scale.LastEnacted
-			statScale.LastFailed = ""
 
-			// Only update if not already set.
-			if !gotStatAnn || (gotStatAnn && currentStat.Scale.LastEnacted == "") {
-				now := s.formattedNow(timeFormatMilli)
-				statScale.LastEnacted = now
-				s.updateDurationMetric(
-					ctx,
-					statusScaleState.Direction(), metricscommon.OutcomeSuccess,
-					statScale.LastCommanded, now,
-				)
-				s.normalEvent(pod, eventReasonScaling, status)
+		case podcommon.StatusScaleStateDownEnacted, podcommon.StatusScaleStateUpEnacted:
+			if currentStat.Scale.LastCommanded == "" {
+				// Detected enacted but wasn't previously commanded. This happens if container resources are already
+				// correctly applied for the desired state e.g. admitting a pod with startup resources already
+				// applied. Only set empty timestamps in this case.
+				statScale.LastCommanded = ""
+				statScale.LastEnacted = ""
+				statScale.LastFailed = ""
+			} else {
+				statScale.LastCommanded = currentStat.Scale.LastCommanded
+				statScale.LastEnacted = currentStat.Scale.LastEnacted
+				statScale.LastFailed = ""
+
+				// Only update if not already set.
+				if !gotStatAnn || (gotStatAnn && currentStat.Scale.LastEnacted == "") {
+					now := s.formattedNow(timeFormatMilli)
+					statScale.LastEnacted = now
+					s.updateDurationMetric(
+						ctx,
+						statusScaleState.Direction(), metricscommon.OutcomeSuccess,
+						statScale.LastCommanded, now,
+					)
+					s.normalEvent(pod, eventReasonScaling, status)
+				}
 			}
+
 		case podcommon.StatusScaleStateDownFailed, podcommon.StatusScaleStateUpFailed:
 			statScale.LastCommanded = currentStat.Scale.LastCommanded
 			statScale.LastEnacted = "" // Assumes can't fail after enacted.
@@ -189,6 +202,7 @@ func (s *status) podMutationFunc(
 				metricsscale.Failure(states.Resources.Direction(), failReason).Inc()
 				s.warningEvent(pod, eventReasonScaling, status)
 			}
+
 		default:
 			panic(fmt.Errorf("statusScaleState '%s' not supported", statusScaleState))
 		}
