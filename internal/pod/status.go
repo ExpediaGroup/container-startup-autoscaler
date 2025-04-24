@@ -18,7 +18,9 @@ package pod
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
@@ -64,10 +66,26 @@ func (s *status) Update(
 	states podcommon.States,
 	statusScaleState podcommon.StatusScaleState,
 	scaleConfigs scalecommon.Configurations,
+	failReason string,
 ) (*v1.Pod, error) {
+	if (statusScaleState == podcommon.StatusScaleStateUpFailed ||
+		statusScaleState == podcommon.StatusScaleStateDownFailed) &&
+		strings.TrimSpace(failReason) == "" {
+
+		panic(errors.New("failReason not provided for failed scale state"))
+	}
+
 	shouldPause := false
 	postPatchPauseCallback := func(pause bool) { shouldPause = pause }
-	mutatePodFunc := s.podMutationFunc(ctx, status, states, statusScaleState, scaleConfigs, postPatchPauseCallback)
+	mutatePodFunc := s.podMutationFunc(
+		ctx,
+		status,
+		states,
+		statusScaleState,
+		scaleConfigs,
+		postPatchPauseCallback,
+		failReason,
+	)
 
 	newPod, err := s.podHelper.Patch(ctx, pod, []func(*v1.Pod) error{mutatePodFunc}, false, true)
 	if err != nil {
@@ -90,6 +108,7 @@ func (s *status) podMutationFunc(
 	statusScaleState podcommon.StatusScaleState,
 	scaleConfigs scalecommon.Configurations,
 	postPatchPauseCallback func(pause bool),
+	failReason string,
 ) func(pod *v1.Pod) error {
 	return func(pod *v1.Pod) error {
 		var currentStat StatusAnnotation
@@ -167,6 +186,7 @@ func (s *status) podMutationFunc(
 					statusScaleState.Direction(), metricscommon.OutcomeFailure,
 					statScale.LastCommanded, now,
 				)
+				metricsscale.Failure(states.Resources.Direction(), failReason).Inc()
 				s.warningEvent(pod, eventReasonScaling, status)
 			}
 		default:

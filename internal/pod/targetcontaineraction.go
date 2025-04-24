@@ -25,7 +25,6 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
-	metricsscale "github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
@@ -151,6 +150,7 @@ func (a *targetContainerAction) containerNotRunningAction(
 		pod,
 		"target container currently not running",
 		scaleConfigs,
+		"",
 	)
 	return nil
 }
@@ -169,6 +169,7 @@ func (a *targetContainerAction) startedUnknownAction(
 		pod,
 		"target container started status currently unknown",
 		scaleConfigs,
+		"",
 	)
 	return nil
 }
@@ -187,6 +188,7 @@ func (a *targetContainerAction) readyUnknownAction(
 		pod,
 		"target container ready status currently unknown",
 		scaleConfigs,
+		"",
 	)
 	return nil
 }
@@ -201,7 +203,7 @@ func (a *targetContainerAction) resUnknownAction(
 	scaleConfigs scalecommon.Configurations,
 ) error {
 	msg := "unknown resources applied"
-	a.updateStatus(ctx, states, podcommon.StatusScaleStateNotApplicable, pod, msg, scaleConfigs)
+	a.updateStatus(ctx, states, podcommon.StatusScaleStateNotApplicable, pod, msg, scaleConfigs, "")
 	return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
 }
 
@@ -235,7 +237,7 @@ func (a *targetContainerAction) notStartedWithPostStartupResAction(
 
 	msg := "startup resources commanded"
 
-	_, err = a.status.Update(ctx, newPod, msg, states, podcommon.StatusScaleStateUpCommanded, scaleConfigs)
+	_, err = a.status.Update(ctx, newPod, msg, states, podcommon.StatusScaleStateUpCommanded, scaleConfigs, "")
 	if err != nil {
 		return common.WrapErrorf(err, "unable to update status")
 	}
@@ -261,7 +263,7 @@ func (a *targetContainerAction) startedWithStartupResAction(
 
 	msg := "post-startup resources commanded"
 
-	_, err = a.status.Update(ctx, newPod, msg, states, podcommon.StatusScaleStateDownCommanded, scaleConfigs)
+	_, err = a.status.Update(ctx, newPod, msg, states, podcommon.StatusScaleStateDownCommanded, scaleConfigs, "")
 	if err != nil {
 		return common.WrapErrorf(err, "unable to update status")
 	}
@@ -300,7 +302,7 @@ func (a *targetContainerAction) notStartedWithUnknownResAction(
 
 	msg := "startup resources commanded (unknown resources applied)"
 
-	_, err = a.status.Update(ctx, newPod, msg, states, podcommon.StatusScaleStateUnknownCommanded, scaleConfigs)
+	_, err = a.status.Update(ctx, newPod, msg, states, podcommon.StatusScaleStateUnknownCommanded, scaleConfigs, "")
 	if err != nil {
 		return common.WrapErrorf(err, "unable to update status")
 	}
@@ -327,7 +329,7 @@ func (a *targetContainerAction) startedWithUnknownResAction(
 
 	msg := "post-startup resources commanded (unknown resources applied)"
 
-	_, err = a.status.Update(ctx, newPod, msg, states, podcommon.StatusScaleStateUnknownCommanded, scaleConfigs)
+	_, err = a.status.Update(ctx, newPod, msg, states, podcommon.StatusScaleStateUnknownCommanded, scaleConfigs, "")
 	if err != nil {
 		return common.WrapErrorf(err, "unable to update status")
 	}
@@ -357,6 +359,7 @@ func (a *targetContainerAction) processConfigEnacted(
 			pod,
 			states.Resources.HumanReadable()+" scale not yet completed - in progress",
 			scaleConfigs,
+			"",
 		)
 		return nil
 
@@ -368,6 +371,7 @@ func (a *targetContainerAction) processConfigEnacted(
 			pod,
 			fmt.Sprintf("%s scale not yet completed - deferred (%s)", states.Resources.HumanReadable(), states.Resize.Message),
 			scaleConfigs,
+			"",
 		)
 		return nil
 
@@ -382,8 +386,7 @@ func (a *targetContainerAction) processConfigEnacted(
 		}
 
 		msg := fmt.Sprintf("%s scale failed - infeasible (%s)", states.Resources.HumanReadable(), states.Resize.Message)
-		a.updateStatus(ctx, states, scaleState, pod, msg, scaleConfigs)
-		metricsscale.Failure(states.Resources.Direction(), "infeasible").Inc()
+		a.updateStatus(ctx, states, scaleState, pod, msg, scaleConfigs, "infeasible")
 		return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
 
 	case podcommon.StateResizeError:
@@ -397,8 +400,7 @@ func (a *targetContainerAction) processConfigEnacted(
 		}
 
 		msg := fmt.Sprintf("%s scale failed - error (%s)", states.Resources.HumanReadable(), states.Resize.Message)
-		a.updateStatus(ctx, states, scaleState, pod, msg, scaleConfigs)
-		metricsscale.Failure(states.Resources.Direction(), "error").Inc()
+		a.updateStatus(ctx, states, scaleState, pod, msg, scaleConfigs, "error")
 		return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
 
 	default:
@@ -417,6 +419,7 @@ func (a *targetContainerAction) processConfigEnacted(
 			pod,
 			"target container current cpu and/or memory resources currently missing",
 			scaleConfigs,
+			"",
 		)
 		return nil
 
@@ -432,6 +435,7 @@ func (a *targetContainerAction) processConfigEnacted(
 			pod,
 			"target container current cpu and/or memory resources currently don't match target container's 'requests'",
 			scaleConfigs,
+			"",
 		)
 		return nil
 
@@ -445,6 +449,7 @@ func (a *targetContainerAction) processConfigEnacted(
 			pod,
 			"target container current cpu and/or memory resources currently unknown",
 			scaleConfigs,
+			"",
 		)
 		return nil
 
@@ -463,7 +468,7 @@ func (a *targetContainerAction) processConfigEnacted(
 	}
 
 	msg := states.Resources.HumanReadable() + " resources enacted"
-	a.logInfoAndUpdateStatus(ctx, logging.VInfo, states, scaleState, pod, msg, scaleConfigs)
+	a.logInfoAndUpdateStatus(ctx, logging.VInfo, states, scaleState, pod, msg, scaleConfigs, "")
 	return nil
 }
 
@@ -488,8 +493,9 @@ func (a *targetContainerAction) updateStatus(
 	pod *v1.Pod,
 	status string,
 	scaleConfigs scalecommon.Configurations,
+	failReason string,
 ) {
-	_, err := a.status.Update(ctx, pod, status, states, scaleState, scaleConfigs)
+	_, err := a.status.Update(ctx, pod, status, states, scaleState, scaleConfigs, failReason)
 	if err != nil {
 		logging.Errorf(ctx, err, "unable to update status (will continue)")
 	}
@@ -504,7 +510,8 @@ func (a *targetContainerAction) logInfoAndUpdateStatus(
 	pod *v1.Pod,
 	message string,
 	scaleConfigs scalecommon.Configurations,
+	failReason string,
 ) {
 	logging.Infof(ctx, v, message)
-	a.updateStatus(ctx, states, scaleState, pod, message, scaleConfigs)
+	a.updateStatus(ctx, states, scaleState, pod, message, scaleConfigs, failReason)
 }

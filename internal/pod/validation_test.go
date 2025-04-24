@@ -270,7 +270,7 @@ func TestValidationValidate(t *testing.T) {
 func TestValidationUpdateStatusAndGetError(t *testing.T) {
 	t.Run("UnableToUpdateStatus", func(t *testing.T) {
 		configStatusMockFunc := func(m *podtest.MockStatus) {
-			m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+			m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 				Return(&v1.Pod{}, errors.New(""))
 		}
 		v := newValidation(

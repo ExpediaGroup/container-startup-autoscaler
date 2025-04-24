@@ -63,7 +63,6 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 	tests := []struct {
 		name                    string
 		configMapFunc           func(cmap.ConcurrentMap[string, any], string)
-		configMetricAssertsFunc func(t *testing.T)
 		fields                  fields
 		mocks                   mocks
 		podNamespace            string
@@ -71,15 +70,12 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 		wantErrMsg              string
 		want                    reconcile.Result
 		wantEmptyMap            bool
+		configMetricAssertsFunc func(t *testing.T)
 	}{
 		{
 			"ExistingReconcileInProgress",
 			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {
 				cmap.Set(podNamespacedName, nil)
-			},
-			func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.ExistingInProgress())
-				assert.Equal(t, float64(1), metricVal)
 			},
 			fields{controllercommon.ControllerConfig{RequeueDurationSecs: 10}},
 			mocks{},
@@ -88,14 +84,14 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			"",
 			reconcile.Result{RequeueAfter: 10 * time.Second},
 			false,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.ExistingInProgress())
+				assert.Equal(t, float64(1), metricVal)
+			},
 		},
 		{
 			"UnableToGetPod",
 			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
-			func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonUnableToGetPod))
-				assert.Equal(t, float64(1), metricVal)
-			},
 			fields{controllercommon.ControllerConfig{RequeueDurationSecs: 10}},
 			mocks{
 				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
@@ -107,14 +103,14 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			"",
 			reconcile.Result{RequeueAfter: 10 * time.Second},
 			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonUnableToGetPod))
+				assert.Equal(t, float64(1), metricVal)
+			},
 		},
 		{
 			"PodDoesntExist",
 			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
-			func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonPodDoesNotExist))
-				assert.Equal(t, float64(1), metricVal)
-			},
 			fields{},
 			mocks{
 				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
@@ -126,14 +122,14 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			"pod doesn't exist (won't requeue)",
 			reconcile.Result{},
 			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonPodDoesNotExist))
+				assert.Equal(t, float64(1), metricVal)
+			},
 		},
 		{
 			"UnableToConfigurePod",
 			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
-			func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonConfiguration))
-				assert.Equal(t, float64(1), metricVal)
-			},
 			fields{},
 			mocks{
 				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
@@ -146,14 +142,14 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			"unable to configure pod (won't requeue)",
 			reconcile.Result{},
 			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonConfiguration))
+				assert.Equal(t, float64(1), metricVal)
+			},
 		},
 		{
 			"UnableToGetTargetContainerName",
 			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
-			func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonConfiguration))
-				assert.Equal(t, float64(2), metricVal)
-			},
 			fields{},
 			mocks{
 				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
@@ -171,14 +167,14 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			"unable to get target container name (won't requeue)",
 			reconcile.Result{},
 			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonConfiguration))
+				assert.Equal(t, float64(2), metricVal)
+			},
 		},
 		{
 			"UnableToValidatePod",
 			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
-			func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonValidation))
-				assert.Equal(t, float64(1), metricVal)
-			},
 			fields{},
 			mocks{
 				configuration: podtest.NewMockConfiguration(nil),
@@ -193,14 +189,14 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			"unable to validate pod (won't requeue)",
 			reconcile.Result{},
 			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonValidation))
+				assert.Equal(t, float64(1), metricVal)
+			},
 		},
 		{
 			"UnableToDetermineTargetContainerStates",
 			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
-			func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonStatesDetermination))
-				assert.Equal(t, float64(1), metricVal)
-			},
 			fields{},
 			mocks{
 				configuration: podtest.NewMockConfiguration(nil),
@@ -216,14 +212,14 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			"unable to determine target container states (won't requeue)",
 			reconcile.Result{},
 			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonStatesDetermination))
+				assert.Equal(t, float64(1), metricVal)
+			},
 		},
 		{
 			"UnableToActionTargetContainerStates",
 			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
-			func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonStatesAction))
-				assert.Equal(t, float64(1), metricVal)
-			},
 			fields{},
 			mocks{
 				configuration:        podtest.NewMockConfiguration(nil),
@@ -240,11 +236,14 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			"unable to action target container states (won't requeue)",
 			reconcile.Result{},
 			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonStatesAction))
+				assert.Equal(t, float64(1), metricVal)
+			},
 		},
 		{
 			"Ok",
 			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
-			func(t *testing.T) {},
 			fields{},
 			mocks{
 				configuration:         podtest.NewMockConfiguration(nil),
@@ -258,6 +257,7 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			"",
 			reconcile.Result{},
 			true,
+			nil,
 		},
 	}
 	for _, tt := range tests {

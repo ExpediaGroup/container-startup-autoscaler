@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 // TODO(wt) Remaining for Kube 1.33:
-// TODO(wt) Test metrics in status_test.go
 // TODO(wt) Ensure docs state that target containers must explicitly state CPU/memory requests/limits
 // TODO(wt) Ensure docs state 'last' timestamp behavior
 // TODO(wt) Add note to docs around swap-enabled containers: https://github.com/kubernetes/kubernetes/pull/130831

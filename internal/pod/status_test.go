@@ -49,6 +49,23 @@ func TestNewStatus(t *testing.T) {
 }
 
 func TestStatusUpdateCore(t *testing.T) {
+	t.Run("NoFailReasonPanics", func(t *testing.T) {
+		s := newStatus(nil, nil)
+
+		fun := func() {
+			_, _ = s.Update(
+				nil,
+				nil,
+				"",
+				podcommon.States{},
+				podcommon.StatusScaleStateUpFailed,
+				nil,
+				" ",
+			)
+		}
+		assert.PanicsWithError(t, "failReason not provided for failed scale state", fun)
+	})
+
 	t.Run("UnableToPatchPod", func(t *testing.T) {
 		s := newStatus(
 			&record.FakeRecorder{},
@@ -67,6 +84,7 @@ func TestStatusUpdateCore(t *testing.T) {
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
 			scaletest.NewMockConfigurations(nil),
+			"",
 		)
 		assert.Nil(t, got)
 		assert.ErrorContains(t, err, "unable to patch pod")
@@ -92,6 +110,7 @@ func TestStatusUpdateCore(t *testing.T) {
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
 			scaletest.NewMockConfigurations(nil),
+			"",
 		)
 		assert.ErrorContains(t, err, "unable to get status annotation from string")
 	})
@@ -115,6 +134,7 @@ func TestStatusUpdateCore(t *testing.T) {
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
 			scaletest.NewMockConfigurations(nil),
+			"",
 		)
 		assert.NoError(t, err)
 		ann, gotAnn := got.Annotations[kubecommon.AnnotationStatus]
@@ -155,6 +175,7 @@ func TestStatusUpdateCore(t *testing.T) {
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
 			scaletest.NewMockConfigurations(nil),
+			"",
 		)
 		assert.NoError(t, err)
 
@@ -164,21 +185,22 @@ func TestStatusUpdateCore(t *testing.T) {
 	})
 }
 
-// TODO(wt) test metrics here
 func TestStatusUpdateScaleStatus(t *testing.T) {
 	type args struct {
 		pod        *v1.Pod
 		scaleState podcommon.StatusScaleState
+		failReason string
 	}
 	tests := []struct {
-		name                   string
-		args                   args
-		wantPanicErrMsg        string
-		wantLastScaleCommanded bool
-		wantLastScaleEnacted   bool
-		wantLastScaleFailed    bool
-		wantEventMsg           string
-		wantPause              bool
+		name                    string
+		args                    args
+		wantPanicErrMsg         string
+		wantLastScaleCommanded  bool
+		wantLastScaleEnacted    bool
+		wantLastScaleFailed     bool
+		wantEventMsg            string
+		wantPause               bool
+		configMetricAssertsFunc func(t *testing.T)
 	}{
 		{
 			"StatusScaleStateNotApplicablePrevious",
@@ -187,6 +209,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateNotApplicable,
+				"",
 			},
 			"",
 			true,
@@ -194,12 +217,14 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			true,
 			"",
 			false,
+			nil,
 		},
 		{
 			"StatusScaleStateCommandedNoPreviousFail",
 			args{
 				kubetest.NewPodBuilder().Build(),
 				podcommon.StatusScaleStateUpCommanded,
+				"",
 			},
 			"",
 			true,
@@ -207,6 +232,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			"Normal Scaling Test",
 			false,
+			nil,
 		},
 		{
 			"StatusScaleStateCommandedPreviousFail",
@@ -215,6 +241,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateUpCommanded,
+				"",
 			},
 			"",
 			true,
@@ -222,12 +249,14 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			"Normal Scaling Test",
 			true,
+			nil,
 		},
 		{
 			"StatusScaleStateUnknownCommandedNoPreviousFail",
 			args{
 				kubetest.NewPodBuilder().Build(),
 				podcommon.StatusScaleStateUnknownCommanded,
+				"",
 			},
 			"",
 			true,
@@ -235,6 +264,10 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			"Normal Scaling Test",
 			false,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(scale.CommandedUnknownRes())
+				assert.Equal(t, float64(1), metricVal)
+			},
 		},
 		{
 			"StatusScaleStateUnknownCommandedPreviousFail",
@@ -243,6 +276,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateUnknownCommanded,
+				"",
 			},
 			"",
 			true,
@@ -250,19 +284,30 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			"Normal Scaling Test",
 			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(scale.CommandedUnknownRes())
+				assert.Equal(t, float64(1), metricVal)
+			},
 		},
 		{
 			"StatusScaleStateEnactedNoPrevious",
 			args{
-				kubetest.NewPodBuilder().Build(),
+				kubetest.NewPodBuilder().
+					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: statusAnnotationString(true, false, false)}).
+					Build(),
 				podcommon.StatusScaleStateUpEnacted,
+				"",
 			},
 			"",
-			false,
+			true,
 			true,
 			false,
 			"Normal Scaling Test",
 			false,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeSuccess))
+				assert.Equal(t, uint64(1), metricVal)
+			},
 		},
 		{
 			"StatusScaleStateEnactedPrevious",
@@ -271,6 +316,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateUpEnacted,
+				"",
 			},
 			"",
 			true,
@@ -278,19 +324,32 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			"",
 			false,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeSuccess))
+				assert.Equal(t, uint64(0), metricVal)
+			},
 		},
 		{
 			"StatusScaleStateFailedNoPrevious",
 			args{
-				kubetest.NewPodBuilder().Build(),
+				kubetest.NewPodBuilder().
+					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: statusAnnotationString(true, false, false)}).
+					Build(),
 				podcommon.StatusScaleStateUpFailed,
+				"failReason",
 			},
 			"",
-			false,
+			true,
 			false,
 			true,
 			"Warning Scaling Test",
 			false,
+			func(t *testing.T) {
+				durationMetricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeFailure))
+				assert.Equal(t, uint64(1), durationMetricVal)
+				failureMetricVal, _ := testutil.GetCounterMetricValue(scale.Failure(metricscommon.DirectionUp, "failReason"))
+				assert.Equal(t, float64(1), failureMetricVal)
+			},
 		},
 		{
 			"StatusScaleStateFailedPrevious",
@@ -299,6 +358,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateUpFailed,
+				"failReason",
 			},
 			"",
 			true,
@@ -306,12 +366,19 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			true,
 			"",
 			false,
+			func(t *testing.T) {
+				durationMetricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeFailure))
+				assert.Equal(t, uint64(0), durationMetricVal)
+				failureMetricVal, _ := testutil.GetCounterMetricValue(scale.Failure(metricscommon.DirectionUp, "failReason"))
+				assert.Equal(t, float64(0), failureMetricVal)
+			},
 		},
 		{
 			"StatusScaleStateNotSupported",
 			args{
 				&v1.Pod{},
 				podcommon.StatusScaleState("test"),
+				"",
 			},
 			"statusScaleState 'test' not supported",
 			false,
@@ -319,10 +386,13 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			"",
 			false,
+			nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			scale.ResetMetrics()
+
 			eventRecorder := record.NewFakeRecorder(1)
 			s := newStatus(
 				eventRecorder,
@@ -341,9 +411,10 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 						ctx,
 						tt.args.pod,
 						"test",
-						podcommon.States{},
+						podcommon.States{Resources: podcommon.StateResourcesStartup},
 						tt.args.scaleState,
 						scaletest.NewMockConfigurations(nil),
+						tt.args.failReason,
 					)
 				})
 				return
@@ -354,9 +425,10 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 				ctx,
 				tt.args.pod,
 				"test",
-				podcommon.States{},
+				podcommon.States{Resources: podcommon.StateResourcesStartup},
 				tt.args.scaleState,
 				scaletest.NewMockConfigurations(nil),
+				tt.args.failReason,
 			)
 			durationMillis := time.Now().UnixMilli() - currentTimeMillis
 			assert.NoError(t, err)
@@ -396,6 +468,9 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 				assert.GreaterOrEqual(t, durationMillis, int64(postPatchPauseSecs*1000))
 			} else {
 				assert.Less(t, durationMillis, int64(postPatchPauseSecs*1000))
+			}
+			if tt.configMetricAssertsFunc != nil {
+				tt.configMetricAssertsFunc(t)
 			}
 		})
 	}
@@ -481,12 +556,30 @@ func TestStatusUpdateDurationMetric(t *testing.T) {
 }
 
 func fullStatusAnnotationString() string {
+	return statusAnnotationString(true, true, true)
+}
+
+func statusAnnotationString(lastCommanded bool, lastEnacted bool, lastFailed bool) string {
 	now := newStatus(&record.FakeRecorder{}, nil).formattedNow(timeFormatMilli)
+
+	lastCommandedString, lastEnactedString, lastFailedString := "", "", ""
+
+	if lastCommanded {
+		lastCommandedString = now
+	}
+
+	if lastEnacted {
+		lastEnactedString = now
+	}
+
+	if lastFailed {
+		lastFailedString = now
+	}
 
 	return NewStatusAnnotation(
 		"test",
 		podcommon.States{},
-		NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, now, now, now),
+		NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, lastCommandedString, lastEnactedString, lastFailedString),
 		now,
 	).Json()
 }

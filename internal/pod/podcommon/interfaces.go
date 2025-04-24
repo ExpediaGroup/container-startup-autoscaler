@@ -70,5 +70,6 @@ type Status interface {
 		states States,
 		statusScaleState StatusScaleState,
 		scaleConfigs scalecommon.Configurations,
+		failReason string,
 	) (*v1.Pod, error)
 }

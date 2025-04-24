@@ -126,6 +126,7 @@ func (v *validation) updateStatusAndGetError(
 		podcommon.NewStatesAllUnknown(),
 		podcommon.StatusScaleStateNotApplicable,
 		scaleConfigs,
+		"",
 	)
 	if err != nil {
 		logging.Errorf(ctx, err, "unable to update status (will continue)")

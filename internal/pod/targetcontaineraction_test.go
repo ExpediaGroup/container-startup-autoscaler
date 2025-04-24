@@ -25,8 +25,6 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/metricscommon"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/scale"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podtest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scaletest"
@@ -34,7 +32,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
-	"k8s.io/component-base/metrics/testutil"
 )
 
 func TestNewTargetContainerAction(t *testing.T) {
@@ -792,21 +789,17 @@ func TestTargetContainerActionStartedWithUnknownResAction(t *testing.T) {
 
 func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 	tests := []struct {
-		name                    string
-		configStatusMockFunc    func(*podtest.MockStatus, func())
-		configMetricAssertsFunc func(t *testing.T)
-		beforeTestFunc          func()
-		states                  podcommon.States
-		wantPanicErrMsg         string
-		wantErrMsg              string
-		wantStatusUpdate        bool
-		wantLogMsg              string
+		name                 string
+		configStatusMockFunc func(*podtest.MockStatus, func())
+		states               podcommon.States
+		wantPanicErrMsg      string
+		wantErrMsg           string
+		wantStatusUpdate     bool
+		wantLogMsg           string
 	}{
 		{
 			"ScaleNotYetCompletedInProgress",
 			func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
-			func(t *testing.T) {},
-			func() {},
 			podcommon.States{
 				Resize: podcommon.NewResizeState(podcommon.StateResizeInProgress, ""),
 			},
@@ -818,8 +811,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		{
 			"ScaleNotYetCompletedDeferred",
 			func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
-			func(t *testing.T) {},
-			func() {},
 			podcommon.States{
 				Resize: podcommon.NewResizeState(podcommon.StateResizeDeferred, "message"),
 			},
@@ -831,13 +822,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		{
 			"ScaleFailedInfeasibleStateResourcesPostStartup",
 			func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
-			func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(scale.Failure(metricscommon.DirectionDown, "infeasible"))
-				assert.Equal(t, float64(1), metricVal)
-			},
-			func() {
-				scale.ResetMetrics()
-			},
 			podcommon.States{
 				Resources: podcommon.StateResourcesPostStartup,
 				Resize:    podcommon.NewResizeState(podcommon.StateResizeInfeasible, "message"),
@@ -850,13 +834,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		{
 			"ScaleFailedInfeasibleStateResourcesStartup",
 			func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
-			func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(scale.Failure(metricscommon.DirectionUp, "infeasible"))
-				assert.Equal(t, float64(1), metricVal)
-			},
-			func() {
-				scale.ResetMetrics()
-			},
 			podcommon.States{
 				Resources: podcommon.StateResourcesStartup,
 				Resize:    podcommon.NewResizeState(podcommon.StateResizeInfeasible, "message"),
@@ -869,11 +846,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		{
 			"ScaleFailedErrorStateResourcesPostStartup",
 			func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
-			func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(scale.Failure(metricscommon.DirectionDown, "error"))
-				assert.Equal(t, float64(1), metricVal)
-			},
-			func() {},
 			podcommon.States{
 				Resources: podcommon.StateResourcesPostStartup,
 				Resize:    podcommon.NewResizeState(podcommon.StateResizeError, "message"),
@@ -886,11 +858,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		{
 			"ScaleFailedErrorStateResourcesStartup",
 			func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
-			func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(scale.Failure(metricscommon.DirectionUp, "error"))
-				assert.Equal(t, float64(1), metricVal)
-			},
-			func() {},
 			podcommon.States{
 				Resources: podcommon.StateResourcesStartup,
 				Resize:    podcommon.NewResizeState(podcommon.StateResizeError, "message"),
@@ -903,8 +870,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		{
 			"UnknownResizeStatePanics",
 			func(m *podtest.MockStatus, run func()) {},
-			func(t *testing.T) {},
-			func() {},
 			podcommon.States{
 				Resize: podcommon.NewResizeState("unknown", ""),
 			},
@@ -916,8 +881,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		{
 			string(podcommon.StateStatusResourcesIncomplete),
 			func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
-			func(t *testing.T) {},
-			func() {},
 			podcommon.States{
 				StatusResources: podcommon.StateStatusResourcesIncomplete,
 				Resize:          podcommon.NewResizeState(podcommon.StateResizeNotStartedOrCompleted, ""),
@@ -930,8 +893,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		{
 			string(podcommon.StateStatusResourcesContainerResourcesMismatch),
 			func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
-			func(t *testing.T) {},
-			func() {},
 			podcommon.States{
 				StatusResources: podcommon.StateStatusResourcesContainerResourcesMismatch,
 				Resize:          podcommon.NewResizeState(podcommon.StateResizeNotStartedOrCompleted, ""),
@@ -944,8 +905,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		{
 			string(podcommon.StateStatusResourcesUnknown),
 			func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
-			func(t *testing.T) {},
-			func() {},
 			podcommon.States{
 				StatusResources: podcommon.StateStatusResourcesUnknown,
 				Resize:          podcommon.NewResizeState(podcommon.StateResizeNotStartedOrCompleted, ""),
@@ -958,8 +917,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		{
 			"UnknownStatusResourcesStatePanics",
 			func(m *podtest.MockStatus, run func()) {},
-			func(t *testing.T) {},
-			func() {},
 			podcommon.States{
 				StatusResources: podcommon.StateStatusResources("test"),
 				Resize:          podcommon.NewResizeState(podcommon.StateResizeNotStartedOrCompleted, ""),
@@ -972,8 +929,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		{
 			string(podcommon.StateStatusResourcesContainerResourcesMatch) + string(podcommon.StateResourcesPostStartup),
 			func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
-			func(t *testing.T) {},
-			func() {},
 			podcommon.States{
 				Resources:       podcommon.StateResourcesPostStartup,
 				StatusResources: podcommon.StateStatusResourcesContainerResourcesMatch,
@@ -987,8 +942,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		{
 			string(podcommon.StateStatusResourcesContainerResourcesMatch) + string(podcommon.StateResourcesStartup),
 			func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
-			func(t *testing.T) {},
-			func() {},
 			podcommon.States{
 				Resources:       podcommon.StateResourcesStartup,
 				StatusResources: podcommon.StateStatusResourcesContainerResourcesMatch,
@@ -1008,10 +961,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 				podtest.NewMockStatusWithRun(tt.configStatusMockFunc, func() { statusUpdated = true }),
 				nil,
 			)
-
-			if tt.beforeTestFunc != nil {
-				tt.beforeTestFunc()
-			}
 
 			if tt.wantPanicErrMsg != "" {
 				assert.PanicsWithError(t, tt.wantPanicErrMsg, func() {
@@ -1041,9 +990,6 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			if tt.wantLogMsg != "" {
 				assert.Contains(t, buffer.String(), tt.wantLogMsg)
 			}
-			if tt.configMetricAssertsFunc != nil {
-				tt.configMetricAssertsFunc(t)
-			}
 		})
 	}
 }
@@ -1067,7 +1013,7 @@ func TestTargetContainerActionContainerResourceConfig(t *testing.T) {
 func TestTargetContainerActionUpdateStatus(t *testing.T) {
 	t.Run("UnableToUpdateStatus", func(t *testing.T) {
 		mockStatus := podtest.NewMockStatus(func(m *podtest.MockStatus) {
-			m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+			m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 				Return(&v1.Pod{}, errors.New(""))
 		})
 		a := newTargetContainerAction(
@@ -1084,6 +1030,7 @@ func TestTargetContainerActionUpdateStatus(t *testing.T) {
 			&v1.Pod{},
 			"",
 			scaletest.NewMockConfigurations(nil),
+			"",
 		)
 		assert.Contains(t, buffer.String(), "unable to update status")
 	})
