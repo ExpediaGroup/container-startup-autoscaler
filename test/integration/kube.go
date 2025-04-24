@@ -242,6 +242,28 @@ func kubeGetEventMessages(t *testing.T, namespace string, podName string, eType 
 	return splitOutput, nil
 }
 
+func kubeGetCsaEventCount(t *testing.T, namespace string, podName string) (int, error) {
+	output, err := cmdRun(
+		t,
+		exec.Command(
+			"kubectl", "get", "events",
+			"-n", namespace,
+			fmt.Sprintf("--field-selector=involvedObject.name=%s,reason=%s", podName, csaEventReasonScaling),
+			"--no-headers=true",
+			"--output=custom-columns=MESSAGE:.message",
+			"--kubeconfig", kindKubeconfig,
+		),
+		fmt.Sprintf("getting all csa events for pod '%s' in namespace '%s'...", podName, namespace),
+		fmt.Sprintf("unable to get all csa events for pod '%s' in namespace '%s'...", podName, namespace),
+		false,
+	)
+	if err != nil {
+		return 0, err
+	}
+
+	return len(strings.Split(output, "\n")), nil
+}
+
 func kubeCauseContainerRestart(t *testing.T, containerId string) error {
 	fixedContainerId := strings.ReplaceAll(containerId, "containerd://", "")
 

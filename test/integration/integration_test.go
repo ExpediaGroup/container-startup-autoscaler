@@ -23,7 +23,6 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/api/core/v1"
 )
@@ -477,16 +476,11 @@ func TestDeploymentStartupAdmittedFlowReadinessProbeCpu(t *testing.T) {
 //
 //	assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
 //
-//	assertEvents(
-//		t,
-//		csaEventReasonScaling,
-//		[]string{
-//			csaStatusMessageStartupCommandedUnknownRes, csaStatusMessageStartupEnacted,
-//			csaStatusMessagePostStartupCommanded, csaStatusMessagePostStartupEnacted,
-//		},
-//		namespace,
-//		names,
-//	)
+//	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessageStartupCommandedUnknownRes, namespace, names)
+//	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessageStartupEnacted, namespace, names)
+//	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessagePostStartupCommanded, namespace, names)
+//	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessagePostStartupEnacted, namespace, names)
+//	assertEventCount(t, 4, namespace, names)
 //}
 
 func TestDeploymentScaleWhenUnknownResourcesCpu(t *testing.T) {
@@ -535,6 +529,7 @@ func TestDeploymentScaleWhenUnknownResourcesCpu(t *testing.T) {
 	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessageStartupEnacted, namespace, names)
 	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessagePostStartupCommanded, namespace, names)
 	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessagePostStartupEnacted, namespace, names)
+	assertEventCount(t, 4, namespace, names)
 }
 
 // TODO(wt) temporarily disabled until memory downscaling is permitted.
@@ -580,16 +575,11 @@ func TestDeploymentScaleWhenUnknownResourcesCpu(t *testing.T) {
 //
 //	assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
 //
-//	assertEvents(
-//		t,
-//		csaEventReasonScaling,
-//		[]string{
-//			csaStatusMessageStartupCommandedUnknownRes, csaStatusMessageStartupEnacted,
-//			csaStatusMessagePostStartupCommanded, csaStatusMessagePostStartupEnacted,
-//		},
-//		namespace,
-//		names,
-//	)
+//	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessageStartupCommandedUnknownRes, namespace, names)
+//	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessageStartupEnacted, namespace, names)
+//	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessagePostStartupCommanded, namespace, names)
+//	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessagePostStartupEnacted, namespace, names)
+//	assertEventCount(t, 4, namespace, names)
 //}
 
 // StatefulSet ---------------------------------------------------------------------------------------------------------
@@ -746,20 +736,31 @@ func TestValidationFailure(t *testing.T) {
 	}
 
 	for _, statusAnn := range podStatusAnn {
-		assert.Contains(t, statusAnn.Status, "cpu post-startup requests (150m) is greater than startup value (100m)")
+		require.Contains(t, statusAnn.Status, "cpu post-startup requests (150m) is greater than startup value (100m)")
 		require.NotEmpty(t, statusAnn.LastUpdated)
 
-		require.Equal(t, podcommon.StateBoolUnknown, statusAnn.States.StartupProbe)
-		require.Equal(t, podcommon.StateBoolUnknown, statusAnn.States.ReadinessProbe)
-		require.Equal(t, podcommon.StateContainerUnknown, statusAnn.States.Container)
-		require.Equal(t, podcommon.StateBoolUnknown, statusAnn.States.Started)
-		require.Equal(t, podcommon.StateBoolUnknown, statusAnn.States.Ready)
-		require.Equal(t, podcommon.StateResourcesUnknown, statusAnn.States.Resources)
-		require.Equal(t, podcommon.StateStatusResourcesUnknown, statusAnn.States.StatusResources)
+		expectedStates := podcommon.States{
+			StartupProbe:    podcommon.StateBoolUnknown,
+			ReadinessProbe:  podcommon.StateBoolUnknown,
+			Container:       podcommon.StateContainerUnknown,
+			Started:         podcommon.StateBoolUnknown,
+			Ready:           podcommon.StateBoolUnknown,
+			Resources:       podcommon.StateResourcesUnknown,
+			StatusResources: podcommon.StateStatusResourcesUnknown,
+			Resize: podcommon.ResizeState{
+				State:   podcommon.StateResizeUnknown,
+				Message: "",
+			},
+		}
+		require.Equal(t, expectedStates, statusAnn.States)
 
-		require.Empty(t, statusAnn.Scale.LastCommanded)
-		require.Empty(t, statusAnn.Scale.LastEnacted)
-		require.Empty(t, statusAnn.Scale.LastFailed)
+		expectedScale := pod.StatusAnnotationScale{
+			EnabledForResources: []v1.ResourceName{v1.ResourceCPU},
+			LastCommanded:       "",
+			LastEnacted:         "",
+			LastFailed:          "",
+		}
+		require.Equal(t, expectedScale, statusAnn.Scale)
 	}
 }
 
@@ -789,11 +790,28 @@ func TestScaleFailureInfeasible(t *testing.T) {
 	}
 
 	for _, statusAnn := range podStatusAnn {
-		assert.Contains(t, statusAnn.Status, "Startup scale failed - infeasible (")
-		// TODO(wt) more assertions
+		require.Contains(t, statusAnn.Status, "Startup scale failed - infeasible (")
+		require.NotEmpty(t, statusAnn.LastUpdated)
+
+		require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.StartupProbe)
+		require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.ReadinessProbe)
+		require.Equal(t, podcommon.StateContainerRunning, statusAnn.States.Container)
+		require.Equal(t, podcommon.StateBoolFalse, statusAnn.States.Started)
+		require.Equal(t, podcommon.StateBoolFalse, statusAnn.States.Ready)
+		require.Equal(t, podcommon.StateResourcesStartup, statusAnn.States.Resources)
+		require.Equal(t, podcommon.StateStatusResourcesContainerResourcesMismatch, statusAnn.States.StatusResources)
+		require.Equal(t, podcommon.StateResizeInfeasible, statusAnn.States.Resize.State)
+		require.NotEmpty(t, statusAnn.States.Resize.Message)
+
+		require.Equal(t, []v1.ResourceName{v1.ResourceCPU}, statusAnn.Scale.EnabledForResources)
+		require.NotEmpty(t, statusAnn.Scale.LastCommanded)
+		require.Empty(t, statusAnn.Scale.LastEnacted)
+		require.NotEmpty(t, statusAnn.Scale.LastFailed)
 	}
 
+	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessageStartupCommanded, namespace, names)
 	assertEvent(t, kubeEventTypeWarning, csaEventReasonScaling, csaStatusMessageInfeasible, namespace, names)
+	assertEventCount(t, 2, namespace, names)
 }
 
 // Helpers -------------------------------------------------------------------------------------------------------------
@@ -858,6 +876,7 @@ func testWorkflow(
 	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessageStartupEnacted, namespace, names)
 	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessagePostStartupCommanded, namespace, names)
 	assertEvent(t, kubeEventTypeNormal, csaEventReasonScaling, csaStatusMessagePostStartupEnacted, namespace, names)
+	assertEventCount(t, 4, namespace, names)
 }
 
 func maybeRegisterCleanup(t *testing.T, namespace string) {
