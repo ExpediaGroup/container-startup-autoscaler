@@ -33,8 +33,7 @@ func assertStartupEnacted(
 	podStatusAnn map[*v1.Pod]pod.StatusAnnotation,
 	expectStartupProbe bool,
 	expectReadinessProbe bool,
-	expectStatusScaleCommanded bool,
-	expectStatusScaleEnacted bool,
+	expectStatusScaleCommandedEnacted bool,
 ) {
 	if (!expectStartupProbe && !expectReadinessProbe) || (expectStartupProbe && expectReadinessProbe) {
 		panic(errors.New("only one of expectStartupProbe/expectReadinessProbe must be true"))
@@ -131,15 +130,11 @@ func assertStartupEnacted(
 			require.Contains(t, statusAnn.Scale.EnabledForResources, v1.ResourceMemory)
 		}
 
-		if expectStatusScaleCommanded {
+		if expectStatusScaleCommandedEnacted {
 			require.NotEmpty(t, statusAnn.Scale.LastCommanded)
-		} else {
-			require.Empty(t, statusAnn.Scale.LastCommanded)
-		}
-
-		if expectStatusScaleEnacted {
 			require.NotEmpty(t, statusAnn.Scale.LastEnacted)
 		} else {
+			require.Empty(t, statusAnn.Scale.LastCommanded)
 			require.Empty(t, statusAnn.Scale.LastEnacted)
 		}
 
