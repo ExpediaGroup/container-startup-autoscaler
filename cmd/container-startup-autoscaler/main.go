@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // TODO(wt) Remaining for Kube 1.33:
-// TODO(wt) Update docs with all relevant changes
-// TODO(wt) Chart, changelog
+// TODO(wt) Update Kube versions where necessary
+// TODO(wt) Complete changelogs
 
 package main
 

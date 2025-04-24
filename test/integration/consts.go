@@ -32,7 +32,7 @@ const (
 )
 
 var kubeVersionToFullVersion = map[string]string{
-	"1.33": "v1.33.0-rc.1", // TODO(wt) update to 1.33.0 when available
+	"1.33": "v1.33.0",
 	// Some older versions are not supported by 'kind build node-image' as the server tgzs don't include the 'version'
 	// file and fail.
 }
