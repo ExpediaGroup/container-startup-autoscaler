@@ -250,7 +250,7 @@ func (s *status) updateDurationMetric(
 
 	diffSecs := nTime.Sub(cTime).Seconds()
 	if diffSecs < 0 {
-		logging.Errorf(ctx, nil, "negative commanded/now seconds difference ('%s'/'%s') (won't update metric)", commanded, now)
+		logging.Errorf(ctx, nil, "negative commanded/now seconds difference '%s'/'%s' (won't update metric)", commanded, now)
 		return
 	}
 
