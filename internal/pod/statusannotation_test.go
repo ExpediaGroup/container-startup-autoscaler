@@ -19,7 +19,6 @@ package pod
 import (
 	"testing"
 
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 )
@@ -27,13 +26,11 @@ import (
 func TestNewStatusAnnotation(t *testing.T) {
 	statAnn := NewStatusAnnotation(
 		"status",
-		podcommon.States{},
 		StatusAnnotationScale{},
 		"lastUpdated",
 	)
 	expected := StatusAnnotation{
 		Status:      "status",
-		States:      podcommon.States{},
 		Scale:       StatusAnnotationScale{},
 		LastUpdated: "lastUpdated",
 	}
@@ -47,16 +44,14 @@ func TestNewEmptyStatusAnnotation(t *testing.T) {
 func TestStatusAnnotationJson(t *testing.T) {
 	j := NewStatusAnnotation(
 		"status",
-		podcommon.NewStates("1", "2", "3", "4", "5", "6", "7", podcommon.NewResizeState("8", "9")),
-		NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, "10", "11", "12"),
-		"13",
+		NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, "1", "2", "3"),
+		"4",
 	).Json()
 	assert.Equal(
 		t,
 		`{"status":"status",`+
-			`"states":{"startupProbe":"1","readinessProbe":"2","container":"3","started":"4","ready":"5","resources":"6","statusResources":"7","resize":{"state":"8","message":"9"}},`+
-			`"scale":{"enabledForResources":["cpu"],"lastCommanded":"10","lastEnacted":"11","lastFailed":"12"},`+
-			`"lastUpdated":"13"}`,
+			`"scale":{"enabledForResources":["cpu"],"lastCommanded":"1","lastEnacted":"2","lastFailed":"3"},`+
+			`"lastUpdated":"4"}`,
 		j,
 	)
 }
@@ -114,18 +109,16 @@ func TestStatusAnnotationFromString(t *testing.T) {
 	t.Run("Ok", func(t *testing.T) {
 		got, err := StatusAnnotationFromString(
 			`{"status":"status",` +
-				`"states":{"startupProbe":"1","readinessProbe":"2","container":"3","started":"4","ready":"5","resources":"6","statusResources":"7","resize":{"state":"8","message":"9"}},` +
-				`"scale":{"enabledForResources":["cpu"],"lastCommanded":"10","lastEnacted":"11","lastFailed":"12"},` +
-				`"lastUpdated":"13"}`,
+				`"scale":{"enabledForResources":["cpu"],"lastCommanded":"1","lastEnacted":"2","lastFailed":"3"},` +
+				`"lastUpdated":"4"}`,
 		)
 		assert.NoError(t, err)
 		assert.Equal(
 			t,
 			NewStatusAnnotation(
 				"status",
-				podcommon.NewStates("1", "2", "3", "4", "5", "6", "7", podcommon.NewResizeState("8", "9")),
-				NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, "10", "11", "12"),
-				"13",
+				NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, "1", "2", "3"),
+				"4",
 			),
 			got,
 		)

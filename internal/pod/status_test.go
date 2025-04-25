@@ -101,7 +101,7 @@ func TestStatusUpdateCore(t *testing.T) {
 				),
 			),
 		)
-		
+
 		got, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			kubetest.NewPodBuilder().AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: "test"}).Build(),
@@ -173,7 +173,6 @@ func TestStatusUpdateCore(t *testing.T) {
 
 		previousStat := NewStatusAnnotation(
 			"Test",
-			podcommon.States{},
 			NewEmptyStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}),
 			"",
 		).Json()
@@ -607,7 +606,6 @@ func statusAnnotationString(lastCommanded bool, lastEnacted bool, lastFailed boo
 
 	return NewStatusAnnotation(
 		"test",
-		podcommon.States{},
 		NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, lastCommandedString, lastEnactedString, lastFailedString),
 		now,
 	).Json()

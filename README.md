@@ -256,19 +256,6 @@ Example output:
 ```json
 {
   "status": "Post-startup resources enacted",
-  "states": {
-    "startupProbe": "true",
-    "readinessProbe": "true",
-    "container": "running",
-    "started": "true",
-    "ready": "false",
-    "resources": "poststartup",
-    "statusResources": "containerresourcesmatch",
-    "resize": {
-      "state": "notstartedorcompleted",
-      "message": ""
-    }
-  },
   "scale": {
     "enabledForResources": [
       "cpu"
@@ -286,16 +273,6 @@ Explanation of status items:
 | Item            | Sub-Item              | Description                                                                                                |
 |-----------------|-----------------------|------------------------------------------------------------------------------------------------------------|
 | `status`        | -                     | Human-readable status. Any validation errors are indicated here.                                           |
-| `states`        | -                     | The states of the target container.                                                                        |
-| `states`        | `startupProbe`        | Whether a startup probe exists.                                                                            |
-| `states`        | `readinessProbe`      | Whether a readiness probe exists.                                                                          |
-| `states`        | `container`           | The container status e.g. `waiting`, `running`.                                                            |
-| `states`        | `started`             | Whether the container is signalled as started by Kube.                                                     |
-| `states`        | `ready`               | Whether the container is signalled as ready by Kube.                                                       |
-| `states`        | `resources`           | The type of resources (startup/post-startup) that are currently applied (but not necessarily enacted).     |
-| `states`        | `statusResources`     | How the reported current enacted resources relate to container resources.                                  |
-| `states.resize` | `state`               | The resize state, computed from Kubernetes pod conditions.                                                 |
-| `states.resize` | `message`             | Any resize-related message, obtained from Kubernetes pod conditions.                                       |
 | `scale`         | -                     | Information around scaling activity.                                                                       |
 | `scale`         | `enabledForResources` | A list of resources that are enabled for scaling (determined by supplied pod [annotations](#annotations)). |
 | `scale`         | `lastCommanded`       | The last time a scale was commanded (UTC). Clears `lastEnacted` and `lastFailed` when set.                 |
@@ -359,7 +336,19 @@ Example `info`-level log:
 
 Each message includes a number of keys that originate from controller-runtime and zerologr. CSA-added values include:
 - `targetname`: the name of the container to target.
-- `targetstates`: the states of the target container, per [status](#status).
+- `targetstates`: the states of the target container, per table below.
+
+| `targetstates` Item | Description                                                                                            |
+|---------------------|--------------------------------------------------------------------------------------------------------|
+| `startupProbe`      | Whether a startup probe exists.                                                                        |
+| `readinessProbe`    | Whether a readiness probe exists.                                                                      |
+| `container`         | The container status e.g. `waiting`, `running`.                                                        |
+| `started`           | Whether the container is signalled as started by Kube.                                                 |
+| `ready`             | Whether the container is signalled as ready by Kube.                                                   |
+| `resources`         | The type of resources (startup/post-startup) that are currently applied (but not necessarily enacted). |
+| `statusResources`   | How the reported current enacted resources relate to container resources.                              |
+| `resize.state`      | The resize state, computed from Kubernetes pod conditions.                                             |
+| `resize.message`    | Any resize-related message, obtained from Kubernetes pod conditions.                                   |
 
 Regardless of configured logging verbosity, `error`-level messages are always displayed.
 
@@ -552,8 +541,8 @@ on available CPU resources - this should be taken into consideration if applicab
 - Try to minimize restarts of target containers for causes within your control.
 - Try to minimize the startup time of your workload through profiling and optimization where possible.
 - Try to minimize the difference between startup resources and post-startup resources - in general, the bigger the
-  difference, the less likely an upscale operation is to succeed (particularly when a cluster consolidation mechanism is
-  employed).
+  difference, the less likely an upscale operation is to succeed, particularly when a cluster consolidation mechanism
+  is employed.
 
 ## Tests
 ### Unit

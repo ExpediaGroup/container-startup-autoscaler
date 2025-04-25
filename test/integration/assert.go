@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 )
@@ -107,20 +106,6 @@ func assertStartupEnacted(
 
 		require.Equal(t, csaStatusMessageStartupEnacted, statusAnn.Status)
 		require.NotEmpty(t, statusAnn.LastUpdated)
-
-		require.Equal(t, expectStartupProbe, statusAnn.States.StartupProbe.Bool())
-		require.Equal(t, expectReadinessProbe, statusAnn.States.ReadinessProbe.Bool())
-		require.Equal(t, podcommon.StateContainerRunning, statusAnn.States.Container)
-		if expectStartupProbe {
-			require.Equal(t, podcommon.StateBoolFalse, statusAnn.States.Started)
-		} else {
-			require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.Started)
-		}
-		require.Equal(t, podcommon.StateBoolFalse, statusAnn.States.Ready)
-		require.Equal(t, podcommon.StateResourcesStartup, statusAnn.States.Resources)
-		require.Equal(t, podcommon.StateStatusResourcesContainerResourcesMatch, statusAnn.States.StatusResources)
-		require.Equal(t, podcommon.StateResizeNotStartedOrCompleted, statusAnn.States.Resize.State)
-		require.Empty(t, statusAnn.States.Resize.Message)
 
 		if annotations.IsCpuSpecified() {
 			require.Contains(t, statusAnn.Scale.EnabledForResources, v1.ResourceCPU)
@@ -213,16 +198,6 @@ func assertPostStartupEnacted(
 
 		require.Equal(t, csaStatusMessagePostStartupEnacted, statusAnn.Status)
 		require.NotEmpty(t, statusAnn.LastUpdated)
-
-		require.Equal(t, expectStartupProbe, statusAnn.States.StartupProbe.Bool())
-		require.Equal(t, expectReadinessProbe, statusAnn.States.ReadinessProbe.Bool())
-		require.Equal(t, podcommon.StateContainerRunning, statusAnn.States.Container)
-		require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.Started)
-		require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.Ready)
-		require.Equal(t, podcommon.StateResourcesPostStartup, statusAnn.States.Resources)
-		require.Equal(t, podcommon.StateStatusResourcesContainerResourcesMatch, statusAnn.States.StatusResources)
-		require.Equal(t, podcommon.StateResizeNotStartedOrCompleted, statusAnn.States.Resize.State)
-		require.Empty(t, statusAnn.States.Resize.Message)
 
 		if annotations.IsCpuSpecified() {
 			require.Contains(t, statusAnn.Scale.EnabledForResources, v1.ResourceCPU)

@@ -211,7 +211,7 @@ func (s *status) podMutationFunc(
 			panic(fmt.Errorf("statusScaleState '%s' not supported", statusScaleState))
 		}
 
-		newStat := NewStatusAnnotation(common.CapitalizeFirstChar(status), states, statScale, s.formattedNow(timeFormatMilli))
+		newStat := NewStatusAnnotation(common.CapitalizeFirstChar(status), statScale, s.formattedNow(timeFormatMilli))
 		if gotStatAnn && newStat.Equal(currentStat) {
 			return nil
 		}

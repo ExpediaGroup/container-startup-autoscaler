@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/stretchr/testify/require"
 	"k8s.io/api/core/v1"
 )
@@ -738,22 +737,6 @@ func TestValidationFailure(t *testing.T) {
 	for _, statusAnn := range podStatusAnn {
 		require.Contains(t, statusAnn.Status, "cpu post-startup requests (150m) is greater than startup value (100m)")
 		require.NotEmpty(t, statusAnn.LastUpdated)
-
-		expectedStates := podcommon.States{
-			StartupProbe:    podcommon.StateBoolUnknown,
-			ReadinessProbe:  podcommon.StateBoolUnknown,
-			Container:       podcommon.StateContainerUnknown,
-			Started:         podcommon.StateBoolUnknown,
-			Ready:           podcommon.StateBoolUnknown,
-			Resources:       podcommon.StateResourcesUnknown,
-			StatusResources: podcommon.StateStatusResourcesUnknown,
-			Resize: podcommon.ResizeState{
-				State:   podcommon.StateResizeUnknown,
-				Message: "",
-			},
-		}
-		require.Equal(t, expectedStates, statusAnn.States)
-
 		expectedScale := pod.StatusAnnotationScale{
 			EnabledForResources: []v1.ResourceName{v1.ResourceCPU},
 			LastCommanded:       "",
@@ -792,17 +775,6 @@ func TestScaleFailureInfeasible(t *testing.T) {
 	for _, statusAnn := range podStatusAnn {
 		require.Contains(t, statusAnn.Status, "Startup scale failed - infeasible (")
 		require.NotEmpty(t, statusAnn.LastUpdated)
-
-		require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.StartupProbe)
-		require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.ReadinessProbe)
-		require.Equal(t, podcommon.StateContainerRunning, statusAnn.States.Container)
-		require.Equal(t, podcommon.StateBoolFalse, statusAnn.States.Started)
-		require.Equal(t, podcommon.StateBoolFalse, statusAnn.States.Ready)
-		require.Equal(t, podcommon.StateResourcesStartup, statusAnn.States.Resources)
-		require.Equal(t, podcommon.StateStatusResourcesContainerResourcesMismatch, statusAnn.States.StatusResources)
-		require.Equal(t, podcommon.StateResizeInfeasible, statusAnn.States.Resize.State)
-		require.NotEmpty(t, statusAnn.States.Resize.Message)
-
 		require.Equal(t, []v1.ResourceName{v1.ResourceCPU}, statusAnn.Scale.EnabledForResources)
 		require.NotEmpty(t, statusAnn.Scale.LastCommanded)
 		require.Empty(t, statusAnn.Scale.LastEnacted)
