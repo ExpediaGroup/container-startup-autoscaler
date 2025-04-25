@@ -85,7 +85,7 @@
 
 ### Removed
 - Examination of `AllocatedResources` within container status.
-  - Not required and now behind feature gate in Kubernetes 1.32.
+  - Not required and now behind a feature gate in Kubernetes 1.32.
 - Controller name label from CSA metrics.
 
 ### Fixed
