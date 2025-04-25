@@ -46,6 +46,11 @@ func NewStatusAnnotation(
 	}
 }
 
+// TODO(wt) test
+func NewEmptyStatusAnnotation() StatusAnnotation {
+	return StatusAnnotation{}
+}
+
 // Json returns a JSON string.
 func (s StatusAnnotation) Json() string {
 	bytes, _ := json.Marshal(s)

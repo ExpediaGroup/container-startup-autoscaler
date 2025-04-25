@@ -120,7 +120,9 @@ func (s *status) podMutationFunc(
 			var err error
 			currentStat, err = StatusAnnotationFromString(currentStatAnn)
 			if err != nil {
-				return common.WrapErrorf(err, "unable to get status annotation from string")
+				logging.Errorf(ctx, err, "unable to get status annotation from string (will ignore)")
+				currentStat = NewEmptyStatusAnnotation()
+				gotStatAnn = false
 			}
 		}
 

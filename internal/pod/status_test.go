@@ -90,20 +90,19 @@ func TestStatusUpdateCore(t *testing.T) {
 		assert.ErrorContains(t, err, "unable to patch pod")
 	})
 
-	t.Run("UnableToGetStatusAnnotationFromString", func(t *testing.T) {
+	t.Run("OkUnableToGetStatusAnnotationFromString", func(t *testing.T) {
+		pod := kubetest.NewPodBuilder().Build()
 		s := newStatus(
 			&record.FakeRecorder{},
 			kube.NewPodHelper(
 				kubetest.ControllerRuntimeFakeClientWithKubeFake(
-					func() *kubefake.Clientset {
-						return kubefake.NewClientset(kubetest.NewPodBuilder().Build())
-					},
+					func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
 					func() interceptor.Funcs { return interceptor.Funcs{} },
 				),
 			),
 		)
-
-		_, err := s.Update(
+		
+		got, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			kubetest.NewPodBuilder().AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: "test"}).Build(),
 			"test",
@@ -112,7 +111,17 @@ func TestStatusUpdateCore(t *testing.T) {
 			scaletest.NewMockConfigurations(nil),
 			"",
 		)
-		assert.ErrorContains(t, err, "unable to get status annotation from string")
+		assert.NoError(t, err)
+		ann, gotAnn := got.Annotations[kubecommon.AnnotationStatus]
+		assert.True(t, gotAnn)
+		stat := &StatusAnnotation{}
+		_ = json.Unmarshal([]byte(ann), stat)
+		assert.Equal(t, "Test", stat.Status)
+		assert.NotEmpty(t, stat.LastUpdated)
+
+		// Ensure pod isn't mutated
+		_, gotAnn = pod.Annotations[kubecommon.AnnotationStatus]
+		assert.False(t, gotAnn)
 	})
 
 	t.Run("OkNoPreviousStatus", func(t *testing.T) {
