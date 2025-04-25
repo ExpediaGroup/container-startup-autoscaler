@@ -247,7 +247,7 @@ func (h *podHelper) waitForCacheUpdate(ctx context.Context, pod *v1.Pod) *v1.Pod
 			pollCount++
 			exists, podFromCache, err := h.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name})
 			if err == nil && exists && podFromCache.ResourceVersion >= pod.ResourceVersion {
-				logging.Infof(ctx, logging.VTrace, "pod polled from cache %d time(s) in total", pollCount)
+				logging.Infof(ctx, logging.VDebug, "pod polled from cache %d time(s) in total", pollCount)
 				informercache.SyncPoll().Observe(float64(pollCount))
 				return podFromCache
 			}
