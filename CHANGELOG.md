@@ -12,6 +12,7 @@
 
 ### Changed
 - Pod CSA status to reflect all validation errors.
+- Pod CSA status to only update upon a more focused set of events.
 - Verbosity level of some log messages.
 - Upgrades Go to 1.24.2.
 - Upgrades all dependencies.
@@ -19,8 +20,8 @@
 ### Removed
 - Ability to perform memory-based scaling since `In-place Update of Pod Resources` now currently [forbids memory downsizing](https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/1287-in-place-update-pod-resources/README.md#memory-limit-decreases).
   Support will be re-introduced when possible.
-- `Validation` Kubernetes events.
 - State information from pod CSA status (still available in logs).
+- `Validation` Kubernetes events.
 
 ### Fixed
 - Duplicate `Scaling` Kubernetes events under certain conditions.

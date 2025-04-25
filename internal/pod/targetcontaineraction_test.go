@@ -113,7 +113,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			"",
 			"",
 			"target container started status currently unknown",
-			true,
+			false,
 		},
 		{
 			"ReadyUnknownAction",
@@ -131,7 +131,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 			"",
 			"",
 			"target container ready status currently unknown",
-			true,
+			false,
 		},
 		{
 			"ResUnknownAction",
@@ -407,14 +407,9 @@ func TestTargetContainerActionStartedUnknownAction(t *testing.T) {
 	)
 
 	buffer := bytes.Buffer{}
-	_ = a.startedUnknownAction(
-		contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(&buffer)).Build(),
-		podcommon.States{},
-		&v1.Pod{},
-		scaletest.NewMockConfigurations(nil),
-	)
+	_ = a.startedUnknownAction(contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(&buffer)).Build())
 	assert.Contains(t, buffer.String(), "target container started status currently unknown")
-	assert.True(t, statusUpdated)
+	assert.False(t, statusUpdated)
 }
 
 func TestTargetContainerActionReadyUnknownAction(t *testing.T) {
@@ -430,14 +425,9 @@ func TestTargetContainerActionReadyUnknownAction(t *testing.T) {
 	)
 
 	buffer := bytes.Buffer{}
-	_ = a.readyUnknownAction(
-		contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(&buffer)).Build(),
-		podcommon.States{},
-		&v1.Pod{},
-		scaletest.NewMockConfigurations(nil),
-	)
+	_ = a.readyUnknownAction(contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(&buffer)).Build())
 	assert.Contains(t, buffer.String(), "target container ready status currently unknown")
-	assert.True(t, statusUpdated)
+	assert.False(t, statusUpdated)
 }
 
 func TestTargetContainerActionResUnknownAction(t *testing.T) {
@@ -887,7 +877,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			},
 			"",
 			"",
-			true,
+			false,
 			"target container current cpu and/or memory resources currently missing",
 		},
 		{
@@ -899,7 +889,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			},
 			"",
 			"",
-			true,
+			false,
 			"target container current cpu and/or memory resources currently don't match target container's 'requests'",
 		},
 		{
@@ -911,7 +901,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			},
 			"",
 			"",
-			true,
+			false,
 			"target container current cpu and/or memory resources currently unknown",
 		},
 		{
@@ -1025,10 +1015,10 @@ func TestTargetContainerActionUpdateStatus(t *testing.T) {
 		buffer := bytes.Buffer{}
 		a.updateStatus(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(&buffer)).Build(),
-			podcommon.States{},
-			podcommon.StatusScaleStateNotApplicable,
 			&v1.Pod{},
 			"",
+			podcommon.States{},
+			podcommon.StatusScaleStateNotApplicable,
 			scaletest.NewMockConfigurations(nil),
 			"",
 		)
