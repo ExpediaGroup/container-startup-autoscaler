@@ -3,7 +3,7 @@
 - This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 1.6.0
-2025-05-TODO(wt)
+2025-05-25
 
 ### Changed
 - CSA version only.
@@ -24,7 +24,7 @@
 2024-12-12
 
 ### Added
-- Support for Kube 1.32.
+- Support for Kubernetes 1.32.
   - Cluster role includes `pods/resize` rule.
 
 ### Changed

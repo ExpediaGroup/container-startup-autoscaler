@@ -3,33 +3,41 @@
 - This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.7.0
-2025-04-TODO(wt)
+2025-04-25
 
 ### Added
-- TODO(wt)
+- Support for Kubernetes 1.33.
+  - Resize status now examined through pod conditions.
+- Additional integration tests.
 
 ### Changed
-- TODO(wt)
+- Pod CSA status to reflect all validation errors.
+- Verbosity level of some log messages.
+- Upgrades Go to 1.24.2.
+- Upgrades all dependencies.
 
 ### Removed
-- TODO(wt)
+- Ability to perform memory-based scaling since `In-place Update of Pod Resources` now currently [forbids memory downsizing](https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/1287-in-place-update-pod-resources/README.md#memory-limit-decreases).
+  Support will be re-introduced when possible.
+- `Validation` Kubernetes events.
+- State information from pod CSA status (still available in logs).
 
 ### Fixed
-- TODO(wt)
+- Duplicate `Scaling` Kubernetes events under certain conditions.
 
 ### Helm Chart
 [1.6.0](charts/container-startup-autoscaler/CHANGELOG.md#160)
 
 ### Kubernetes Compatibility
-| Kube Version | Compatible? | `In-place Update of Pod Resources` State |
-|:------------:|:-----------:|:----------------------------------------:|
-|     1.33     |     ✔️      |                   Beta                   |
-|     1.32     |      ❌      |                  Alpha                   |
-|     1.31     |      ❌      |                  Alpha                   |
-|     1.30     |      ❌      |                  Alpha                   |
-|     1.29     |      ❌      |                  Alpha                   |
-|     1.28     |      ❌      |                  Alpha                   |
-|     1.27     |      ❌      |                  Alpha                   |
+| Kubernetes Version | Compatible? | `In-place Update of Pod Resources` State |
+|:------------------:|:-----------:|:----------------------------------------:|
+|        1.33        |     ✔️      |                   Beta                   |
+|        1.32        |      ❌      |                  Alpha                   |
+|        1.31        |      ❌      |                  Alpha                   |
+|        1.30        |      ❌      |                  Alpha                   |
+|        1.29        |      ❌      |                  Alpha                   |
+|        1.28        |      ❌      |                  Alpha                   |
+|        1.27        |      ❌      |                  Alpha                   |
 
 ## 0.6.0
 2025-03-07
@@ -52,20 +60,20 @@
 [1.5.0](charts/container-startup-autoscaler/CHANGELOG.md#150)
 
 ### Kubernetes Compatibility
-| Kube Version | Compatible? | `In-place Update of Pod Resources` State |
-|:------------:|:-----------:|:----------------------------------------:|
-|     1.32     |     ✔️      |                  Alpha                   |
-|     1.31     |      ❌      |                  Alpha                   |
-|     1.30     |      ❌      |                  Alpha                   |
-|     1.29     |      ❌      |                  Alpha                   |
-|     1.28     |      ❌      |                  Alpha                   |
-|     1.27     |      ❌      |                  Alpha                   |
+| Kubernetes Version | Compatible? | `In-place Update of Pod Resources` State |
+|:------------------:|:-----------:|:----------------------------------------:|
+|        1.32        |     ✔️      |                  Alpha                   |
+|        1.31        |      ❌      |                  Alpha                   |
+|        1.30        |      ❌      |                  Alpha                   |
+|        1.29        |      ❌      |                  Alpha                   |
+|        1.28        |      ❌      |                  Alpha                   |
+|        1.27        |      ❌      |                  Alpha                   |
 
 ## 0.5.0
 2024-12-12
 
 ### Added
-- Support for Kube 1.32.
+- Support for Kubernetes 1.32.
   - Container resizes now performed through `resize` subresource.
 - Ability to register an additional CA certificate (or chain) when building the kind node image for integration tests
   and sandbox scripts.
@@ -77,7 +85,7 @@
 
 ### Removed
 - Examination of `AllocatedResources` within container status.
-  - Not required and now behind feature gate in Kube 1.32.
+  - Not required and now behind feature gate in Kubernetes 1.32.
 - Controller name label from CSA metrics.
 
 ### Fixed
@@ -88,14 +96,14 @@
 [1.4.0](charts/container-startup-autoscaler/CHANGELOG.md#140)
 
 ### Kubernetes Compatibility
-| Kube Version | Compatible? | `In-place Update of Pod Resources` State |
-|:------------:|:-----------:|:----------------------------------------:|
-|     1.32     |     ✔️      |                  Alpha                   |
-|     1.31     |      ❌      |                  Alpha                   |
-|     1.30     |      ❌      |                  Alpha                   |
-|     1.29     |      ❌      |                  Alpha                   |
-|     1.28     |      ❌      |                  Alpha                   |
-|     1.27     |      ❌      |                  Alpha                   |
+| Kubernetes Version | Compatible? | `In-place Update of Pod Resources` State |
+|:------------------:|:-----------:|:----------------------------------------:|
+|        1.32        |     ✔️      |                  Alpha                   |
+|        1.31        |      ❌      |                  Alpha                   |
+|        1.30        |      ❌      |                  Alpha                   |
+|        1.29        |      ❌      |                  Alpha                   |
+|        1.28        |      ❌      |                  Alpha                   |
+|        1.27        |      ❌      |                  Alpha                   |
 
 ## 0.4.0
 2024-11-29
@@ -108,13 +116,13 @@
 [1.3.0](charts/container-startup-autoscaler/CHANGELOG.md#130)
 
 ### Kubernetes Compatibility
-| Kube Version | Compatible? | `In-place Update of Pod Resources` State |
-|:------------:|:-----------:|:----------------------------------------:|
-|     1.31     |     ✔️      |                  Alpha                   |
-|     1.30     |     ✔️      |                  Alpha                   |
-|     1.29     |     ✔️      |                  Alpha                   |
-|     1.28     |     ✔️      |                  Alpha                   |
-|     1.27     |      ❌      |                  Alpha                   |
+| Kubernetes Version | Compatible? | `In-place Update of Pod Resources` State |
+|:------------------:|:-----------:|:----------------------------------------:|
+|        1.31        |     ✔️      |                  Alpha                   |
+|        1.30        |     ✔️      |                  Alpha                   |
+|        1.29        |     ✔️      |                  Alpha                   |
+|        1.28        |     ✔️      |                  Alpha                   |
+|        1.27        |      ❌      |                  Alpha                   |
 
 ## 0.3.0
 2024-02-01
@@ -126,13 +134,13 @@
 [1.2.0](charts/container-startup-autoscaler/CHANGELOG.md#120)
 
 ### Kubernetes Compatibility
-| Kube Version | Compatible? | `In-place Update of Pod Resources` State |
-|:------------:|:-----------:|:----------------------------------------:|
-|     1.31     |     ✔️      |                  Alpha                   |
-|     1.30     |     ✔️      |                  Alpha                   |
-|     1.29     |     ✔️      |                  Alpha                   |
-|     1.28     |     ✔️      |                  Alpha                   |
-|     1.27     |      ❌      |                  Alpha                   |
+| Kubernetes Version | Compatible? | `In-place Update of Pod Resources` State |
+|:------------------:|:-----------:|:----------------------------------------:|
+|        1.31        |     ✔️      |                  Alpha                   |
+|        1.30        |     ✔️      |                  Alpha                   |
+|        1.29        |     ✔️      |                  Alpha                   |
+|        1.28        |     ✔️      |                  Alpha                   |
+|        1.27        |      ❌      |                  Alpha                   |
 
 ## 0.2.0
 2024-02-01
@@ -144,11 +152,11 @@
 [1.1.0](charts/container-startup-autoscaler/CHANGELOG.md#110)
 
 ### Kubernetes Compatibility
-| Kube Version | Compatible? | `In-place Update of Pod Resources` State |
-|:------------:|:-----------:|:----------------------------------------:|
-|     1.29     |     ✔️      |                  Alpha                   |
-|     1.28     |     ✔️      |                  Alpha                   |
-|     1.27     |      ❌      |                  Alpha                   |
+| Kubernetes Version | Compatible? | `In-place Update of Pod Resources` State |
+|:------------------:|:-----------:|:----------------------------------------:|
+|        1.29        |     ✔️      |                  Alpha                   |
+|        1.28        |     ✔️      |                  Alpha                   |
+|        1.27        |      ❌      |                  Alpha                   |
 
 ## 0.1.0
 2024-01-05
@@ -160,8 +168,8 @@
 [1.0.0](charts/container-startup-autoscaler/CHANGELOG.md#100)
 
 ### Kubernetes Compatibility
-| Kube Version | Compatible? | `In-place Update of Pod Resources` State |
-|:------------:|:-----------:|:----------------------------------------:|
-|     1.29     |     ✔️      |                  Alpha                   |
-|     1.28     |     ✔️      |                  Alpha                   |
-|     1.27     |      ❌      |                  Alpha                   |
+| Kubernetes Version | Compatible? | `In-place Update of Pod Resources` State |
+|:------------------:|:-----------:|:----------------------------------------:|
+|        1.29        |     ✔️      |                  Alpha                   |
+|        1.28        |     ✔️      |                  Alpha                   |
+|        1.27        |      ❌      |                  Alpha                   |

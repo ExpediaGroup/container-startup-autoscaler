@@ -14,9 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// TODO(wt) Remaining for Kube 1.33:
-// TODO(wt) Complete changelogs
-
 package main
 
 import (
