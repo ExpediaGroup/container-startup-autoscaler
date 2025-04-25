@@ -40,6 +40,10 @@ func TestNewStatusAnnotation(t *testing.T) {
 	assert.Equal(t, expected, statAnn)
 }
 
+func TestNewEmptyStatusAnnotation(t *testing.T) {
+	assert.Equal(t, StatusAnnotation{}, NewEmptyStatusAnnotation())
+}
+
 func TestStatusAnnotationJson(t *testing.T) {
 	j := NewStatusAnnotation(
 		"status",

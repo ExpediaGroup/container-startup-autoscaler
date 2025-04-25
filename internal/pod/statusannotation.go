@@ -46,7 +46,6 @@ func NewStatusAnnotation(
 	}
 }
 
-// TODO(wt) test
 func NewEmptyStatusAnnotation() StatusAnnotation {
 	return StatusAnnotation{}
 }

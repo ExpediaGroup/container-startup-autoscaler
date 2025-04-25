@@ -114,7 +114,7 @@ func (s *status) podMutationFunc(
 		shouldPause := false
 		defer func() { postPatchPauseCallback(shouldPause) }()
 
-		var currentStat StatusAnnotation
+		currentStat := NewEmptyStatusAnnotation()
 		currentStatAnn, gotStatAnn := pod.Annotations[kubecommon.AnnotationStatus]
 		if gotStatAnn {
 			var err error
