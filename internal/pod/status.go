@@ -83,8 +83,8 @@ func (s *status) Update(
 		states,
 		statusScaleState,
 		scaleConfigs,
-		postPatchPauseCallback,
 		failReason,
+		postPatchPauseCallback,
 	)
 
 	newPod, err := s.podHelper.Patch(ctx, pod, []func(*v1.Pod) error{mutatePodFunc}, false, true)
@@ -107,10 +107,13 @@ func (s *status) podMutationFunc(
 	states podcommon.States,
 	statusScaleState podcommon.StatusScaleState,
 	scaleConfigs scalecommon.Configurations,
-	postPatchPauseCallback func(pause bool),
 	failReason string,
+	postPatchPauseCallback func(pause bool),
 ) func(pod *v1.Pod) error {
 	return func(pod *v1.Pod) error {
+		shouldPause := false
+		defer func() { postPatchPauseCallback(shouldPause) }()
+
 		var currentStat StatusAnnotation
 		currentStatAnn, gotStatAnn := pod.Annotations[kubecommon.AnnotationStatus]
 		if gotStatAnn {
@@ -122,7 +125,6 @@ func (s *status) podMutationFunc(
 		}
 
 		statScale := NewEmptyStatusAnnotationScale(scaleConfigs.AllEnabledConfigurationsResourceNames())
-		shouldPause := false
 
 		switch statusScaleState {
 		case podcommon.StatusScaleStateNotApplicable:
@@ -213,8 +215,6 @@ func (s *status) podMutationFunc(
 		}
 
 		pod.Annotations[kubecommon.AnnotationStatus] = newStat.Json()
-
-		postPatchPauseCallback(shouldPause)
 		return nil
 	}
 }

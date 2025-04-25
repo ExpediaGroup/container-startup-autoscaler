@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"sync"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
@@ -129,9 +130,14 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 
 	ctx = ccontext.WithTargetContainerName(ctx, targetContainerName)
 
-	for _, scaleConfig := range scaleConfigs.AllConfigurations() {
-		logging.Infof(ctx, logging.VTrace, "scale configuration: %s", scaleConfig.String())
+	var builder strings.Builder
+	for i, scaleConfig := range scaleConfigs.AllConfigurations() {
+		if i > 0 {
+			builder.WriteString(", ")
+		}
+		builder.WriteString(scaleConfig.String())
 	}
+	logging.Infof(ctx, logging.VTrace, "scale configurations: %s", builder.String())
 
 	targetContainer, err := r.pod.Validation.Validate(ctx, kubePod, targetContainerName, scaleConfigs)
 	if err != nil {
