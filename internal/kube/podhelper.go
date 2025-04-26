@@ -83,18 +83,25 @@ func (h *podHelper) Get(ctx context.Context, name types.NamespacedName) (bool, *
 func (h *podHelper) Patch(
 	ctx context.Context,
 	pod *v1.Pod,
-	podMutationFuncs []func(*v1.Pod) error,
+	podMutationFuncs []func(*v1.Pod) (bool, error),
 	patchResize bool,
 	mustSyncCache bool,
 ) (*v1.Pod, error) {
-	// Copy and apply mutations.
+	// Apply mutations to a copy.
 	mutatedPod := pod.DeepCopy()
+	shouldPatch := false
 
 	for _, podMutationFunc := range podMutationFuncs {
-		err := podMutationFunc(mutatedPod)
+		shouldPatchFunc, err := podMutationFunc(mutatedPod)
 		if err != nil {
 			return nil, common.WrapErrorf(err, "unable to mutate pod")
 		}
+		shouldPatch = shouldPatch || shouldPatchFunc
+	}
+
+	// Only patch if at least one podMutationFunc indicated to do so.
+	if !shouldPatch {
+		return pod, nil
 	}
 
 	var err error
@@ -123,7 +130,7 @@ func (h *podHelper) Patch(
 				// Reapply mutations to latest pod.
 				mutatedPod = latestPod
 				for _, podMutationFunc := range podMutationFuncs {
-					_ = podMutationFunc(mutatedPod)
+					_, _ = podMutationFunc(mutatedPod)
 				}
 			}
 

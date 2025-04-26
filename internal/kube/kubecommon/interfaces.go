@@ -34,7 +34,7 @@ type PodHelper interface {
 	Patch(
 		ctx context.Context,
 		pod *v1.Pod,
-		podMutationFuncs []func(*v1.Pod) error,
+		podMutationFuncs []func(*v1.Pod) (bool, error),
 		patchResize bool,
 		mustSyncCache bool,
 	) (*v1.Pod, error)

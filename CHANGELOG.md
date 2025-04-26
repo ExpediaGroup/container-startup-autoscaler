@@ -24,6 +24,7 @@
 - `Validation` Kubernetes events.
 
 ### Fixed
+- Unnecessary status patches when status hasn't changed.
 - Duplicate `Scaling` Kubernetes events under certain conditions.
 
 ### Helm Chart

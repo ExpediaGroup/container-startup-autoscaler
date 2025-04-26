@@ -131,7 +131,7 @@ func TestPodHelperPatch(t *testing.T) {
 		got, err := h.Patch(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			&v1.Pod{},
-			[]func(pod *v1.Pod) error{func(pod *v1.Pod) error { return errors.New("") }},
+			[]func(pod *v1.Pod) (bool, error){func(pod *v1.Pod) (bool, error) { return false, errors.New("") }},
 			false,
 			false,
 		)
@@ -148,7 +148,7 @@ func TestPodHelperPatch(t *testing.T) {
 		got, err := h.Patch(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			&v1.Pod{},
-			[]func(pod *v1.Pod) error{func(pod *v1.Pod) error { return nil }},
+			[]func(pod *v1.Pod) (bool, error){func(pod *v1.Pod) (bool, error) { return true, nil }},
 			false,
 			false,
 		)
@@ -171,7 +171,7 @@ func TestPodHelperPatch(t *testing.T) {
 		got, err := h.Patch(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			&v1.Pod{},
-			[]func(pod *v1.Pod) error{func(pod *v1.Pod) error { return nil }},
+			[]func(pod *v1.Pod) (bool, error){func(pod *v1.Pod) (bool, error) { return true, nil }},
 			false,
 			false,
 		)
@@ -195,7 +195,7 @@ func TestPodHelperPatch(t *testing.T) {
 		got, err := h.Patch(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			&v1.Pod{},
-			[]func(pod *v1.Pod) error{func(pod *v1.Pod) error { return nil }},
+			[]func(pod *v1.Pod) (bool, error){func(pod *v1.Pod) (bool, error) { return true, nil }},
 			false,
 			false,
 		)
@@ -205,15 +205,36 @@ func TestPodHelperPatch(t *testing.T) {
 
 	t.Run("OkNoPatchResizeTrue", func(t *testing.T) {
 		pod := kubetest.NewPodBuilder().Build()
-		podMutationFunc1 := func(pod *v1.Pod) error {
+		podMutationFunc1 := func(pod *v1.Pod) (bool, error) { return false, nil }
+		podMutationFunc2 := func(pod *v1.Pod) (bool, error) { return false, nil }
+		h := NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
+			func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
+			func() interceptor.Funcs { return interceptor.Funcs{} },
+		))
+
+		got, err := h.Patch(
+			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
+			pod,
+			[]func(pod *v1.Pod) (bool, error){podMutationFunc1, podMutationFunc2},
+			true,
+			true,
+		)
+		assert.NoError(t, err)
+		assert.Equal(t, pod, got)
+		assert.True(t, pod == got)
+	})
+
+	t.Run("OkNoChangeResizeTrue", func(t *testing.T) {
+		pod := kubetest.NewPodBuilder().Build()
+		podMutationFunc1 := func(pod *v1.Pod) (bool, error) {
 			pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU] = kubetest.PodCpuPostStartupRequestsEnabled
 			pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU] = kubetest.PodCpuPostStartupLimitsEnabled
-			return nil
+			return true, nil
 		}
-		podMutationFunc2 := func(pod *v1.Pod) error {
+		podMutationFunc2 := func(pod *v1.Pod) (bool, error) {
 			pod.Spec.Containers[0].Resources.Requests[v1.ResourceMemory] = kubetest.PodMemoryPostStartupRequestsEnabled
 			pod.Spec.Containers[0].Resources.Limits[v1.ResourceMemory] = kubetest.PodMemoryPostStartupLimitsEnabled
-			return nil
+			return true, nil
 		}
 		h := NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
 			func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
@@ -223,7 +244,7 @@ func TestPodHelperPatch(t *testing.T) {
 		got, err := h.Patch(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			pod,
-			[]func(pod *v1.Pod) error{podMutationFunc1, podMutationFunc2},
+			[]func(pod *v1.Pod) (bool, error){podMutationFunc1, podMutationFunc2},
 			true,
 			true,
 		)
@@ -242,15 +263,15 @@ func TestPodHelperPatch(t *testing.T) {
 
 	t.Run("OkWithResolvedConflictResizeTrue", func(t *testing.T) {
 		pod := kubetest.NewPodBuilder().Build()
-		podMutationFunc1 := func(pod *v1.Pod) error {
+		podMutationFunc1 := func(pod *v1.Pod) (bool, error) {
 			pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU] = kubetest.PodCpuPostStartupRequestsEnabled
 			pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU] = kubetest.PodCpuPostStartupLimitsEnabled
-			return nil
+			return true, nil
 		}
-		podMutationFunc2 := func(pod *v1.Pod) error {
+		podMutationFunc2 := func(pod *v1.Pod) (bool, error) {
 			pod.Spec.Containers[0].Resources.Requests[v1.ResourceMemory] = kubetest.PodMemoryPostStartupRequestsEnabled
 			pod.Spec.Containers[0].Resources.Limits[v1.ResourceMemory] = kubetest.PodMemoryPostStartupLimitsEnabled
-			return nil
+			return true, nil
 		}
 		conflictErr := kerrors.NewConflict(schema.GroupResource{}, "", errors.New(""))
 		h := NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
@@ -264,7 +285,7 @@ func TestPodHelperPatch(t *testing.T) {
 		got, err := h.Patch(
 			contexttest.NewCtxBuilder(contexttest.NewOneRetryCtxConfig(nil)).Build(),
 			pod,
-			[]func(pod *v1.Pod) error{podMutationFunc1, podMutationFunc2},
+			[]func(pod *v1.Pod) (bool, error){podMutationFunc1, podMutationFunc2},
 			true,
 			true,
 		)
@@ -279,15 +300,15 @@ func TestPodHelperPatch(t *testing.T) {
 
 	t.Run("OkWithoutConflictResizeTrue", func(t *testing.T) {
 		pod := kubetest.NewPodBuilder().Build()
-		podMutationFunc1 := func(pod *v1.Pod) error {
+		podMutationFunc1 := func(pod *v1.Pod) (bool, error) {
 			pod.Spec.Containers[0].Resources.Requests[v1.ResourceCPU] = kubetest.PodCpuPostStartupRequestsEnabled
 			pod.Spec.Containers[0].Resources.Limits[v1.ResourceCPU] = kubetest.PodCpuPostStartupLimitsEnabled
-			return nil
+			return true, nil
 		}
-		podMutationFunc2 := func(pod *v1.Pod) error {
+		podMutationFunc2 := func(pod *v1.Pod) (bool, error) {
 			pod.Spec.Containers[0].Resources.Requests[v1.ResourceMemory] = kubetest.PodMemoryPostStartupRequestsEnabled
 			pod.Spec.Containers[0].Resources.Limits[v1.ResourceMemory] = kubetest.PodMemoryPostStartupLimitsEnabled
-			return nil
+			return true, nil
 		}
 		h := NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
 			func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
@@ -297,7 +318,7 @@ func TestPodHelperPatch(t *testing.T) {
 		got, err := h.Patch(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			pod,
-			[]func(pod *v1.Pod) error{podMutationFunc1, podMutationFunc2},
+			[]func(pod *v1.Pod) (bool, error){podMutationFunc1, podMutationFunc2},
 			true,
 			true,
 		)
@@ -316,9 +337,9 @@ func TestPodHelperPatch(t *testing.T) {
 
 	t.Run("OkWithoutConflictResizeFalse", func(t *testing.T) {
 		pod := kubetest.NewPodBuilder().Build()
-		podMutationFunc := func(pod *v1.Pod) error {
+		podMutationFunc := func(pod *v1.Pod) (bool, error) {
 			pod.Annotations["test"] = "test"
-			return nil
+			return true, nil
 		}
 		h := NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
 			func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
@@ -328,7 +349,7 @@ func TestPodHelperPatch(t *testing.T) {
 		got, err := h.Patch(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			pod,
-			[]func(pod *v1.Pod) error{podMutationFunc},
+			[]func(pod *v1.Pod) (bool, error){podMutationFunc},
 			false,
 			true,
 		)

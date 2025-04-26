@@ -87,7 +87,7 @@ func (s *status) Update(
 		postPatchPauseCallback,
 	)
 
-	newPod, err := s.podHelper.Patch(ctx, pod, []func(*v1.Pod) error{mutatePodFunc}, false, true)
+	newPod, err := s.podHelper.Patch(ctx, pod, []func(*v1.Pod) (bool, error){mutatePodFunc}, false, true)
 	if err != nil {
 		return nil, common.WrapErrorf(err, "unable to patch pod")
 	}
@@ -109,8 +109,8 @@ func (s *status) podMutationFunc(
 	scaleConfigs scalecommon.Configurations,
 	failReason string,
 	postPatchPauseCallback func(pause bool),
-) func(pod *v1.Pod) error {
-	return func(pod *v1.Pod) error {
+) func(pod *v1.Pod) (bool, error) {
+	return func(pod *v1.Pod) (bool, error) {
 		shouldPause := false
 		defer func() { postPatchPauseCallback(shouldPause) }()
 
@@ -213,11 +213,12 @@ func (s *status) podMutationFunc(
 
 		newStat := NewStatusAnnotation(common.CapitalizeFirstChar(status), statScale, s.formattedNow(timeFormatMilli))
 		if gotStatAnn && newStat.Equal(currentStat) {
-			return nil
+			logging.Infof(ctx, logging.VDebug, "status annotation not changed so will not patch")
+			return false, nil
 		}
 
 		pod.Annotations[kubecommon.AnnotationStatus] = newStat.Json()
-		return nil
+		return true, nil
 	}
 }
 

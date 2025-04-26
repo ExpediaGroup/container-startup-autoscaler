@@ -53,12 +53,13 @@ func TestStartupPodMutationFunc(t *testing.T) {
 		funcPod   *v1.Pod
 	}
 	tests := []struct {
-		name         string
-		fields       fields
-		args         args
-		wantErrMsg   string
-		wantRequests resource.Quantity
-		wantLimits   resource.Quantity
+		name            string
+		fields          fields
+		args            args
+		wantErrMsg      string
+		wantShouldPatch bool
+		wantRequests    resource.Quantity
+		wantLimits      resource.Quantity
 	}{
 		{
 			"NotEnabled",
@@ -73,6 +74,7 @@ func TestStartupPodMutationFunc(t *testing.T) {
 				kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
 			},
 			"",
+			false,
 			kubetest.PodCpuPostStartupRequestsEnabled,
 			kubetest.PodCpuPostStartupLimitsEnabled,
 		},
@@ -88,6 +90,7 @@ func TestStartupPodMutationFunc(t *testing.T) {
 				kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
 			},
 			"container not present",
+			false,
 			kubetest.PodCpuPostStartupRequestsEnabled,
 			kubetest.PodCpuPostStartupLimitsEnabled,
 		},
@@ -102,6 +105,7 @@ func TestStartupPodMutationFunc(t *testing.T) {
 				kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
 			},
 			"",
+			true,
 			kubetest.PodCpuStartupEnabled,
 			kubetest.PodCpuStartupEnabled,
 		},
@@ -113,12 +117,13 @@ func TestStartupPodMutationFunc(t *testing.T) {
 				config:       tt.fields.config,
 			}
 			mutationFunc := update.StartupPodMutationFunc(tt.args.container)
-			err := mutationFunc(tt.args.funcPod)
+			got, err := mutationFunc(tt.args.funcPod)
 			if tt.wantErrMsg != "" {
 				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
 				assert.NoError(t, err)
 			}
+			assert.Equal(t, tt.wantShouldPatch, got)
 			assert.Equal(t, tt.wantRequests, tt.args.funcPod.Spec.Containers[0].Resources.Requests[tt.fields.resourceName])
 			assert.Equal(t, tt.wantLimits, tt.args.funcPod.Spec.Containers[0].Resources.Limits[tt.fields.resourceName])
 		})
@@ -135,12 +140,13 @@ func TestPostStartupPodMutationFunc(t *testing.T) {
 		funcPod   *v1.Pod
 	}
 	tests := []struct {
-		name         string
-		fields       fields
-		args         args
-		wantErrMsg   string
-		wantRequests resource.Quantity
-		wantLimits   resource.Quantity
+		name            string
+		fields          fields
+		args            args
+		wantErrMsg      string
+		wantShouldPatch bool
+		wantRequests    resource.Quantity
+		wantLimits      resource.Quantity
 	}{
 		{
 			"NotEnabled",
@@ -155,6 +161,7 @@ func TestPostStartupPodMutationFunc(t *testing.T) {
 				kubetest.NewPodBuilder().Build(),
 			},
 			"",
+			false,
 			kubetest.PodCpuStartupEnabled,
 			kubetest.PodCpuStartupEnabled,
 		},
@@ -170,6 +177,7 @@ func TestPostStartupPodMutationFunc(t *testing.T) {
 				kubetest.NewPodBuilder().Build(),
 			},
 			"container not present",
+			false,
 			kubetest.PodCpuStartupEnabled,
 			kubetest.PodCpuStartupEnabled,
 		},
@@ -184,6 +192,7 @@ func TestPostStartupPodMutationFunc(t *testing.T) {
 				kubetest.NewPodBuilder().Build(),
 			},
 			"",
+			true,
 			kubetest.PodCpuPostStartupRequestsEnabled,
 			kubetest.PodCpuPostStartupLimitsEnabled,
 		},
@@ -195,12 +204,13 @@ func TestPostStartupPodMutationFunc(t *testing.T) {
 				config:       tt.fields.config,
 			}
 			mutationFunc := update.PostStartupPodMutationFunc(tt.args.container)
-			err := mutationFunc(tt.args.funcPod)
+			got, err := mutationFunc(tt.args.funcPod)
 			if tt.wantErrMsg != "" {
 				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
 				assert.NoError(t, err)
 			}
+			assert.Equal(t, tt.wantShouldPatch, got)
 			assert.Equal(t, tt.wantRequests, tt.args.funcPod.Spec.Containers[0].Resources.Requests[tt.fields.resourceName])
 			assert.Equal(t, tt.wantLimits, tt.args.funcPod.Spec.Containers[0].Resources.Limits[tt.fields.resourceName])
 		})

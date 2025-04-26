@@ -35,8 +35,8 @@ func NewUpdates(configs scalecommon.Configurations) scalecommon.Updates {
 }
 
 // StartupPodMutationFuncAll invokes StartupPodMutationFunc on each update within this collection and returns them.
-func (u *updates) StartupPodMutationFuncAll(container *v1.Container) []func(pod *v1.Pod) error {
-	var funcs []func(pod *v1.Pod) error
+func (u *updates) StartupPodMutationFuncAll(container *v1.Container) []func(pod *v1.Pod) (bool, error) {
+	var funcs []func(pod *v1.Pod) (bool, error)
 
 	for _, update := range u.AllUpdates() {
 		funcs = append(funcs, update.StartupPodMutationFunc(container))
@@ -47,8 +47,8 @@ func (u *updates) StartupPodMutationFuncAll(container *v1.Container) []func(pod 
 
 // PostStartupPodMutationFuncAll invokes PostStartupPodMutationFunc on each update within this collection and returns
 // them.
-func (u *updates) PostStartupPodMutationFuncAll(container *v1.Container) []func(pod *v1.Pod) error {
-	var funcs []func(pod *v1.Pod) error
+func (u *updates) PostStartupPodMutationFuncAll(container *v1.Container) []func(pod *v1.Pod) (bool, error) {
+	var funcs []func(pod *v1.Pod) (bool, error)
 
 	for _, update := range u.AllUpdates() {
 		funcs = append(funcs, update.PostStartupPodMutationFunc(container))
