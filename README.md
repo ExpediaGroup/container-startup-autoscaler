@@ -302,7 +302,7 @@ CSA uses the [logr](https://github.com/go-logr/logr) API with [zerologr](https:/
 JSON-based `error`-, `info`-, `debug`- and `trace`-level messages.
 
 When [configuring](#csa-configuration) verbosity, `info`-level messages have a verbosity (`v`) of 0,
-`debug`-level messages have a `v` of 1, and `debug`-level messages have a `v` of 2 - this is mapped via zerologr.
+`debug`-level messages have a `v` of 1, and `trace`-level messages have a `v` of 2 - this is mapped via zerologr.
 Regardless of configured logging verbosity, `error`-level messages are always emitted. 
 
 Example `info`-level log:
