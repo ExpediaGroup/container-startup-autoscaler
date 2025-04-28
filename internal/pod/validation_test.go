@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
@@ -35,15 +34,16 @@ import (
 )
 
 func TestNewValidation(t *testing.T) {
-	recorder := &record.FakeRecorder{}
 	podHelper := kube.NewPodHelper(nil)
 	containerHelper := kube.NewContainerHelper()
-	stat := newStatus(podHelper)
-	val := newValidation(recorder, stat, podHelper, containerHelper)
-	assert.Equal(t, recorder, val.recorder)
-	assert.Equal(t, stat, val.status)
-	assert.Equal(t, podHelper, val.podHelper)
-	assert.Equal(t, containerHelper, val.containerHelper)
+	stat := newStatus(&record.FakeRecorder{}, podHelper)
+	val := newValidation(stat, podHelper, containerHelper)
+	expected := &validation{
+		status:          stat,
+		podHelper:       podHelper,
+		containerHelper: containerHelper,
+	}
+	assert.Equal(t, expected, val)
 }
 
 func TestValidationValidate(t *testing.T) {
@@ -56,141 +56,185 @@ func TestValidationValidate(t *testing.T) {
 		wantErrMsg                 string
 		wantNilContainer           bool
 		wantStatusUpdate           bool
-		wantEventMsg               string
 	}{
 		{
-			name: "UnableToGetEnabledLabelValue",
-			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
+			"UnableToGetEnabledLabelValue",
+			func(m *podtest.MockStatus, run func()) {
 				m.UpdateDefaultAndRun(run)
 			},
-			configPodHelperMockFunc: func(m *kubetest.MockPodHelper) {
+			func(m *kubetest.MockPodHelper) {
 				m.On("ExpectedLabelValueAs", mock.Anything, kubecommon.LabelEnabled, kubecommon.DataTypeBool).
 					Return(nil, errors.New(""))
 			},
-			wantErrMsg:       "unable to get pod enabled label value",
-			wantNilContainer: true,
-			wantStatusUpdate: true,
-			wantEventMsg:     "Validation error: unable to get pod enabled label value",
+			nil,
+			nil,
+			"unable to get pod enabled label value",
+			true,
+			true,
 		},
 		{
-			name: "EnabledLabelFalse",
-			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
+			"EnabledLabelFalse",
+			func(m *podtest.MockStatus, run func()) {
 				m.UpdateDefaultAndRun(run)
 			},
-			configPodHelperMockFunc: func(m *kubetest.MockPodHelper) {
+			func(m *kubetest.MockPodHelper) {
 				m.On("ExpectedLabelValueAs", mock.Anything, kubecommon.LabelEnabled, kubecommon.DataTypeBool).
 					Return(false, nil)
 			},
-			wantErrMsg:       "pod enabled label value is unexpectedly 'false'",
-			wantNilContainer: true,
-			wantStatusUpdate: true,
-			wantEventMsg:     "Validation error: pod enabled label value is unexpectedly 'false'",
+			nil,
+			nil,
+			"pod enabled label value is unexpectedly 'false'",
+			true,
+			true,
 		},
 		{
-			name: "VpaNotSupported",
-			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
+			"VpaNotSupported",
+			func(m *podtest.MockStatus, run func()) {
 				m.UpdateDefaultAndRun(run)
 			},
-			configPodHelperMockFunc: func(m *kubetest.MockPodHelper) {
+			func(m *kubetest.MockPodHelper) {
 				m.On("HasAnnotation", mock.Anything, KnownVpaAnnotations[0]).Return(true, "")
 				m.ExpectedLabelValueAsDefault()
 			},
-			wantErrMsg:       "vpa not supported",
-			wantNilContainer: true,
-			wantStatusUpdate: true,
-			wantEventMsg:     "Validation error: vpa not supported",
+			nil,
+			nil,
+			"vpa not supported",
+			true,
+			true,
 		},
 		{
-			name: "TargetContainerNotInPodSpec",
-			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
+			"TargetContainerNotInPodSpec",
+			func(m *podtest.MockStatus, run func()) {
 				m.UpdateDefaultAndRun(run)
 			},
-			configPodHelperMockFunc: func(m *kubetest.MockPodHelper) {
+			func(m *kubetest.MockPodHelper) {
 				m.On("HasAnnotation", mock.Anything, mock.Anything).Return(false, "")
 				m.On("IsContainerInSpec", mock.Anything, mock.Anything).Return(false)
 				m.ExpectedLabelValueAsDefault()
 			},
-			wantErrMsg:       "target container not in pod spec",
-			wantNilContainer: true,
-			wantStatusUpdate: true,
-			wantEventMsg:     "Validation error: target container not in pod spec",
+			nil,
+			nil,
+			"target container not in pod spec",
+			true,
+			true,
 		},
 		{
-			name: "TargetContainerNoProbes",
-			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
+			"TargetContainerNoProbes",
+			func(m *podtest.MockStatus, run func()) {
 				m.UpdateDefaultAndRun(run)
 			},
-			configPodHelperMockFunc: func(m *kubetest.MockPodHelper) {
+			func(m *kubetest.MockPodHelper) {
 				m.On("HasAnnotation", mock.Anything, mock.Anything).Return(false, "")
 				m.ExpectedLabelValueAsDefault()
 				m.IsContainerInSpecDefault()
 			},
-			configContHelperMockFunc: func(m *kubetest.MockContainerHelper) {
+			func(m *kubetest.MockContainerHelper) {
 				m.On("HasStartupProbe", mock.Anything).Return(false)
 				m.On("HasReadinessProbe", mock.Anything).Return(false)
 				m.GetDefault()
 			},
-			wantErrMsg:       "target container does not specify startup probe or readiness probe",
-			wantNilContainer: true,
-			wantStatusUpdate: true,
-			wantEventMsg:     "Validation error: target container does not specify startup probe or readiness probe",
+			nil,
+			"target container does not specify startup probe or readiness probe",
+			true,
+			true,
 		},
 		{
-			name: "UnableToValidateConfiguration",
-			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
+			"UnableToDeterminePodQosClass",
+			func(m *podtest.MockStatus, run func()) {
 				m.UpdateDefaultAndRun(run)
 			},
-			configPodHelperMockFunc: func(m *kubetest.MockPodHelper) {
+			func(m *kubetest.MockPodHelper) {
 				m.On("HasAnnotation", mock.Anything, mock.Anything).Return(false, "")
+				m.On("QOSClass", mock.Anything).Return(v1.PodQOSClass(""), errors.New(""))
+				m.ExpectedLabelValueAsDefault()
+				m.IsContainerInSpecDefault()
+
+			},
+			nil,
+			nil,
+			"unable to determine pod qos class",
+			true,
+			true,
+		},
+		{
+			"PodQosClassIsNotGuaranteed",
+			func(m *podtest.MockStatus, run func()) {
+				m.UpdateDefaultAndRun(run)
+			},
+			func(m *kubetest.MockPodHelper) {
+				m.On("HasAnnotation", mock.Anything, mock.Anything).Return(false, "")
+				m.On("QOSClass", mock.Anything).Return(v1.PodQOSBurstable, nil)
 				m.ExpectedLabelValueAsDefault()
 				m.IsContainerInSpecDefault()
 			},
-			configScaleConfigsMockFunc: func(m *scaletest.MockConfigurations) {
-				m.On("ValidateAll", mock.Anything).Return(errors.New(""))
-			},
-			wantErrMsg:       "unable to validate configuration",
-			wantNilContainer: true,
-			wantStatusUpdate: true,
-			wantEventMsg:     "Validation error: unable to validate configuration",
+			nil,
+			nil,
+			"pod qos class is not guaranteed",
+			true,
+			true,
 		},
 		{
-			name: "UnableToValidateConfigurationCollection",
-			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
+			"UnableToValidateScaleConfiguration",
+			func(m *podtest.MockStatus, run func()) {
 				m.UpdateDefaultAndRun(run)
 			},
-			configPodHelperMockFunc: func(m *kubetest.MockPodHelper) {
+			func(m *kubetest.MockPodHelper) {
 				m.On("HasAnnotation", mock.Anything, mock.Anything).Return(false, "")
 				m.ExpectedLabelValueAsDefault()
 				m.IsContainerInSpecDefault()
+				m.QOSClassDefault()
 			},
-			configScaleConfigsMockFunc: func(m *scaletest.MockConfigurations) {
+			nil,
+			func(m *scaletest.MockConfigurations) {
+				m.On("ValidateAll", mock.Anything).Return(errors.New("text"))
+			},
+			"text",
+			true,
+			true,
+		},
+		{
+			"UnableToValidateScaleConfigurationCollection",
+			func(m *podtest.MockStatus, run func()) {
+				m.UpdateDefaultAndRun(run)
+			},
+			func(m *kubetest.MockPodHelper) {
+				m.On("HasAnnotation", mock.Anything, mock.Anything).Return(false, "")
+				m.ExpectedLabelValueAsDefault()
+				m.IsContainerInSpecDefault()
+				m.QOSClassDefault()
+			},
+			nil,
+			func(m *scaletest.MockConfigurations) {
 				m.On("ValidateAll", mock.Anything).Return(nil)
-				m.On("ValidateCollection", mock.Anything).Return(errors.New(""))
+				m.On("ValidateCollection", mock.Anything).Return(errors.New("text"))
 			},
-			wantErrMsg:       "unable to validate configuration collection",
-			wantNilContainer: true,
-			wantStatusUpdate: true,
-			wantEventMsg:     "Validation error: unable to validate configuration collection",
+			"text",
+			true,
+			true,
 		},
 		{
-			name: "Ok",
-			configStatusMockFunc: func(m *podtest.MockStatus, run func()) {
+			"Ok",
+			func(m *podtest.MockStatus, run func()) {
 				m.UpdateDefaultAndRun(run)
 			},
-			configPodHelperMockFunc: func(m *kubetest.MockPodHelper) {
+			func(m *kubetest.MockPodHelper) {
 				m.On("HasAnnotation", mock.Anything, mock.Anything).Return(false, "")
 				m.ExpectedLabelValueAsDefault()
 				m.IsContainerInSpecDefault()
+				m.QOSClassDefault()
 			},
+			nil,
+			nil,
+			"",
+			false,
+			false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			statusUpdated := false
 			run := func() { statusUpdated = true }
-			eventRecorder := record.NewFakeRecorder(1)
 			v := newValidation(
-				eventRecorder,
 				podtest.NewMockStatusWithRun(tt.configStatusMockFunc, run),
 				kubetest.NewMockPodHelper(tt.configPodHelperMockFunc),
 				kubetest.NewMockContainerHelper(tt.configContHelperMockFunc),
@@ -205,9 +249,9 @@ func TestValidationValidate(t *testing.T) {
 			)
 			if tt.wantErrMsg != "" {
 				assert.True(t, errors.As(err, &ValidationError{}))
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			if tt.wantNilContainer {
 				assert.Nil(t, container)
@@ -219,14 +263,6 @@ func TestValidationValidate(t *testing.T) {
 			} else {
 				assert.False(t, statusUpdated)
 			}
-			if tt.wantEventMsg != "" {
-				select {
-				case res := <-eventRecorder.Events:
-					assert.Contains(t, res, tt.wantEventMsg)
-				case <-time.After(5 * time.Second):
-					t.Fatalf("event not generated")
-				}
-			}
 		})
 	}
 }
@@ -234,11 +270,10 @@ func TestValidationValidate(t *testing.T) {
 func TestValidationUpdateStatusAndGetError(t *testing.T) {
 	t.Run("UnableToUpdateStatus", func(t *testing.T) {
 		configStatusMockFunc := func(m *podtest.MockStatus) {
-			m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+			m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 				Return(&v1.Pod{}, errors.New(""))
 		}
 		v := newValidation(
-			&record.FakeRecorder{},
 			podtest.NewMockStatus(configStatusMockFunc),
 			nil,
 			nil,

@@ -30,9 +30,12 @@ import (
 func TestNewConfiguration(t *testing.T) {
 	podHelper := kube.NewPodHelper(nil)
 	containerHelper := kube.NewContainerHelper()
-	configuration := newConfiguration(podHelper, containerHelper)
-	assert.Equal(t, podHelper, configuration.podHelper)
-	assert.Equal(t, containerHelper, configuration.containerHelper)
+	config := newConfiguration(podHelper, containerHelper)
+	expected := &configuration{
+		podHelper:       podHelper,
+		containerHelper: containerHelper,
+	}
+	assert.Equal(t, expected, config)
 }
 
 func TestConfigurationConfigure(t *testing.T) {
@@ -45,7 +48,7 @@ func TestConfigurationConfigure(t *testing.T) {
 
 		configuration := newConfiguration(mockPodHelper, nil)
 		configs, err := configuration.Configure(&v1.Pod{})
-		assert.Contains(t, err.Error(), "unable to store configuration from annotations")
+		assert.ErrorContains(t, err, "unable to store configuration from annotations")
 		assert.Nil(t, configs)
 	})
 
@@ -55,7 +58,7 @@ func TestConfigurationConfigure(t *testing.T) {
 
 		configuration := newConfiguration(mockPodHelper, mockContainerHelper)
 		configs, err := configuration.Configure(&v1.Pod{})
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.NotNil(t, configs)
 	})
 }

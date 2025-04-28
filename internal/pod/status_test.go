@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
@@ -32,22 +33,49 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	kubefake "k8s.io/client-go/kubernetes/fake"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/component-base/metrics/testutil"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 func TestNewStatus(t *testing.T) {
+	recorder := &record.FakeRecorder{}
 	podHelper := kube.NewPodHelper(nil)
-	status := newStatus(podHelper)
-	assert.Equal(t, podHelper, status.podHelper)
+	expected := &status{
+		recorder:  recorder,
+		podHelper: podHelper,
+	}
+	assert.Equal(t, expected, newStatus(recorder, podHelper))
 }
 
 func TestStatusUpdateCore(t *testing.T) {
+	t.Run("NoFailReasonPanics", func(t *testing.T) {
+		s := newStatus(nil, nil)
+
+		fun := func() {
+			_, _ = s.Update(
+				nil,
+				nil,
+				"",
+				podcommon.States{},
+				podcommon.StatusScaleStateUpFailed,
+				nil,
+				" ",
+			)
+		}
+		assert.PanicsWithError(t, "failReason not provided for failed scale state", fun)
+	})
+
 	t.Run("UnableToPatchPod", func(t *testing.T) {
-		s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewClientset() },
-			func() interceptor.Funcs { return interceptor.Funcs{Patch: kubetest.InterceptorFuncPatchFail()} },
-		)))
+		s := newStatus(
+			&record.FakeRecorder{},
+			kube.NewPodHelper(
+				kubetest.ControllerRuntimeFakeClientWithKubeFake(
+					func() *kubefake.Clientset { return kubefake.NewClientset() },
+					func() interceptor.Funcs { return interceptor.Funcs{Patch: kubetest.InterceptorFuncPatchFail()} },
+				),
+			),
+		)
 
 		got, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
@@ -56,36 +84,57 @@ func TestStatusUpdateCore(t *testing.T) {
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
 			scaletest.NewMockConfigurations(nil),
+			"",
 		)
 		assert.Nil(t, got)
-		assert.Contains(t, err.Error(), "unable to patch pod")
+		assert.ErrorContains(t, err, "unable to patch pod")
 	})
 
-	t.Run("UnableToGetStatusAnnotationFromString", func(t *testing.T) {
-		s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset {
-				return kubefake.NewClientset(kubetest.NewPodBuilder().Build())
-			},
-			func() interceptor.Funcs { return interceptor.Funcs{} },
-		)))
+	t.Run("OkUnableToGetStatusAnnotationFromString", func(t *testing.T) {
+		pod := kubetest.NewPodBuilder().Build()
+		s := newStatus(
+			&record.FakeRecorder{},
+			kube.NewPodHelper(
+				kubetest.ControllerRuntimeFakeClientWithKubeFake(
+					func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
+					func() interceptor.Funcs { return interceptor.Funcs{} },
+				),
+			),
+		)
 
-		_, err := s.Update(
+		got, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
 			kubetest.NewPodBuilder().AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: "test"}).Build(),
 			"test",
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
 			scaletest.NewMockConfigurations(nil),
+			"",
 		)
-		assert.Contains(t, err.Error(), "unable to get status annotation from string")
+		assert.NoError(t, err)
+		ann, gotAnn := got.Annotations[kubecommon.AnnotationStatus]
+		assert.True(t, gotAnn)
+		stat := &StatusAnnotation{}
+		_ = json.Unmarshal([]byte(ann), stat)
+		assert.Equal(t, "Test", stat.Status)
+		assert.NotEmpty(t, stat.LastUpdated)
+
+		// Ensure pod isn't mutated
+		_, gotAnn = pod.Annotations[kubecommon.AnnotationStatus]
+		assert.False(t, gotAnn)
 	})
 
 	t.Run("OkNoPreviousStatus", func(t *testing.T) {
 		pod := kubetest.NewPodBuilder().Build()
-		s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
-			func() interceptor.Funcs { return interceptor.Funcs{} },
-		)))
+		s := newStatus(
+			&record.FakeRecorder{},
+			kube.NewPodHelper(
+				kubetest.ControllerRuntimeFakeClientWithKubeFake(
+					func() *kubefake.Clientset { return kubefake.NewClientset(pod) },
+					func() interceptor.Funcs { return interceptor.Funcs{} },
+				),
+			),
+		)
 
 		got, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
@@ -94,8 +143,9 @@ func TestStatusUpdateCore(t *testing.T) {
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
 			scaletest.NewMockConfigurations(nil),
+			"",
 		)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		ann, gotAnn := got.Annotations[kubecommon.AnnotationStatus]
 		assert.True(t, gotAnn)
 		stat := &StatusAnnotation{}
@@ -109,16 +159,20 @@ func TestStatusUpdateCore(t *testing.T) {
 	})
 
 	t.Run("OkPreviousStatusSame", func(t *testing.T) {
-		s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
-			func() *kubefake.Clientset {
-				return kubefake.NewClientset(kubetest.NewPodBuilder().Build())
-			},
-			func() interceptor.Funcs { return interceptor.Funcs{} },
-		)))
+		s := newStatus(
+			&record.FakeRecorder{},
+			kube.NewPodHelper(
+				kubetest.ControllerRuntimeFakeClientWithKubeFake(
+					func() *kubefake.Clientset {
+						return kubefake.NewClientset(kubetest.NewPodBuilder().Build())
+					},
+					func() interceptor.Funcs { return interceptor.Funcs{} },
+				),
+			),
+		)
 
 		previousStat := NewStatusAnnotation(
 			"Test",
-			podcommon.States{},
 			NewEmptyStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}),
 			"",
 		).Json()
@@ -129,8 +183,9 @@ func TestStatusUpdateCore(t *testing.T) {
 			podcommon.States{},
 			podcommon.StatusScaleStateNotApplicable,
 			scaletest.NewMockConfigurations(nil),
+			"",
 		)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 
 		stat := &StatusAnnotation{}
 		_ = json.Unmarshal([]byte(got.Annotations[kubecommon.AnnotationStatus]), stat)
@@ -142,108 +197,240 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 	type args struct {
 		pod        *v1.Pod
 		scaleState podcommon.StatusScaleState
+		failReason string
 	}
 	tests := []struct {
-		name                   string
-		args                   args
-		wantPanicErrMsg        string
-		wantLastScaleCommanded bool
-		wantLastScaleEnacted   bool
-		wantLastScaleFailed    bool
+		name                    string
+		args                    args
+		wantPanicErrMsg         string
+		wantLastScaleCommanded  bool
+		wantLastScaleEnacted    bool
+		wantLastScaleFailed     bool
+		wantEventMsg            string
+		wantPause               bool
+		configMetricAssertsFunc func(t *testing.T)
 	}{
 		{
-			name: "StatusScaleStateNotApplicablePrevious",
-			args: args{
+			"StatusScaleStateNotApplicablePrevious",
+			args{
 				kubetest.NewPodBuilder().
 					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateNotApplicable,
+				"",
 			},
-			wantLastScaleCommanded: true,
-			wantLastScaleEnacted:   true,
-			wantLastScaleFailed:    true,
+			"",
+			true,
+			true,
+			true,
+			"",
+			false,
+			nil,
 		},
 		{
-			name: "StatusScaleStateCommanded",
-			args: args{
+			"StatusScaleStateCommandedNoPreviousFail",
+			args{
 				kubetest.NewPodBuilder().Build(),
 				podcommon.StatusScaleStateUpCommanded,
+				"",
 			},
-			wantLastScaleCommanded: true,
-			wantLastScaleEnacted:   false,
-			wantLastScaleFailed:    false,
+			"",
+			true,
+			false,
+			false,
+			"Normal Scaling Test",
+			false,
+			nil,
 		},
 		{
-			name: "StatusScaleStateUnknownCommanded",
-			args: args{
+			"StatusScaleStateCommandedPreviousFail",
+			args{
+				kubetest.NewPodBuilder().
+					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
+					Build(),
+				podcommon.StatusScaleStateUpCommanded,
+				"",
+			},
+			"",
+			true,
+			false,
+			false,
+			"Normal Scaling Test",
+			true,
+			nil,
+		},
+		{
+			"StatusScaleStateUnknownCommandedNoPreviousFail",
+			args{
 				kubetest.NewPodBuilder().Build(),
 				podcommon.StatusScaleStateUnknownCommanded,
+				"",
 			},
-			wantLastScaleCommanded: true,
-			wantLastScaleEnacted:   false,
-			wantLastScaleFailed:    false,
+			"",
+			true,
+			false,
+			false,
+			"Normal Scaling Test",
+			false,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(scale.CommandedUnknownRes())
+				assert.Equal(t, float64(1), metricVal)
+			},
 		},
 		{
-			name: "StatusScaleStateEnactedNoPrevious",
-			args: args{
-				kubetest.NewPodBuilder().Build(),
+			"StatusScaleStateUnknownCommandedPreviousFail",
+			args{
+				kubetest.NewPodBuilder().
+					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
+					Build(),
+				podcommon.StatusScaleStateUnknownCommanded,
+				"",
+			},
+			"",
+			true,
+			false,
+			false,
+			"Normal Scaling Test",
+			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(scale.CommandedUnknownRes())
+				assert.Equal(t, float64(1), metricVal)
+			},
+		},
+		{
+			"StatusScaleStateEnactedLastCommandedEmpty",
+			args{
+				kubetest.NewPodBuilder().
+					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: statusAnnotationString(false, false, false)}).
+					Build(),
 				podcommon.StatusScaleStateUpEnacted,
+				"",
 			},
-			wantLastScaleCommanded: false,
-			wantLastScaleEnacted:   true,
-			wantLastScaleFailed:    false,
+			"",
+			false,
+			false,
+			false,
+			"",
+			false,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeSuccess))
+				assert.Equal(t, uint64(0), metricVal)
+			},
 		},
 		{
-			name: "StatusScaleStateEnactedPrevious",
-			args: args{
+			"StatusScaleStateEnactedLastCommandedNotEmptyNoPrevious",
+			args{
+				kubetest.NewPodBuilder().
+					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: statusAnnotationString(true, false, false)}).
+					Build(),
+				podcommon.StatusScaleStateUpEnacted,
+				"",
+			},
+			"",
+			true,
+			true,
+			false,
+			"Normal Scaling Test",
+			false,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeSuccess))
+				assert.Equal(t, uint64(1), metricVal)
+			},
+		},
+		{
+			"StatusScaleStateEnactedLastCommandedNotEmptyPrevious",
+			args{
 				kubetest.NewPodBuilder().
 					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateUpEnacted,
+				"",
 			},
-			wantLastScaleCommanded: true,
-			wantLastScaleEnacted:   true,
-			wantLastScaleFailed:    false,
+			"",
+			true,
+			true,
+			false,
+			"",
+			false,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeSuccess))
+				assert.Equal(t, uint64(0), metricVal)
+			},
 		},
 		{
-			name: "StatusScaleStateFailedNoPrevious",
-			args: args{
-				kubetest.NewPodBuilder().Build(),
+			"StatusScaleStateFailedNoPrevious",
+			args{
+				kubetest.NewPodBuilder().
+					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: statusAnnotationString(true, false, false)}).
+					Build(),
 				podcommon.StatusScaleStateUpFailed,
+				"failReason",
 			},
-			wantLastScaleCommanded: false,
-			wantLastScaleEnacted:   false,
-			wantLastScaleFailed:    true,
+			"",
+			true,
+			false,
+			true,
+			"Warning Scaling Test",
+			false,
+			func(t *testing.T) {
+				durationMetricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeFailure))
+				assert.Equal(t, uint64(1), durationMetricVal)
+				failureMetricVal, _ := testutil.GetCounterMetricValue(scale.Failure(metricscommon.DirectionUp, "failReason"))
+				assert.Equal(t, float64(1), failureMetricVal)
+			},
 		},
 		{
-			name: "StatusScaleStateFailedPrevious",
-			args: args{
+			"StatusScaleStateFailedPrevious",
+			args{
 				kubetest.NewPodBuilder().
 					AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: fullStatusAnnotationString()}).
 					Build(),
 				podcommon.StatusScaleStateUpFailed,
+				"failReason",
 			},
-			wantLastScaleCommanded: true,
-			wantLastScaleEnacted:   false,
-			wantLastScaleFailed:    true,
+			"",
+			true,
+			false,
+			true,
+			"",
+			false,
+			func(t *testing.T) {
+				durationMetricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeFailure))
+				assert.Equal(t, uint64(0), durationMetricVal)
+				failureMetricVal, _ := testutil.GetCounterMetricValue(scale.Failure(metricscommon.DirectionUp, "failReason"))
+				assert.Equal(t, float64(0), failureMetricVal)
+			},
 		},
 		{
-			name: "StatusScaleStateNotSupported",
-			args: args{
+			"StatusScaleStateNotSupported",
+			args{
 				&v1.Pod{},
 				podcommon.StatusScaleState("test"),
+				"",
 			},
-			wantPanicErrMsg: "statusScaleState 'test' not supported",
+			"statusScaleState 'test' not supported",
+			false,
+			false,
+			false,
+			"",
+			false,
+			nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newStatus(kube.NewPodHelper(kubetest.ControllerRuntimeFakeClientWithKubeFake(
-				func() *kubefake.Clientset {
-					return kubefake.NewClientset(kubetest.NewPodBuilder().Build())
-				},
-				func() interceptor.Funcs { return interceptor.Funcs{} },
-			)))
+			scale.ResetMetrics()
+
+			eventRecorder := record.NewFakeRecorder(1)
+			s := newStatus(
+				eventRecorder,
+				kube.NewPodHelper(
+					kubetest.ControllerRuntimeFakeClientWithKubeFake(
+						func() *kubefake.Clientset { return kubefake.NewClientset(kubetest.NewPodBuilder().Build()) },
+						func() interceptor.Funcs { return interceptor.Funcs{} },
+					),
+				),
+			)
 			ctx := contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build()
 
 			if tt.wantPanicErrMsg != "" {
@@ -252,23 +439,27 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 						ctx,
 						tt.args.pod,
 						"test",
-						podcommon.States{},
+						podcommon.States{Resources: podcommon.StateResourcesStartup},
 						tt.args.scaleState,
 						scaletest.NewMockConfigurations(nil),
+						tt.args.failReason,
 					)
 				})
 				return
 			}
 
+			currentTimeMillis := time.Now().UnixMilli()
 			got, err := s.Update(
 				ctx,
 				tt.args.pod,
 				"test",
-				podcommon.States{},
+				podcommon.States{Resources: podcommon.StateResourcesStartup},
 				tt.args.scaleState,
 				scaletest.NewMockConfigurations(nil),
+				tt.args.failReason,
 			)
-			assert.Nil(t, err)
+			durationMillis := time.Now().UnixMilli() - currentTimeMillis
+			assert.NoError(t, err)
 
 			stat := &StatusAnnotation{}
 			_ = json.Unmarshal([]byte(got.Annotations[kubecommon.AnnotationStatus]), stat)
@@ -287,6 +478,28 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			} else {
 				assert.Empty(t, stat.Scale.LastFailed)
 			}
+			if tt.wantEventMsg != "" {
+				select {
+				case res := <-eventRecorder.Events:
+					assert.Contains(t, res, tt.wantEventMsg)
+				case <-time.After(1 * time.Second):
+					t.Fatalf("event not generated")
+				}
+			} else {
+				select {
+				case <-eventRecorder.Events:
+					t.Fatalf("event unexpectedly generated")
+				case <-time.After(1 * time.Second):
+				}
+			}
+			if tt.wantPause {
+				assert.GreaterOrEqual(t, durationMillis, int64(postPatchPauseSecs*1000))
+			} else {
+				assert.Less(t, durationMillis, int64(postPatchPauseSecs*1000))
+			}
+			if tt.configMetricAssertsFunc != nil {
+				tt.configMetricAssertsFunc(t)
+			}
 		})
 	}
 }
@@ -303,50 +516,57 @@ func TestStatusUpdateDurationMetric(t *testing.T) {
 		wantLogMsg              string
 	}{
 		{
-			name:       "Empty",
-			args:       args{},
-			wantLogMsg: "",
-		},
-		{
-			name: "UnableToParseCommandedTime",
-			args: args{
-				commanded: "test",
-				now:       "test",
+			"Empty",
+			func(t *testing.T) {},
+			args{
+				"",
+				"",
 			},
-			wantLogMsg: "unable to parse commanded time",
+			"",
 		},
 		{
-			name: "UnableToParseNowTime",
-			args: args{
-				commanded: "2023-01-01T00:00:00.000-0000",
-				now:       "test",
+			"UnableToParseCommandedTime",
+			func(t *testing.T) {},
+			args{
+				"test",
+				"test",
 			},
-			wantLogMsg: "unable to parse now time",
+			"unable to parse commanded time",
 		},
 		{
-			name: "NegativeDiff",
-			args: args{
-				commanded: "2023-01-01T00:01:00.000-0000",
-				now:       "2023-01-01T00:00:00.000-0000",
+			"UnableToParseNowTime",
+			func(t *testing.T) {},
+			args{
+				"2023-01-01T00:00:00.000-0000",
+				"test",
 			},
-			wantLogMsg: "negative commanded/now seconds difference",
+			"unable to parse now time",
 		},
 		{
-			name: "Ok",
-			configMetricAssertsFunc: func(t *testing.T) {
+			"NegativeDiff",
+			func(t *testing.T) {},
+			args{
+				"2023-01-01T00:01:00.000-0000",
+				"2023-01-01T00:00:00.000-0000",
+			},
+			"negative commanded/now seconds difference",
+		},
+		{
+			"Ok",
+			func(t *testing.T) {
 				metricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeSuccess))
 				assert.Equal(t, uint64(1), metricVal)
 			},
-			args: args{
-				commanded: "2023-01-01T00:00:00.000-0000",
-				now:       "2023-01-01T00:01:00.000-0000",
+			args{
+				"2023-01-01T00:00:00.000-0000",
+				"2023-01-01T00:01:00.000-0000",
 			},
-			wantLogMsg: "",
+			"",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newStatus(nil)
+			s := newStatus(&record.FakeRecorder{}, nil)
 			buffer := &bytes.Buffer{}
 			ctx := contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(buffer)).Build()
 			s.updateDurationMetric(
@@ -364,12 +584,29 @@ func TestStatusUpdateDurationMetric(t *testing.T) {
 }
 
 func fullStatusAnnotationString() string {
-	now := newStatus(nil).formattedNow(timeFormatMilli)
+	return statusAnnotationString(true, true, true)
+}
+
+func statusAnnotationString(lastCommanded bool, lastEnacted bool, lastFailed bool) string {
+	now := newStatus(&record.FakeRecorder{}, nil).formattedNow(timeFormatMilli)
+
+	lastCommandedString, lastEnactedString, lastFailedString := "", "", ""
+
+	if lastCommanded {
+		lastCommandedString = now
+	}
+
+	if lastEnacted {
+		lastEnactedString = now
+	}
+
+	if lastFailed {
+		lastFailedString = now
+	}
 
 	return NewStatusAnnotation(
 		"test",
-		podcommon.States{},
-		NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, now, now, now),
+		NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, lastCommandedString, lastEnactedString, lastFailedString),
 		now,
 	).Json()
 }

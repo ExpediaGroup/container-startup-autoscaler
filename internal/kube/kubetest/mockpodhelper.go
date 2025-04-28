@@ -50,7 +50,7 @@ func (m *MockPodHelper) Get(ctx context.Context, name types.NamespacedName) (boo
 func (m *MockPodHelper) Patch(
 	ctx context.Context,
 	pod *v1.Pod,
-	podMutationFuncs []func(*v1.Pod) error,
+	podMutationFuncs []func(*v1.Pod) (bool, error),
 	patchResize bool,
 	mustSyncCache bool,
 ) (*v1.Pod, error) {
@@ -78,9 +78,14 @@ func (m *MockPodHelper) IsContainerInSpec(pod *v1.Pod, containerName string) boo
 	return args.Bool(0)
 }
 
-func (m *MockPodHelper) ResizeStatus(pod *v1.Pod) v1.PodResizeStatus {
+func (m *MockPodHelper) ResizeConditions(pod *v1.Pod) []v1.PodCondition {
 	args := m.Called(pod)
-	return args.Get(0).(v1.PodResizeStatus)
+	return args.Get(0).([]v1.PodCondition)
+}
+
+func (m *MockPodHelper) QOSClass(pod *v1.Pod) (v1.PodQOSClass, error) {
+	args := m.Called(pod)
+	return args.Get(0).(v1.PodQOSClass), args.Error(1)
 }
 
 func (m *MockPodHelper) GetDefault() {
@@ -162,8 +167,12 @@ func (m *MockPodHelper) IsContainerInSpecDefault() {
 	m.On("IsContainerInSpec", mock.Anything, mock.Anything).Return(true)
 }
 
-func (m *MockPodHelper) ResizeStatusDefault() {
-	m.On("ResizeStatus", mock.Anything).Return(v1.PodResizeStatus(""), nil)
+func (m *MockPodHelper) ResizeConditionsDefault() {
+	m.On("ResizeConditions", mock.Anything).Return([]v1.PodCondition{}, nil)
+}
+
+func (m *MockPodHelper) QOSClassDefault() {
+	m.On("QOSClass", mock.Anything).Return(v1.PodQOSGuaranteed, nil)
 }
 
 func (m *MockPodHelper) AllDefaults() {
@@ -173,5 +182,6 @@ func (m *MockPodHelper) AllDefaults() {
 	m.ExpectedLabelValueAsDefault()
 	m.ExpectedAnnotationValueAsDefault()
 	m.IsContainerInSpecDefault()
-	m.ResizeStatusDefault()
+	m.ResizeConditionsDefault()
+	m.QOSClassDefault()
 }

@@ -32,9 +32,9 @@ const (
 )
 
 var kubeVersionToFullVersion = map[string]string{
-	"1.32": "v1.32.0",
-	// Older versions are not supported by 'kind build node-image' as the server tgzs don't include the 'version' file
-	// and fail.
+	"1.33": "v1.33.0",
+	// Some older versions are not supported by 'kind build node-image' as the server tgzs don't include the 'version'
+	// file and fail.
 }
 
 // metrics-server ------------------------------------------------------------------------------------------------------
@@ -66,11 +66,16 @@ const (
 	csaStatusMessageStartupEnacted                 = "Startup resources enacted"
 	csaStatusMessagePostStartupEnacted             = "Post-startup resources enacted"
 	csaStatusMessageValidationError                = "Validation error"
+	csaStatusMessageInfeasible                     = "scale failed - infeasible"
 )
 
 const (
-	csaEventReasonScaling    = "Scaling"
-	csaEventReasonValidation = "Validation"
+	kubeEventTypeNormal  = "Normal"
+	kubeEventTypeWarning = "Warning"
+)
+
+const (
+	csaEventReasonScaling = "Scaling"
 )
 
 // echo-server ---------------------------------------------------------------------------------------------------------
@@ -95,7 +100,7 @@ const (
 )
 
 const (
-	echoServerDefaultProbeInitialDelaySeconds = 15
+	echoServerDefaultProbeInitialDelaySeconds = 10
 	echoServerProbePeriodSeconds              = 1
 	echoServerProbeFailureThreshold           = echoServerDefaultProbeInitialDelaySeconds
 )

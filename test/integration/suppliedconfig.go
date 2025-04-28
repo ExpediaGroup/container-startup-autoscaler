@@ -54,9 +54,9 @@ func suppliedConfigInit() {
 	suppliedConfigSetBool("KEEP_CLUSTER", &suppliedConfig.keepCluster, true)
 	suppliedConfigSetBool("DELETE_NS_AFTER_TEST", &suppliedConfig.deleteNsPostTest, true)
 
-	logMessage(nil, fmt.Sprintf("(config) KUBE_VERSION: "+suppliedConfig.kubeVersion))
-	logMessage(nil, fmt.Sprintf("(config) MAX_PARALLELISM: "+suppliedConfig.maxParallelism))
-	logMessage(nil, fmt.Sprintf("(config) EXTRA_CA_CERT_PATH: "+suppliedConfig.extraCaCertPath))
+	logMessage(nil, fmt.Sprintf("(config) KUBE_VERSION: %s", suppliedConfig.kubeVersion))
+	logMessage(nil, fmt.Sprintf("(config) MAX_PARALLELISM: %s", suppliedConfig.maxParallelism))
+	logMessage(nil, fmt.Sprintf("(config) EXTRA_CA_CERT_PATH: %s", suppliedConfig.extraCaCertPath))
 	logMessage(nil, fmt.Sprintf("(config) REUSE_CLUSTER: %t", suppliedConfig.reuseCluster))
 	logMessage(nil, fmt.Sprintf("(config) INSTALL_METRICS_SERVER: %t", suppliedConfig.installMetricsServer))
 	logMessage(nil, fmt.Sprintf("(config) KEEP_CSA: %t", suppliedConfig.keepCsa))

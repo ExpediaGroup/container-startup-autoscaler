@@ -44,14 +44,14 @@ func (u *update) ResourceName() v1.ResourceName {
 }
 
 // StartupPodMutationFunc returns a function that mutates a pod to apply startup resources for the resource.
-func (u *update) StartupPodMutationFunc(container *v1.Container) func(pod *v1.Pod) error {
+func (u *update) StartupPodMutationFunc(container *v1.Container) func(pod *v1.Pod) (bool, error) {
 	if !u.config.IsEnabled() {
-		return func(pod *v1.Pod) error {
-			return nil
+		return func(pod *v1.Pod) (bool, error) {
+			return false, nil
 		}
 	}
 
-	return func(pod *v1.Pod) error {
+	return func(pod *v1.Pod) (bool, error) {
 		err := u.setResources(
 			pod,
 			container,
@@ -59,22 +59,22 @@ func (u *update) StartupPodMutationFunc(container *v1.Container) func(pod *v1.Po
 			u.config.Resources().Startup,
 		)
 		if err != nil {
-			return common.WrapErrorf(err, "unable to set %s startup resources", u.resourceName)
+			return false, common.WrapErrorf(err, "unable to set %s startup resources", u.resourceName)
 		}
 
-		return nil
+		return true, nil
 	}
 }
 
 // PostStartupPodMutationFunc returns a function that mutates a pod to apply post-startup resources for the resource.
-func (u *update) PostStartupPodMutationFunc(container *v1.Container) func(pod *v1.Pod) error {
+func (u *update) PostStartupPodMutationFunc(container *v1.Container) func(pod *v1.Pod) (bool, error) {
 	if !u.config.IsEnabled() {
-		return func(pod *v1.Pod) error {
-			return nil
+		return func(pod *v1.Pod) (bool, error) {
+			return false, nil
 		}
 	}
 
-	return func(pod *v1.Pod) error {
+	return func(pod *v1.Pod) (bool, error) {
 		err := u.setResources(
 			pod,
 			container,
@@ -82,10 +82,10 @@ func (u *update) PostStartupPodMutationFunc(container *v1.Container) func(pod *v
 			u.config.Resources().PostStartupLimits,
 		)
 		if err != nil {
-			return common.WrapErrorf(err, "unable to set %s post-startup resources", u.resourceName)
+			return false, common.WrapErrorf(err, "unable to set %s post-startup resources", u.resourceName)
 		}
 
-		return nil
+		return true, nil
 	}
 }
 

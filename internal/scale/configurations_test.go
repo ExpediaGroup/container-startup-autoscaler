@@ -48,23 +48,23 @@ func TestConfigurationsTargetContainerName(t *testing.T) {
 		want       string
 	}{
 		{
-			name: "UnableToGetTargetContainerNameAnnotationValue",
-			fields: fields{
-				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
+			"UnableToGetTargetContainerNameAnnotationValue",
+			fields{
+				kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
 					m.On("ExpectedAnnotationValueAs", mock.Anything, mock.Anything, mock.Anything).
 						Return("", errors.New(""))
 				}),
 			},
-			wantErrMsg: "unable to get '" + scalecommon.AnnotationTargetContainerName + "' annotation value",
-			want:       "",
+			"unable to get '" + scalecommon.AnnotationTargetContainerName + "' annotation value",
+			"",
 		},
 		{
-			name: "Ok",
-			fields: fields{
-				podHelper: kubetest.NewMockPodHelper(nil),
+			"Ok",
+			fields{
+				kubetest.NewMockPodHelper(nil),
 			},
-			wantErrMsg: "",
-			want:       kubetest.DefaultContainerName,
+			"",
+			kubetest.DefaultContainerName,
 		},
 	}
 	for _, tt := range tests {
@@ -74,9 +74,9 @@ func TestConfigurationsTargetContainerName(t *testing.T) {
 			}
 			got, err := configs.TargetContainerName(&v1.Pod{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -94,22 +94,22 @@ func TestConfigurationsStoreFromAnnotationsAll(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "Error",
-			fields: fields{
-				cpuConfig: scaletest.NewMockConfiguration(nil),
-				memoryConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
+			"Error",
+			fields{
+				scaletest.NewMockConfiguration(nil),
+				scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 					m.On("StoreFromAnnotations", mock.Anything).Return(errors.New(""))
 				}),
 			},
-			wantErr: true,
+			true,
 		},
 		{
-			name: "Ok",
-			fields: fields{
-				cpuConfig:    scaletest.NewMockConfiguration(nil),
-				memoryConfig: scaletest.NewMockConfiguration(nil),
+			"Ok",
+			fields{
+				scaletest.NewMockConfiguration(nil),
+				scaletest.NewMockConfiguration(nil),
 			},
-			wantErr: false,
+			false,
 		},
 	}
 	for _, tt := range tests {
@@ -122,7 +122,7 @@ func TestConfigurationsStoreFromAnnotationsAll(t *testing.T) {
 			if tt.wantErr {
 				assert.NotNil(t, err)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -139,22 +139,22 @@ func TestConfigurationsValidateAll(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "Error",
-			fields: fields{
-				cpuConfig: scaletest.NewMockConfiguration(nil),
-				memoryConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
+			"Error",
+			fields{
+				scaletest.NewMockConfiguration(nil),
+				scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 					m.On("Validate", mock.Anything).Return(errors.New(""))
 				}),
 			},
-			wantErr: true,
+			true,
 		},
 		{
-			name: "Ok",
-			fields: fields{
-				cpuConfig:    scaletest.NewMockConfiguration(nil),
-				memoryConfig: scaletest.NewMockConfiguration(nil),
+			"Ok",
+			fields{
+				scaletest.NewMockConfiguration(nil),
+				scaletest.NewMockConfiguration(nil),
 			},
-			wantErr: false,
+			false,
 		},
 	}
 	for _, tt := range tests {
@@ -167,7 +167,7 @@ func TestConfigurationsValidateAll(t *testing.T) {
 			if tt.wantErr {
 				assert.NotNil(t, err)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -184,38 +184,24 @@ func TestConfigurationsValidateCollection(t *testing.T) {
 		wantErrMsg string
 	}{
 		{
-			name: "NoResourcesAreConfiguredForScaling",
-			fields: fields{
-				cpuConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
+			"NoResourcesAreConfiguredForScaling",
+			fields{
+				scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 					m.On("IsEnabled").Return(false)
 				}),
-				memoryConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
+				scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 					m.On("IsEnabled").Return(false)
 				}),
 			},
-			wantErrMsg: "no resources are configured for scaling",
+			"no resources are configured for scaling",
 		},
 		{
-			name: "RequestsLimitsValidationFailed",
-			fields: fields{
-				cpuConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
-					m.On("IsEnabled").Return(true)
-					m.ValidateRequestsLimitsDefault()
-				}),
-				memoryConfig: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
-					m.On("IsEnabled").Return(false)
-					m.On("ValidateRequestsLimits", mock.Anything).Return(errors.New("validaterequestslimits"))
-				}),
+			"Ok",
+			fields{
+				scaletest.NewMockConfiguration(nil),
+				scaletest.NewMockConfiguration(nil),
 			},
-			wantErrMsg: "validaterequestslimits",
-		},
-		{
-			name: "Ok",
-			fields: fields{
-				cpuConfig:    scaletest.NewMockConfiguration(nil),
-				memoryConfig: scaletest.NewMockConfiguration(nil),
-			},
-			wantErrMsg: "",
+			"",
 		},
 	}
 	for _, tt := range tests {
@@ -224,11 +210,11 @@ func TestConfigurationsValidateCollection(t *testing.T) {
 				cpuConfig:    tt.fields.cpuConfig,
 				memoryConfig: tt.fields.memoryConfig,
 			}
-			err := configs.ValidateCollection(&v1.Container{})
+			err := configs.ValidateCollection()
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -250,36 +236,31 @@ func TestConfigurationsConfigFor(t *testing.T) {
 		wantResourceName v1.ResourceName
 	}{
 		{
-			name: "Cpu",
-			fields: fields{
-				cpuConfig:    &configuration{resourceName: v1.ResourceCPU},
-				memoryConfig: &configuration{resourceName: v1.ResourceMemory},
+			"Cpu",
+			fields{
+				&configuration{resourceName: v1.ResourceCPU},
+				&configuration{resourceName: v1.ResourceMemory},
 			},
-			args: args{
-				resourceName: v1.ResourceCPU,
-			},
-			wantNil:          false,
-			wantResourceName: v1.ResourceCPU,
+			args{v1.ResourceCPU},
+			false,
+			v1.ResourceCPU,
 		},
 		{
-			name: "Memory",
-			fields: fields{
-				cpuConfig:    &configuration{resourceName: v1.ResourceCPU},
-				memoryConfig: &configuration{resourceName: v1.ResourceMemory},
+			"Memory",
+			fields{
+				&configuration{resourceName: v1.ResourceCPU},
+				&configuration{resourceName: v1.ResourceMemory},
 			},
-			args: args{
-				resourceName: v1.ResourceMemory,
-			},
-			wantNil:          false,
-			wantResourceName: v1.ResourceMemory,
+			args{v1.ResourceMemory},
+			false,
+			v1.ResourceMemory,
 		},
 		{
-			name:   "Default",
-			fields: fields{},
-			args: args{
-				resourceName: v1.ResourceName(""),
-			},
-			wantNil: true,
+			"Default",
+			fields{},
+			args{v1.ResourceName("")},
+			true,
+			v1.ResourceName(""),
 		},
 	}
 	for _, tt := range tests {
@@ -313,16 +294,18 @@ func TestConfigurationsAllConfigs(t *testing.T) {
 func TestConfigurationsAllEnabledConfigs(t *testing.T) {
 	configs := &configurations{
 		cpuConfig: &configuration{
-			resourceName:             v1.ResourceCPU,
-			csaEnabled:               false,
-			hasStoredFromAnnotations: true,
-			userEnabled:              false,
+			resourceName: v1.ResourceCPU,
+			csaEnabled:   false,
+			hasStored:    true,
+			hasValidated: true,
+			userEnabled:  false,
 		},
 		memoryConfig: &configuration{
-			resourceName:             v1.ResourceMemory,
-			csaEnabled:               true,
-			hasStoredFromAnnotations: true,
-			userEnabled:              true,
+			resourceName: v1.ResourceMemory,
+			csaEnabled:   true,
+			hasStored:    true,
+			hasValidated: true,
+			userEnabled:  true,
 		},
 	}
 	allConfigs := configs.AllEnabledConfigurations()
@@ -333,16 +316,18 @@ func TestConfigurationsAllEnabledConfigs(t *testing.T) {
 func TestConfigurationsAllEnabledConfigsResourceNames(t *testing.T) {
 	configs := &configurations{
 		cpuConfig: &configuration{
-			resourceName:             v1.ResourceCPU,
-			csaEnabled:               false,
-			hasStoredFromAnnotations: true,
-			userEnabled:              false,
+			resourceName: v1.ResourceCPU,
+			csaEnabled:   false,
+			hasStored:    true,
+			hasValidated: true,
+			userEnabled:  false,
 		},
 		memoryConfig: &configuration{
-			resourceName:             v1.ResourceMemory,
-			csaEnabled:               true,
-			hasStoredFromAnnotations: true,
-			userEnabled:              true,
+			resourceName: v1.ResourceMemory,
+			csaEnabled:   true,
+			hasStored:    true,
+			hasValidated: true,
+			userEnabled:  true,
 		},
 	}
 	assert.Equal(t, []v1.ResourceName{v1.ResourceMemory}, configs.AllEnabledConfigurationsResourceNames())

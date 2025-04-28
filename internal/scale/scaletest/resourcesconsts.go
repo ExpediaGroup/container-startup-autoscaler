@@ -22,10 +22,22 @@ import (
 )
 
 var (
+	RawResourcesCpuEnabled = scalecommon.RawResources{
+		Startup:             kubetest.PodAnnotationCpuStartup,
+		PostStartupRequests: kubetest.PodAnnotationCpuPostStartupRequests,
+		PostStartupLimits:   kubetest.PodAnnotationCpuPostStartupLimits,
+	}
+
 	ResourcesCpuEnabled = scalecommon.Resources{
 		Startup:             kubetest.PodCpuStartupEnabled,
 		PostStartupRequests: kubetest.PodCpuPostStartupRequestsEnabled,
 		PostStartupLimits:   kubetest.PodCpuPostStartupLimitsEnabled,
+	}
+
+	RawResourcesCpuDisabled = scalecommon.RawResources{
+		Startup:             kubetest.PodAnnotationCpuStartup,
+		PostStartupRequests: kubetest.PodAnnotationCpuStartup,
+		PostStartupLimits:   kubetest.PodAnnotationCpuStartup,
 	}
 
 	ResourcesCpuDisabled = scalecommon.Resources{
@@ -34,10 +46,22 @@ var (
 		PostStartupLimits:   kubetest.PodCpuPostStartupLimitsDisabled,
 	}
 
+	RawResourcesMemoryEnabled = scalecommon.RawResources{
+		Startup:             kubetest.PodAnnotationMemoryStartup,
+		PostStartupRequests: kubetest.PodAnnotationMemoryPostStartupRequests,
+		PostStartupLimits:   kubetest.PodAnnotationMemoryPostStartupLimits,
+	}
+
 	ResourcesMemoryEnabled = scalecommon.Resources{
 		Startup:             kubetest.PodMemoryStartupEnabled,
 		PostStartupRequests: kubetest.PodMemoryPostStartupRequestsEnabled,
 		PostStartupLimits:   kubetest.PodMemoryPostStartupLimitsEnabled,
+	}
+
+	RawResourcesMemoryDisabled = scalecommon.RawResources{
+		Startup:             kubetest.PodAnnotationMemoryStartup,
+		PostStartupRequests: kubetest.PodAnnotationMemoryStartup,
+		PostStartupLimits:   kubetest.PodAnnotationMemoryStartup,
 	}
 
 	ResourcesMemoryDisabled = scalecommon.Resources{
@@ -46,10 +70,22 @@ var (
 		PostStartupLimits:   kubetest.PodMemoryPostStartupLimitsDisabled,
 	}
 
+	RawResourcesCpuUnknown = scalecommon.RawResources{
+		Startup:             kubetest.PodAnnotationCpuUnknown,
+		PostStartupRequests: kubetest.PodAnnotationCpuUnknown,
+		PostStartupLimits:   kubetest.PodAnnotationCpuUnknown,
+	}
+
 	ResourcesCpuUnknown = scalecommon.Resources{
 		Startup:             kubetest.PodCpuUnknown,
 		PostStartupRequests: kubetest.PodCpuUnknown,
 		PostStartupLimits:   kubetest.PodCpuUnknown,
+	}
+
+	RawResourcesMemoryUnknown = scalecommon.RawResources{
+		Startup:             kubetest.PodAnnotationMemoryUnknown,
+		PostStartupRequests: kubetest.PodAnnotationMemoryUnknown,
+		PostStartupLimits:   kubetest.PodAnnotationMemoryUnknown,
 	}
 
 	ResourcesMemoryUnknown = scalecommon.Resources{

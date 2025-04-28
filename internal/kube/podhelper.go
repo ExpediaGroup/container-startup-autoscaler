@@ -83,18 +83,25 @@ func (h *podHelper) Get(ctx context.Context, name types.NamespacedName) (bool, *
 func (h *podHelper) Patch(
 	ctx context.Context,
 	pod *v1.Pod,
-	podMutationFuncs []func(*v1.Pod) error,
+	podMutationFuncs []func(*v1.Pod) (bool, error),
 	patchResize bool,
 	mustSyncCache bool,
 ) (*v1.Pod, error) {
-	// Copy and apply mutations.
+	// Apply mutations to a copy.
 	mutatedPod := pod.DeepCopy()
+	shouldPatch := false
 
 	for _, podMutationFunc := range podMutationFuncs {
-		err := podMutationFunc(mutatedPod)
+		shouldPatchFunc, err := podMutationFunc(mutatedPod)
 		if err != nil {
 			return nil, common.WrapErrorf(err, "unable to mutate pod")
 		}
+		shouldPatch = shouldPatch || shouldPatchFunc
+	}
+
+	// Only patch if at least one podMutationFunc indicated to do so.
+	if !shouldPatch {
+		return pod, nil
 	}
 
 	var err error
@@ -123,7 +130,7 @@ func (h *podHelper) Patch(
 				// Reapply mutations to latest pod.
 				mutatedPod = latestPod
 				for _, podMutationFunc := range podMutationFuncs {
-					_ = podMutationFunc(mutatedPod)
+					_, _ = podMutationFunc(mutatedPod)
 				}
 			}
 
@@ -182,9 +189,27 @@ func (h *podHelper) IsContainerInSpec(pod *v1.Pod, containerName string) bool {
 	return false
 }
 
-// ResizeStatus returns the resize status for the supplied pod.
-func (h *podHelper) ResizeStatus(pod *v1.Pod) v1.PodResizeStatus {
-	return pod.Status.Resize
+// ResizeConditions returns the resize-related conditions for the supplied pod.
+func (h *podHelper) ResizeConditions(pod *v1.Pod) []v1.PodCondition {
+	var resizeConditions []v1.PodCondition
+
+	for _, condition := range pod.Status.Conditions {
+		if condition.Type == v1.PodResizePending || condition.Type == v1.PodResizeInProgress {
+			resizeConditions = append(resizeConditions, condition)
+		}
+	}
+
+	return resizeConditions
+}
+
+// QOSClass returns the QOS class of the supplied pod. It returns an error if the QOS class is not (yet) present in the
+// pod's status.
+func (h *podHelper) QOSClass(pod *v1.Pod) (v1.PodQOSClass, error) {
+	if pod.Status.QOSClass == "" {
+		return pod.Status.QOSClass, errors.New("pod status qos class not present")
+	}
+
+	return pod.Status.QOSClass, nil
 }
 
 // expectedLabelOrAnnotationAs retrieves an expected label or annotation and returns the indicated type.
@@ -229,7 +254,7 @@ func (h *podHelper) waitForCacheUpdate(ctx context.Context, pod *v1.Pod) *v1.Pod
 			pollCount++
 			exists, podFromCache, err := h.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name})
 			if err == nil && exists && podFromCache.ResourceVersion >= pod.ResourceVersion {
-				logging.Infof(ctx, logging.VTrace, "pod polled from cache %d time(s) in total", pollCount)
+				logging.Infof(ctx, logging.VDebug, "pod polled from cache %d time(s) in total", pollCount)
 				informercache.SyncPoll().Observe(float64(pollCount))
 				return podFromCache
 			}

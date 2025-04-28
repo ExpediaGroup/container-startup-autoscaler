@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"sync"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
@@ -69,7 +70,7 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 	_, exists := r.reconcilingPods.Get(namespacedName)
 	if exists {
 		r.mutex.Unlock()
-		logging.Infof(ctx, logging.VTrace, "existing reconcile in progress (will requeue)")
+		logging.Infof(ctx, logging.VDebug, "existing reconcile in progress (will requeue)")
 		reconciler.ExistingInProgress().Inc()
 		return reconcile.Result{RequeueAfter: r.controllerConfig.RequeueDurationSecsDuration()}, nil
 	}
@@ -129,9 +130,14 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 
 	ctx = ccontext.WithTargetContainerName(ctx, targetContainerName)
 
-	for _, scaleConfig := range scaleConfigs.AllConfigurations() {
-		logging.Infof(ctx, logging.VTrace, "scale configuration: %s", scaleConfig.String())
+	var builder strings.Builder
+	for i, scaleConfig := range scaleConfigs.AllConfigurations() {
+		if i > 0 {
+			builder.WriteString(" / ")
+		}
+		builder.WriteString(scaleConfig.String())
 	}
+	logging.Infof(ctx, logging.VDebug, "scale configurations: %s", builder.String())
 
 	targetContainer, err := r.pod.Validation.Validate(ctx, kubePod, targetContainerName, scaleConfigs)
 	if err != nil {

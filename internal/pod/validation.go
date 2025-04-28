@@ -20,33 +20,26 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/record"
 )
-
-const eventReasonValidation = "Validation"
 
 // validation is the default implementation of podcommon.Validation.
 type validation struct {
-	recorder        record.EventRecorder
 	status          podcommon.Status
 	podHelper       kubecommon.PodHelper
 	containerHelper kubecommon.ContainerHelper
 }
 
 func newValidation(
-	recorder record.EventRecorder,
 	status podcommon.Status,
 	podHelper kubecommon.PodHelper,
 	containerHelper kubecommon.ContainerHelper,
 ) *validation {
 	return &validation{
-		recorder:        recorder,
 		status:          status,
 		podHelper:       podHelper,
 		containerHelper: containerHelper,
@@ -94,12 +87,22 @@ func (v *validation) Validate(
 		return nil, v.updateStatusAndGetError(ctx, pod, "target container does not specify startup probe or readiness probe", nil, scaleConfigs)
 	}
 
-	if err = scaleConfigs.ValidateAll(ctr); err != nil {
-		return nil, v.updateStatusAndGetError(ctx, pod, "unable to validate configuration", err, scaleConfigs)
+	// All resources must be guaranteed in nature to avoid change in pod QoS class.
+	qosClass, err := v.podHelper.QOSClass(pod)
+	if err != nil {
+		return nil, v.updateStatusAndGetError(ctx, pod, "unable to determine pod qos class", err, scaleConfigs)
 	}
 
-	if err = scaleConfigs.ValidateCollection(ctr); err != nil {
-		return nil, v.updateStatusAndGetError(ctx, pod, "unable to validate configuration collection", err, scaleConfigs)
+	if qosClass != v1.PodQOSGuaranteed {
+		return nil, v.updateStatusAndGetError(ctx, pod, "pod qos class is not guaranteed", nil, scaleConfigs)
+	}
+
+	if err = scaleConfigs.ValidateAll(ctr); err != nil {
+		return nil, v.updateStatusAndGetError(ctx, pod, err.Error(), nil, scaleConfigs)
+	}
+
+	if err = scaleConfigs.ValidateCollection(); err != nil {
+		return nil, v.updateStatusAndGetError(ctx, pod, err.Error(), nil, scaleConfigs)
 	}
 
 	return ctr, nil
@@ -116,12 +119,18 @@ func (v *validation) updateStatusAndGetError(
 ) error {
 	ret := NewValidationError(errMessage, cause)
 
-	_, err := v.status.Update(ctx, pod, ret.Error(), podcommon.NewStatesAllUnknown(), podcommon.StatusScaleStateNotApplicable, scaleConfigs)
+	_, err := v.status.Update(
+		ctx,
+		pod,
+		ret.Error(),
+		podcommon.NewStatesAllUnknown(),
+		podcommon.StatusScaleStateNotApplicable,
+		scaleConfigs,
+		"",
+	)
 	if err != nil {
 		logging.Errorf(ctx, err, "unable to update status (will continue)")
 	}
-
-	v.recorder.Event(pod, v1.EventTypeWarning, eventReasonValidation, common.CapitalizeFirstChar(ret.Error()))
 
 	return ret
 }

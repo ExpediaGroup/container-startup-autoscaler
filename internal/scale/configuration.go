@@ -37,9 +37,11 @@ type configuration struct {
 	podHelper                         kubecommon.PodHelper
 	containerHelper                   kubecommon.ContainerHelper
 
-	hasStoredFromAnnotations bool
-	userEnabled              bool
-	resources                scalecommon.Resources
+	hasStored    bool
+	hasValidated bool
+	userEnabled  bool
+	rawResources scalecommon.RawResources
+	resources    scalecommon.Resources
 }
 
 func NewConfiguration(
@@ -74,10 +76,11 @@ func (c *configuration) IsEnabled() bool {
 	return c.csaEnabled && c.userEnabled
 }
 
-// Resources returns scalecommon.Resources stored from annotations. Panics if StoreFromAnnotations has not first been
-// invoked.
+// Resources returns scalecommon.Resources stored from annotations. Panics if StoreFromAnnotations and Validate have
+// not first been invoked.
 func (c *configuration) Resources() scalecommon.Resources {
 	c.checkStored()
+	c.checkValidated()
 	return c.resources
 }
 
@@ -85,7 +88,7 @@ func (c *configuration) Resources() scalecommon.Resources {
 // enabled by CSA or user.
 func (c *configuration) StoreFromAnnotations(pod *v1.Pod) error {
 	if !c.csaEnabled {
-		c.hasStoredFromAnnotations = true
+		c.hasStored = true
 		return nil
 	}
 
@@ -95,44 +98,40 @@ func (c *configuration) StoreFromAnnotations(pod *v1.Pod) error {
 
 	if !hasStartupAnn && !hasPostStartupRequestsAnn && !hasPostStartupLimitsAnn {
 		c.userEnabled = false
-		c.hasStoredFromAnnotations = true
+		c.hasStored = true
 		return nil
 	}
 
+	startup, postStartupRequests, postStartupLimits := "", "", ""
 	annErrFmt := "unable to get '%s' annotation value"
-	qParseErrFmt := "unable to parse '%s' annotation value ('%s')"
 
-	value, err := c.podHelper.ExpectedAnnotationValueAs(pod, c.annotationStartupName, kubecommon.DataTypeString)
-	if err != nil {
-		return common.WrapErrorf(err, annErrFmt, c.annotationStartupName)
-	}
-	startup, err := resource.ParseQuantity(value.(string))
-	if err != nil {
-		return common.WrapErrorf(err, qParseErrFmt, c.annotationStartupName, value)
+	if hasStartupAnn {
+		value, err := c.podHelper.ExpectedAnnotationValueAs(pod, c.annotationStartupName, kubecommon.DataTypeString)
+		if err != nil {
+			return common.WrapErrorf(err, annErrFmt, c.annotationStartupName)
+		}
+		startup = value.(string)
 	}
 
-	value, err = c.podHelper.ExpectedAnnotationValueAs(pod, c.annotationPostStartupRequestsName, kubecommon.DataTypeString)
-	if err != nil {
-		return common.WrapErrorf(err, annErrFmt, c.annotationPostStartupRequestsName)
-	}
-	postStartupRequests, err := resource.ParseQuantity(value.(string))
-	if err != nil {
-		return common.WrapErrorf(err, qParseErrFmt, c.annotationPostStartupRequestsName, value)
-	}
-
-	value, err = c.podHelper.ExpectedAnnotationValueAs(pod, c.annotationPostStartupLimitsName, kubecommon.DataTypeString)
-	if err != nil {
-		return common.WrapErrorf(err, annErrFmt, c.annotationPostStartupLimitsName)
-	}
-	postStartupLimits, err := resource.ParseQuantity(value.(string))
-	if err != nil {
-		return common.WrapErrorf(err, qParseErrFmt, c.annotationPostStartupLimitsName, value)
+	if hasPostStartupRequestsAnn {
+		value, err := c.podHelper.ExpectedAnnotationValueAs(pod, c.annotationPostStartupRequestsName, kubecommon.DataTypeString)
+		if err != nil {
+			return common.WrapErrorf(err, annErrFmt, c.annotationPostStartupRequestsName)
+		}
+		postStartupRequests = value.(string)
 	}
 
-	c.userEnabled = true
-	c.resources = scalecommon.NewResources(startup, postStartupRequests, postStartupLimits)
-	c.hasStoredFromAnnotations = true
+	if hasPostStartupLimitsAnn {
+		value, err := c.podHelper.ExpectedAnnotationValueAs(pod, c.annotationPostStartupLimitsName, kubecommon.DataTypeString)
+		if err != nil {
+			return common.WrapErrorf(err, annErrFmt, c.annotationPostStartupLimitsName)
+		}
+		postStartupLimits = value.(string)
+	}
 
+	c.rawResources = scalecommon.NewRawResources(startup, postStartupRequests, postStartupLimits)
+	c.userEnabled = true // But subject to later validation.
+	c.hasStored = true
 	return nil
 }
 
@@ -141,32 +140,77 @@ func (c *configuration) StoreFromAnnotations(pod *v1.Pod) error {
 func (c *configuration) Validate(container *v1.Container) error {
 	c.checkStored()
 
-	if !c.csaEnabled || !c.userEnabled {
+	if !c.IsEnabled() {
+		c.hasValidated = true
 		return nil
+	}
+
+	annNotPresentErrFmt := "annotation '%s' not present"
+
+	if c.rawResources.Startup == "" {
+		return fmt.Errorf(annNotPresentErrFmt, c.annotationStartupName)
+	}
+
+	if c.rawResources.PostStartupRequests == "" {
+		return fmt.Errorf(annNotPresentErrFmt, c.annotationPostStartupRequestsName)
+	}
+
+	if c.rawResources.PostStartupLimits == "" {
+		return fmt.Errorf(annNotPresentErrFmt, c.annotationPostStartupLimitsName)
+	}
+
+	annParseErrFmt := "unable to parse '%s' annotation value ('%s')"
+
+	startupQuantity, err := resource.ParseQuantity(c.rawResources.Startup)
+	if err != nil {
+		return common.WrapErrorf(err, annParseErrFmt, c.annotationStartupName, c.rawResources.Startup)
+	}
+
+	postStartupRequestsQuantity, err := resource.ParseQuantity(c.rawResources.PostStartupRequests)
+	if err != nil {
+		return common.WrapErrorf(err, annParseErrFmt, c.annotationPostStartupRequestsName, c.rawResources.PostStartupRequests)
+	}
+
+	postStartupLimitsQuantity, err := resource.ParseQuantity(c.rawResources.PostStartupLimits)
+	if err != nil {
+		return common.WrapErrorf(err, annParseErrFmt, c.annotationPostStartupLimitsName, c.rawResources.PostStartupLimits)
 	}
 
 	// TODO(wt) QoS class is currently immutable so post-startup resources must also be 'guaranteed'. See
 	//  https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/1287-in-place-update-pod-resources#qos-class
-	if !c.resources.PostStartupRequests.Equal(c.resources.PostStartupLimits) {
+	if !postStartupRequestsQuantity.Equal(postStartupLimitsQuantity) {
 		return fmt.Errorf(
 			"%s post-startup requests (%s) must equal post-startup limits (%s)",
 			c.resourceName,
-			c.resources.PostStartupRequests.String(),
-			c.resources.PostStartupLimits.String(),
+			c.rawResources.PostStartupRequests,
+			c.rawResources.PostStartupLimits,
 		)
 	}
 
-	if c.resources.PostStartupRequests.Cmp(c.resources.Startup) == 1 {
+	if postStartupRequestsQuantity.Cmp(startupQuantity) == 1 {
 		return fmt.Errorf(
 			"%s post-startup requests (%s) is greater than startup value (%s)",
 			c.resourceName,
-			c.resources.PostStartupRequests.String(),
-			c.resources.Startup.String(),
+			c.rawResources.PostStartupRequests,
+			c.rawResources.Startup,
 		)
 	}
 
-	if err := c.ValidateRequestsLimits(container); err != nil {
-		return err
+	requests := c.containerHelper.Requests(container, c.resourceName)
+	if requests.IsZero() {
+		return fmt.Errorf("target container does not specify %s requests", c.resourceName)
+	}
+
+	limits := c.containerHelper.Limits(container, c.resourceName)
+	if limits.IsZero() {
+		return fmt.Errorf("target container does not specify %s limits", c.resourceName)
+	}
+
+	if !requests.Equal(limits) {
+		return fmt.Errorf(
+			"target container %s requests (%s) must equal limits (%s)",
+			c.resourceName, requests.String(), limits.String(),
+		)
 	}
 
 	resizePolicy, err := c.containerHelper.ResizePolicy(container, c.resourceName)
@@ -180,24 +224,8 @@ func (c *configuration) Validate(container *v1.Container) error {
 		)
 	}
 
-	return nil
-}
-
-// ValidateRequestsLimits performs requests/limits-specific validation against the supplied container.
-func (c *configuration) ValidateRequestsLimits(container *v1.Container) error {
-	requests := c.containerHelper.Requests(container, c.resourceName)
-	if requests.IsZero() {
-		return fmt.Errorf("target container does not specify %s requests", c.resourceName)
-	}
-
-	limits := c.containerHelper.Limits(container, c.resourceName)
-	if !requests.Equal(limits) {
-		return fmt.Errorf(
-			"target container %s requests (%s) must equal limits (%s)",
-			c.resourceName, requests.String(), limits.String(),
-		)
-	}
-
+	c.resources = scalecommon.NewResources(startupQuantity, postStartupRequestsQuantity, postStartupLimitsQuantity)
+	c.hasValidated = true
 	return nil
 }
 
@@ -206,22 +234,29 @@ func (c *configuration) ValidateRequestsLimits(container *v1.Container) error {
 func (c *configuration) String() string {
 	c.checkStored()
 
-	if !c.csaEnabled || !c.userEnabled {
+	if !c.IsEnabled() {
 		return fmt.Sprintf("(%s) not enabled", c.resourceName)
 	}
 
 	return fmt.Sprintf(
 		"(%s) startup: %s, post-startup requests: %s, post-startup limits: %s",
 		c.resourceName,
-		c.resources.Startup.String(),
-		c.resources.PostStartupRequests.String(),
-		c.resources.PostStartupLimits.String(),
+		c.rawResources.Startup,
+		c.rawResources.PostStartupRequests,
+		c.rawResources.PostStartupLimits,
 	)
 }
 
 // checkStored panics if StoreFromAnnotations has not been invoked.
 func (c *configuration) checkStored() {
-	if !c.hasStoredFromAnnotations {
+	if !c.hasStored {
 		panic(errors.New("StoreFromAnnotations() hasn't been invoked first"))
+	}
+}
+
+// checkValidated panics if Validate has not been invoked.
+func (c *configuration) checkValidated() {
+	if !c.hasValidated {
+		panic(errors.New("Validate() hasn't been invoked first"))
 	}
 }

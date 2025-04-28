@@ -22,8 +22,6 @@ import (
 	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 )
@@ -34,7 +32,7 @@ func assertStartupEnacted(
 	podStatusAnn map[*v1.Pod]pod.StatusAnnotation,
 	expectStartupProbe bool,
 	expectReadinessProbe bool,
-	expectStatusCommandedEnactedEmpty bool,
+	expectStatusScaleCommandedEnacted bool,
 ) {
 	if (!expectStartupProbe && !expectReadinessProbe) || (expectStartupProbe && expectReadinessProbe) {
 		panic(errors.New("only one of expectStartupProbe/expectReadinessProbe must be true"))
@@ -109,25 +107,22 @@ func assertStartupEnacted(
 		require.Equal(t, csaStatusMessageStartupEnacted, statusAnn.Status)
 		require.NotEmpty(t, statusAnn.LastUpdated)
 
-		require.Equal(t, expectStartupProbe, statusAnn.States.StartupProbe.Bool())
-		require.Equal(t, expectReadinessProbe, statusAnn.States.ReadinessProbe.Bool())
-		require.Equal(t, podcommon.StateContainerRunning, statusAnn.States.Container)
-		if expectStartupProbe {
-			require.Equal(t, podcommon.StateBoolFalse, statusAnn.States.Started)
-		} else {
-			require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.Started)
+		if annotations.IsCpuSpecified() {
+			require.Contains(t, statusAnn.Scale.EnabledForResources, v1.ResourceCPU)
 		}
-		require.Equal(t, podcommon.StateBoolFalse, statusAnn.States.Ready)
-		require.Equal(t, podcommon.StateResourcesStartup, statusAnn.States.Resources)
-		require.Equal(t, podcommon.StateStatusResourcesContainerResourcesMatch, statusAnn.States.StatusResources)
 
-		if expectStatusCommandedEnactedEmpty {
-			require.Empty(t, statusAnn.Scale.LastCommanded)
-			require.Empty(t, statusAnn.Scale.LastEnacted)
-		} else {
+		if annotations.IsMemorySpecified() {
+			require.Contains(t, statusAnn.Scale.EnabledForResources, v1.ResourceMemory)
+		}
+
+		if expectStatusScaleCommandedEnacted {
 			require.NotEmpty(t, statusAnn.Scale.LastCommanded)
 			require.NotEmpty(t, statusAnn.Scale.LastEnacted)
+		} else {
+			require.Empty(t, statusAnn.Scale.LastCommanded)
+			require.Empty(t, statusAnn.Scale.LastEnacted)
 		}
+
 		require.Empty(t, statusAnn.Scale.LastFailed)
 	}
 }
@@ -204,13 +199,13 @@ func assertPostStartupEnacted(
 		require.Equal(t, csaStatusMessagePostStartupEnacted, statusAnn.Status)
 		require.NotEmpty(t, statusAnn.LastUpdated)
 
-		require.Equal(t, expectStartupProbe, statusAnn.States.StartupProbe.Bool())
-		require.Equal(t, expectReadinessProbe, statusAnn.States.ReadinessProbe.Bool())
-		require.Equal(t, podcommon.StateContainerRunning, statusAnn.States.Container)
-		require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.Started)
-		require.Equal(t, podcommon.StateBoolTrue, statusAnn.States.Ready)
-		require.Equal(t, podcommon.StateResourcesPostStartup, statusAnn.States.Resources)
-		require.Equal(t, podcommon.StateStatusResourcesContainerResourcesMatch, statusAnn.States.StatusResources)
+		if annotations.IsCpuSpecified() {
+			require.Contains(t, statusAnn.Scale.EnabledForResources, v1.ResourceCPU)
+		}
+
+		if annotations.IsMemorySpecified() {
+			require.Contains(t, statusAnn.Scale.EnabledForResources, v1.ResourceMemory)
+		}
 
 		require.NotEmpty(t, statusAnn.Scale.LastCommanded)
 		require.NotEmpty(t, statusAnn.Scale.LastEnacted)
@@ -218,21 +213,27 @@ func assertPostStartupEnacted(
 	}
 }
 
-func assertEvents(t *testing.T, reason string, substrs []string, namespace string, names []string) {
+func assertEvent(t *testing.T, eType string, reason string, messageSubstr string, namespace string, names []string) {
 	for _, name := range names {
-		messages, err := kubeGetEventMessages(t, namespace, name, reason)
+		messages, err := kubeGetEventMessages(t, namespace, name, eType, reason)
 		maybeLogErrAndFailNow(t, err)
 
-		for _, substr := range substrs {
-			gotMessage := false
-			for _, message := range messages {
-				if strings.Contains(message, substr) {
-					gotMessage = true
-					break
-				}
+		gotMessage := false
+		for _, message := range messages {
+			if strings.Contains(message, messageSubstr) {
+				gotMessage = true
+				break
 			}
-
-			assert.True(t, gotMessage)
 		}
+		require.True(t, gotMessage)
+	}
+}
+
+func assertEventCount(t *testing.T, count int, namespace string, names []string) {
+	for _, name := range names {
+		eventCount, err := kubeGetCsaEventCount(t, namespace, name)
+		maybeLogErrAndFailNow(t, err)
+
+		require.Equal(t, count, eventCount)
 	}
 }

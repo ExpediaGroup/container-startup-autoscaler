@@ -26,7 +26,11 @@ import (
 
 func TestNewValidationError(t *testing.T) {
 	err := NewValidationError("test", errors.New(""))
-	assert.True(t, errors.As(err, &ValidationError{}))
+	expected := ValidationError{
+		message: "test",
+		wrapped: errors.New(""),
+	}
+	assert.Equal(t, expected, err)
 }
 
 func TestValidationErrorError(t *testing.T) {

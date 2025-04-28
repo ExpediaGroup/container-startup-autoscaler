@@ -33,29 +33,37 @@ import (
 )
 
 func TestNewTargetContainerState(t *testing.T) {
+	pHelper := kube.NewPodHelper(nil)
 	cHelper := kube.NewContainerHelper()
-	s := newTargetContainerState(cHelper)
-	assert.Equal(t, cHelper, s.containerHelper)
+	state := newTargetContainerState(pHelper, cHelper)
+	expected := targetContainerState{
+		podHelper:       pHelper,
+		containerHelper: cHelper,
+	}
+	assert.Equal(t, expected, state)
 }
 
 func TestTargetContainerStateStates(t *testing.T) {
 	tests := []struct {
-		name               string
-		targetContainer    *v1.Container
-		configMockFunc     func(*kubetest.MockContainerHelper)
-		wantStates         podcommon.States
-		wantStateResources podcommon.StateResources
-		wantErrMsg         string
+		name                  string
+		targetContainer       *v1.Container
+		configPHelperMockFunc func(*kubetest.MockPodHelper)
+		configCHelperMockFunc func(*kubetest.MockContainerHelper)
+		wantErrMsg            string
+		wantStates            podcommon.States
+		wantStateResources    podcommon.StateResources
 	}{
 		{
-			name:            "UnableToDetermineContainerState",
-			targetContainer: &v1.Container{},
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"UnableToDetermineContainerState",
+			&v1.Container{},
+			nil,
+			func(m *kubetest.MockContainerHelper) {
 				m.On("State", mock.Anything, mock.Anything).Return(v1.ContainerState{}, errors.New(""))
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
 			},
-			wantStates: podcommon.NewStates(
+			"unable to determine container state",
+			podcommon.NewStates(
 				podcommon.StateBoolTrue,
 				podcommon.StateBoolTrue,
 				podcommon.StateContainerUnknown,
@@ -63,19 +71,22 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolUnknown,
 				podcommon.StateResourcesUnknown,
 				podcommon.StateStatusResourcesUnknown,
+				podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
 			),
-			wantErrMsg: "unable to determine container state",
+			podcommon.StateResources(""),
 		},
 		{
-			name:            "UnableToDetermineStartedState",
-			targetContainer: &v1.Container{},
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"UnableToDetermineStartedState",
+			&v1.Container{},
+			nil,
+			func(m *kubetest.MockContainerHelper) {
 				m.On("IsStarted", mock.Anything, mock.Anything).Return(false, errors.New(""))
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
 				m.StateDefault()
 			},
-			wantStates: podcommon.NewStates(
+			"unable to determine started state",
+			podcommon.NewStates(
 				podcommon.StateBoolTrue,
 				podcommon.StateBoolTrue,
 				podcommon.StateContainerRunning,
@@ -83,20 +94,23 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolUnknown,
 				podcommon.StateResourcesUnknown,
 				podcommon.StateStatusResourcesUnknown,
+				podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
 			),
-			wantErrMsg: "unable to determine started state",
+			podcommon.StateResources(""),
 		},
 		{
-			name:            "UnableToDetermineReadyState",
-			targetContainer: &v1.Container{},
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"UnableToDetermineReadyState",
+			&v1.Container{},
+			nil,
+			func(m *kubetest.MockContainerHelper) {
 				m.On("IsReady", mock.Anything, mock.Anything).Return(false, errors.New(""))
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
 				m.StateDefault()
 				m.IsStartedDefault()
 			},
-			wantStates: podcommon.NewStates(
+			"unable to determine ready state",
+			podcommon.NewStates(
 				podcommon.StateBoolTrue,
 				podcommon.StateBoolTrue,
 				podcommon.StateContainerRunning,
@@ -104,13 +118,15 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolUnknown,
 				podcommon.StateResourcesUnknown,
 				podcommon.StateStatusResourcesUnknown,
+				podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
 			),
-			wantErrMsg: "unable to determine ready state",
+			podcommon.StateResources(""),
 		},
 		{
-			name:            "UnableToDetermineStatusResourcesStates",
-			targetContainer: kubetest.NewContainerBuilder().Build(),
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"UnableToDetermineStatusResourcesStates",
+			kubetest.NewContainerBuilder().Build(),
+			nil,
+			func(m *kubetest.MockContainerHelper) {
 				m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
 					Return(resource.Quantity{}, errors.New(""))
 				m.HasStartupProbeDefault()
@@ -120,7 +136,8 @@ func TestTargetContainerStateStates(t *testing.T) {
 				m.IsReadyDefault()
 				applyMockRequestsLimitsStartup(m)
 			},
-			wantStates: podcommon.NewStates(
+			"unable to determine status resources states",
+			podcommon.NewStates(
 				podcommon.StateBoolTrue,
 				podcommon.StateBoolTrue,
 				podcommon.StateContainerRunning,
@@ -128,18 +145,41 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolTrue,
 				podcommon.StateResourcesStartup,
 				podcommon.StateStatusResourcesUnknown,
+				podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
 			),
-			wantErrMsg: "unable to determine status resources states",
+			podcommon.StateResources(""),
 		},
 		{
-			name:            "StateNotShouldReturnError",
-			targetContainer: &v1.Container{},
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"UnableToDetermineResizeState",
+			kubetest.NewContainerBuilder().Build(),
+			func(m *kubetest.MockPodHelper) {
+				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsUnknownConditions)
+			},
+			nil,
+			"unable to determine resize state",
+			podcommon.NewStates(
+				podcommon.StateBoolTrue,
+				podcommon.StateBoolTrue,
+				podcommon.StateContainerRunning,
+				podcommon.StateBoolTrue,
+				podcommon.StateBoolTrue,
+				podcommon.StateResourcesStartup,
+				podcommon.StateStatusResourcesContainerResourcesMatch,
+				podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
+			),
+			podcommon.StateResources(""),
+		},
+		{
+			"StateNotShouldReturnError",
+			&v1.Container{},
+			nil,
+			func(m *kubetest.MockContainerHelper) {
 				m.On("State", mock.Anything, mock.Anything).Return(v1.ContainerState{}, kube.NewContainerStatusNotPresentError())
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
 			},
-			wantStates: podcommon.NewStates(
+			"",
+			podcommon.NewStates(
 				podcommon.StateBoolTrue,
 				podcommon.StateBoolTrue,
 				podcommon.StateContainerUnknown,
@@ -147,18 +187,22 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolUnknown,
 				podcommon.StateResourcesUnknown,
 				podcommon.StateStatusResourcesUnknown,
+				podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
 			),
+			podcommon.StateResources(""),
 		},
 		{
-			name:            "IsStartedNotShouldReturnError",
-			targetContainer: &v1.Container{},
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"IsStartedNotShouldReturnError",
+			&v1.Container{},
+			nil,
+			func(m *kubetest.MockContainerHelper) {
 				m.On("IsStarted", mock.Anything, mock.Anything).Return(false, kube.NewContainerStatusNotPresentError())
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
 				m.StateDefault()
 			},
-			wantStates: podcommon.NewStates(
+			"",
+			podcommon.NewStates(
 				podcommon.StateBoolTrue,
 				podcommon.StateBoolTrue,
 				podcommon.StateContainerRunning,
@@ -166,19 +210,23 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolUnknown,
 				podcommon.StateResourcesUnknown,
 				podcommon.StateStatusResourcesUnknown,
+				podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
 			),
+			podcommon.StateResources(""),
 		},
 		{
-			name:            "IsReadyNotShouldReturnError",
-			targetContainer: &v1.Container{},
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"IsReadyNotShouldReturnError",
+			&v1.Container{},
+			nil,
+			func(m *kubetest.MockContainerHelper) {
 				m.On("IsReady", mock.Anything, mock.Anything).Return(false, kube.NewContainerStatusNotPresentError())
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
 				m.StateDefault()
 				m.IsStartedDefault()
 			},
-			wantStates: podcommon.NewStates(
+			"",
+			podcommon.NewStates(
 				podcommon.StateBoolTrue,
 				podcommon.StateBoolTrue,
 				podcommon.StateContainerRunning,
@@ -186,12 +234,15 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolUnknown,
 				podcommon.StateResourcesUnknown,
 				podcommon.StateStatusResourcesUnknown,
+				podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
 			),
+			podcommon.StateResources(""),
 		},
 		{
-			name:            "StateStatusResourcesNotShouldReturnError",
-			targetContainer: kubetest.NewContainerBuilder().Build(),
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"StateStatusResourcesNotShouldReturnError",
+			kubetest.NewContainerBuilder().Build(),
+			nil,
+			func(m *kubetest.MockContainerHelper) {
 				m.On("CurrentRequests", mock.Anything, mock.Anything, mock.Anything).
 					Return(resource.Quantity{}, kube.NewContainerStatusNotPresentError())
 				m.HasStartupProbeDefault()
@@ -201,7 +252,8 @@ func TestTargetContainerStateStates(t *testing.T) {
 				m.IsReadyDefault()
 				applyMockRequestsLimitsStartup(m)
 			},
-			wantStates: podcommon.NewStates(
+			"",
+			podcommon.NewStates(
 				podcommon.StateBoolTrue,
 				podcommon.StateBoolTrue,
 				podcommon.StateContainerRunning,
@@ -209,12 +261,15 @@ func TestTargetContainerStateStates(t *testing.T) {
 				podcommon.StateBoolTrue,
 				podcommon.StateResourcesStartup,
 				podcommon.StateStatusResourcesUnknown,
+				podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
 			),
+			podcommon.StateResources(""),
 		},
 		{
-			name:            string(podcommon.StateResourcesStartup),
-			targetContainer: kubetest.NewContainerBuilder().Build(),
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			string(podcommon.StateResourcesStartup),
+			kubetest.NewContainerBuilder().Build(),
+			nil,
+			func(m *kubetest.MockContainerHelper) {
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
 				m.StateDefault()
@@ -224,12 +279,15 @@ func TestTargetContainerStateStates(t *testing.T) {
 				m.CurrentRequestsDefault()
 				m.CurrentLimitsDefault()
 			},
-			wantStateResources: podcommon.StateResourcesStartup,
+			"",
+			podcommon.States{},
+			podcommon.StateResourcesStartup,
 		},
 		{
-			name:            string(podcommon.StateResourcesPostStartup),
-			targetContainer: kubetest.NewContainerBuilder().Build(),
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			string(podcommon.StateResourcesPostStartup),
+			kubetest.NewContainerBuilder().Build(),
+			nil,
+			func(m *kubetest.MockContainerHelper) {
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
 				m.StateDefault()
@@ -239,12 +297,15 @@ func TestTargetContainerStateStates(t *testing.T) {
 				m.CurrentRequestsDefault()
 				m.CurrentLimitsDefault()
 			},
-			wantStateResources: podcommon.StateResourcesPostStartup,
+			"",
+			podcommon.States{},
+			podcommon.StateResourcesPostStartup,
 		},
 		{
-			name:            string(podcommon.StateResourcesUnknown),
-			targetContainer: kubetest.NewContainerBuilder().Build(),
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			string(podcommon.StateResourcesUnknown),
+			kubetest.NewContainerBuilder().Build(),
+			nil,
+			func(m *kubetest.MockContainerHelper) {
 				m.HasStartupProbeDefault()
 				m.HasReadinessProbeDefault()
 				m.StateDefault()
@@ -254,12 +315,17 @@ func TestTargetContainerStateStates(t *testing.T) {
 				m.CurrentRequestsDefault()
 				m.CurrentLimitsDefault()
 			},
-			wantStateResources: podcommon.StateResourcesUnknown,
+			"",
+			podcommon.States{},
+			podcommon.StateResourcesUnknown,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newTargetContainerState(kubetest.NewMockContainerHelper(tt.configMockFunc))
+			s := newTargetContainerState(
+				kubetest.NewMockPodHelper(tt.configPHelperMockFunc),
+				kubetest.NewMockContainerHelper(tt.configCHelperMockFunc),
+			)
 
 			cpuConfig := scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 				m.On("Resources").Return(scalecommon.Resources{
@@ -291,9 +357,9 @@ func TestTargetContainerStateStates(t *testing.T) {
 				configs,
 			)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			if tt.wantStates != (podcommon.States{}) {
 				assert.Equal(t, tt.wantStates, got)
@@ -312,23 +378,23 @@ func TestTargetContainerStateStateStartupProbe(t *testing.T) {
 		want           podcommon.StateBool
 	}{
 		{
-			name: "StateBoolTrue",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"StateBoolTrue",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("HasStartupProbe", mock.Anything, mock.Anything).Return(true, nil)
 			},
-			want: podcommon.StateBoolTrue,
+			podcommon.StateBoolTrue,
 		},
 		{
-			name: "StateBoolFalse",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"StateBoolFalse",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("HasStartupProbe", mock.Anything, mock.Anything).Return(false, nil)
 			},
-			want: podcommon.StateBoolFalse,
+			podcommon.StateBoolFalse,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newTargetContainerState(kubetest.NewMockContainerHelper(tt.configMockFunc))
+			s := newTargetContainerState(nil, kubetest.NewMockContainerHelper(tt.configMockFunc))
 			assert.Equal(t, tt.want, s.stateStartupProbe(&v1.Container{}))
 		})
 	}
@@ -341,23 +407,23 @@ func TestTargetContainerStateStateReadinessProbe(t *testing.T) {
 		want           podcommon.StateBool
 	}{
 		{
-			name: "StateBoolTrue",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"StateBoolTrue",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("HasReadinessProbe", mock.Anything, mock.Anything).Return(true, nil)
 			},
-			want: podcommon.StateBoolTrue,
+			podcommon.StateBoolTrue,
 		},
 		{
-			name: "StateBoolFalse",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"StateBoolFalse",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("HasReadinessProbe", mock.Anything, mock.Anything).Return(false, nil)
 			},
-			want: podcommon.StateBoolFalse,
+			podcommon.StateBoolFalse,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newTargetContainerState(kubetest.NewMockContainerHelper(tt.configMockFunc))
+			s := newTargetContainerState(nil, kubetest.NewMockContainerHelper(tt.configMockFunc))
 			assert.Equal(t, tt.want, s.stateReadinessProbe(&v1.Container{}))
 		})
 	}
@@ -367,61 +433,65 @@ func TestTargetContainerStateStateContainer(t *testing.T) {
 	tests := []struct {
 		name           string
 		configMockFunc func(*kubetest.MockContainerHelper)
-		want           podcommon.StateContainer
 		wantErrMsg     string
+		want           podcommon.StateContainer
 	}{
 		{
-			name: "UnableToGetContainerState",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"UnableToGetContainerState",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("State", mock.Anything, mock.Anything).Return(v1.ContainerState{}, errors.New(""))
 			},
-			want:       podcommon.StateContainerUnknown,
-			wantErrMsg: "unable to get container state",
+			"unable to get container state",
+			podcommon.StateContainerUnknown,
 		},
 		{
-			name: "StateContainerRunning",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"StateContainerRunning",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("State", mock.Anything, mock.Anything).Return(v1.ContainerState{
 					Running: &v1.ContainerStateRunning{},
 				}, nil)
 			},
-			want: podcommon.StateContainerRunning,
+			"",
+			podcommon.StateContainerRunning,
 		},
 		{
-			name: "StateContainerWaiting",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"StateContainerWaiting",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("State", mock.Anything, mock.Anything).Return(v1.ContainerState{
 					Waiting: &v1.ContainerStateWaiting{},
 				}, nil)
 			},
-			want: podcommon.StateContainerWaiting,
+			"",
+			podcommon.StateContainerWaiting,
 		},
 		{
-			name: "StateContainerTerminated",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"StateContainerTerminated",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("State", mock.Anything, mock.Anything).Return(v1.ContainerState{
 					Terminated: &v1.ContainerStateTerminated{},
 				}, nil)
 			},
-			want: podcommon.StateContainerTerminated,
+			"",
+			podcommon.StateContainerTerminated,
 		},
 		{
-			name: "StateContainerUnknown",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"StateContainerUnknown",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("State", mock.Anything, mock.Anything).Return(v1.ContainerState{}, nil)
 			},
-			want: podcommon.StateContainerUnknown,
+			"",
+			podcommon.StateContainerUnknown,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newTargetContainerState(kubetest.NewMockContainerHelper(tt.configMockFunc))
+			s := newTargetContainerState(nil, kubetest.NewMockContainerHelper(tt.configMockFunc))
 
 			got, err := s.stateContainer(&v1.Pod{}, &v1.Container{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -432,41 +502,43 @@ func TestTargetContainerStateStateStarted(t *testing.T) {
 	tests := []struct {
 		name           string
 		configMockFunc func(*kubetest.MockContainerHelper)
-		want           podcommon.StateBool
 		wantErrMsg     string
+		want           podcommon.StateBool
 	}{
 		{
-			name: "UnableToGetContainerReadyStatus",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"UnableToGetContainerReadyStatus",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("IsStarted", mock.Anything, mock.Anything).Return(false, errors.New(""))
 			},
-			want:       podcommon.StateBoolUnknown,
-			wantErrMsg: "unable to get container ready status",
+			"unable to get container ready status",
+			podcommon.StateBoolUnknown,
 		},
 		{
-			name: "StateBoolTrue",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"StateBoolTrue",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("IsStarted", mock.Anything, mock.Anything).Return(true, nil)
 			},
-			want: podcommon.StateBoolTrue,
+			"",
+			podcommon.StateBoolTrue,
 		},
 		{
-			name: "StateBoolFalse",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"StateBoolFalse",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("IsStarted", mock.Anything, mock.Anything).Return(false, nil)
 			},
-			want: podcommon.StateBoolFalse,
+			"",
+			podcommon.StateBoolFalse,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newTargetContainerState(kubetest.NewMockContainerHelper(tt.configMockFunc))
+			s := newTargetContainerState(nil, kubetest.NewMockContainerHelper(tt.configMockFunc))
 
 			got, err := s.stateStarted(&v1.Pod{}, &v1.Container{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -477,41 +549,43 @@ func TestTargetContainerStateStateReady(t *testing.T) {
 	tests := []struct {
 		name           string
 		configMockFunc func(*kubetest.MockContainerHelper)
-		want           podcommon.StateBool
 		wantErrMsg     string
+		want           podcommon.StateBool
 	}{
 		{
-			name: "UnableToGetContainerReadyStatus",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"UnableToGetContainerReadyStatus",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("IsReady", mock.Anything, mock.Anything).Return(false, errors.New(""))
 			},
-			want:       podcommon.StateBoolUnknown,
-			wantErrMsg: "unable to get container ready status",
+			"unable to get container ready status",
+			podcommon.StateBoolUnknown,
 		},
 		{
-			name: "StateBoolTrue",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"StateBoolTrue",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("IsReady", mock.Anything, mock.Anything).Return(true, nil)
 			},
-			want: podcommon.StateBoolTrue,
+			"",
+			podcommon.StateBoolTrue,
 		},
 		{
-			name: "StateBoolFalse",
-			configMockFunc: func(m *kubetest.MockContainerHelper) {
+			"StateBoolFalse",
+			func(m *kubetest.MockContainerHelper) {
 				m.On("IsReady", mock.Anything, mock.Anything).Return(false, nil)
 			},
-			want: podcommon.StateBoolFalse,
+			"",
+			podcommon.StateBoolFalse,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newTargetContainerState(kubetest.NewMockContainerHelper(tt.configMockFunc))
+			s := newTargetContainerState(nil, kubetest.NewMockContainerHelper(tt.configMockFunc))
 
 			got, err := s.stateReady(&v1.Pod{}, &v1.Container{})
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -522,71 +596,179 @@ func TestTargetContainerStateStateStatusResources(t *testing.T) {
 	tests := []struct {
 		name           string
 		configMockFunc func(states *scaletest.MockStates)
-		want           podcommon.StateStatusResources
 		wantErrMsg     string
+		want           podcommon.StateStatusResources
 	}{
 		{
-			name: "UnableToDetermineIfAnyCurrentResourcesAreZero",
-			configMockFunc: func(m *scaletest.MockStates) {
+			"UnableToDetermineIfAnyCurrentResourcesAreZero",
+			func(m *scaletest.MockStates) {
 				m.On("IsAnyCurrentZeroAll", mock.Anything, mock.Anything).Return(false, errors.New(""))
 			},
-			want:       podcommon.StateStatusResourcesUnknown,
-			wantErrMsg: "unable to determine if any current resources are zero",
+			"unable to determine if any current resources are zero",
+			podcommon.StateStatusResourcesUnknown,
 		},
 		{
-			name: "UnableToDetermineIfCurrentRequestsMatchesSpec",
-			configMockFunc: func(m *scaletest.MockStates) {
+			"UnableToDetermineIfCurrentRequestsMatchesSpec",
+			func(m *scaletest.MockStates) {
 				m.On("DoesRequestsCurrentMatchSpecAll", mock.Anything, mock.Anything).Return(false, errors.New(""))
 				m.IsAnyCurrentZeroAllDefault()
 			},
-			want:       podcommon.StateStatusResourcesUnknown,
-			wantErrMsg: "unable to determine if current requests matches spec",
+			"unable to determine if current requests matches spec",
+			podcommon.StateStatusResourcesUnknown,
 		},
 		{
-			name: "UnableToDetermineIfCurrentLimitsMatchesSpec",
-			configMockFunc: func(m *scaletest.MockStates) {
+			"UnableToDetermineIfCurrentLimitsMatchesSpec",
+			func(m *scaletest.MockStates) {
 				m.On("DoesLimitsCurrentMatchSpecAll", mock.Anything, mock.Anything).Return(false, errors.New(""))
 				m.IsAnyCurrentZeroAllDefault()
 				m.DoesRequestsCurrentMatchSpecAllDefault()
 			},
-			want:       podcommon.StateStatusResourcesUnknown,
-			wantErrMsg: "unable to determine if current limits matches spec",
+			"unable to determine if current limits matches spec",
+			podcommon.StateStatusResourcesUnknown,
 		},
 		{
-			name: string(podcommon.StateStatusResourcesIncomplete),
-			configMockFunc: func(m *scaletest.MockStates) {
+			string(podcommon.StateStatusResourcesIncomplete),
+			func(m *scaletest.MockStates) {
 				m.On("IsAnyCurrentZeroAll", mock.Anything, mock.Anything).Return(true, nil)
 			},
-			want: podcommon.StateStatusResourcesIncomplete,
+			"",
+			podcommon.StateStatusResourcesIncomplete,
 		},
 		{
-			name: string(podcommon.StateStatusResourcesContainerResourcesMatch),
-			configMockFunc: func(m *scaletest.MockStates) {
+			string(podcommon.StateStatusResourcesContainerResourcesMatch),
+			func(m *scaletest.MockStates) {
 				m.On("DoesRequestsCurrentMatchSpecAll", mock.Anything, mock.Anything).Return(true, nil)
 				m.On("DoesLimitsCurrentMatchSpecAll", mock.Anything, mock.Anything).Return(true, nil)
 				m.IsAnyCurrentZeroAllDefault()
 			},
-			want: podcommon.StateStatusResourcesContainerResourcesMatch,
+			"",
+			podcommon.StateStatusResourcesContainerResourcesMatch,
 		},
 		{
-			name: string(podcommon.StateStatusResourcesContainerResourcesMismatch),
-			configMockFunc: func(m *scaletest.MockStates) {
+			string(podcommon.StateStatusResourcesContainerResourcesMismatch),
+			func(m *scaletest.MockStates) {
 				m.On("DoesRequestsCurrentMatchSpecAll", mock.Anything, mock.Anything).Return(true, nil)
 				m.On("DoesLimitsCurrentMatchSpecAll", mock.Anything, mock.Anything).Return(false, nil)
 				m.IsAnyCurrentZeroAllDefault()
 			},
-			want: podcommon.StateStatusResourcesContainerResourcesMismatch,
+			"",
+			podcommon.StateStatusResourcesContainerResourcesMismatch,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newTargetContainerState(kubetest.NewMockContainerHelper(nil))
+			s := newTargetContainerState(nil, kubetest.NewMockContainerHelper(nil))
 
 			got, err := s.stateStatusResources(&v1.Pod{}, &v1.Container{}, scaletest.NewMockStates(tt.configMockFunc))
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, tt.want, got)
+		})
+	}
+
+}
+
+func TestTargetContainerStateStateResize(t *testing.T) {
+	tests := []struct {
+		name           string
+		configMockFunc func(*kubetest.MockPodHelper)
+		wantErrMsg     string
+		want           podcommon.ResizeState
+	}{
+		{
+			"UnknownPodResizePendingConditionReason",
+			func(m *kubetest.MockPodHelper) {
+				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsUnknownPending)
+
+			},
+			"unknown pod resize pending condition reason",
+			podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
+		},
+		{
+			"UnknownPodResizeInProgressConditionState",
+			func(m *kubetest.MockPodHelper) {
+				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsUnknownInProgress)
+
+			},
+			"unknown pod resize in progress condition state",
+			podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
+		},
+		{
+			"UnexpectedPodResizeConditions",
+			func(m *kubetest.MockPodHelper) {
+				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsUnknownConditions)
+
+			},
+			"unexpected pod resize conditions",
+			podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
+		},
+		{
+			"StateResizeNotStartedOrCompletedNoConditions",
+			func(m *kubetest.MockPodHelper) {
+				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsNotStartedOrCompletedNoConditions)
+
+			},
+			"",
+			podcommon.NewResizeState(podcommon.StateResizeNotStartedOrCompleted, ""),
+		},
+		{
+			"StateResizeDeferred",
+			func(m *kubetest.MockPodHelper) {
+				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsDeferred)
+
+			},
+			"",
+			podcommon.NewResizeState(podcommon.StateResizeDeferred, "message"),
+		},
+		{
+			"StateResizeInfeasible",
+			func(m *kubetest.MockPodHelper) {
+				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsInfeasible)
+
+			},
+			"",
+			podcommon.NewResizeState(podcommon.StateResizeInfeasible, "message"),
+		},
+		{
+			"StateResizeError",
+			func(m *kubetest.MockPodHelper) {
+				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsError)
+
+			},
+			"",
+			podcommon.NewResizeState(podcommon.StateResizeError, "message"),
+		},
+		{
+			"StateResizeInProgress",
+			func(m *kubetest.MockPodHelper) {
+				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsInProgress)
+
+			},
+			"",
+			podcommon.NewResizeState(podcommon.StateResizeInProgress, ""),
+		},
+		{
+			"StateResizeNotStartedOrCompletedResizeInProgressTrue",
+			func(m *kubetest.MockPodHelper) {
+				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsNotStartedOrCompletedResizeInProgressTrue)
+
+			},
+			"",
+			podcommon.NewResizeState(podcommon.StateResizeNotStartedOrCompleted, ""),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := newTargetContainerState(kubetest.NewMockPodHelper(tt.configMockFunc), nil)
+
+			got, err := s.stateResize(&v1.Pod{})
+			if tt.wantErrMsg != "" {
+				assert.ErrorContains(t, err, tt.wantErrMsg)
+			} else {
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 		})
@@ -606,7 +788,7 @@ func TestTargetContainerStateShouldReturnError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := newTargetContainerState(nil)
+			s := newTargetContainerState(nil, nil)
 			assert.Equal(
 				t,
 				tt.want,

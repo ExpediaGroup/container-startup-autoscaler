@@ -25,6 +25,7 @@ type States struct {
 	Ready           StateBool            `json:"ready"`
 	Resources       StateResources       `json:"resources"`
 	StatusResources StateStatusResources `json:"statusResources"`
+	Resize          ResizeState          `json:"resize"`
 }
 
 func NewStates(
@@ -35,6 +36,7 @@ func NewStates(
 	ready StateBool,
 	stateResources StateResources,
 	stateStatusResources StateStatusResources,
+	resize ResizeState,
 ) States {
 	return States{
 		StartupProbe:    startupProbe,
@@ -44,6 +46,7 @@ func NewStates(
 		Ready:           ready,
 		Resources:       stateResources,
 		StatusResources: stateStatusResources,
+		Resize:          resize,
 	}
 }
 
@@ -56,5 +59,22 @@ func NewStatesAllUnknown() States {
 		Ready:           StateBoolUnknown,
 		Resources:       StateResourcesUnknown,
 		StatusResources: StateStatusResourcesUnknown,
+		Resize:          NewResizeState(StateResizeUnknown, ""),
+	}
+}
+
+// ResizeState holds information related to the current state of a pod resize.
+type ResizeState struct {
+	State   StateResize `json:"state"`
+	Message string      `json:"message"`
+}
+
+func NewResizeState(
+	state StateResize,
+	message string,
+) ResizeState {
+	return ResizeState{
+		State:   state,
+		Message: message,
 	}
 }

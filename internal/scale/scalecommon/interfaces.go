@@ -36,10 +36,6 @@ type Configuration interface {
 		container *v1.Container,
 	) error
 
-	ValidateRequestsLimits(
-		container *v1.Container,
-	) error
-
 	String() string
 }
 
@@ -57,9 +53,7 @@ type Configurations interface {
 		container *v1.Container,
 	) error
 
-	ValidateCollection(
-		container *v1.Container,
-	) error
+	ValidateCollection() error
 
 	ConfigurationFor(
 		resourceName v1.ResourceName,
@@ -140,22 +134,22 @@ type Update interface {
 
 	StartupPodMutationFunc(
 		container *v1.Container,
-	) func(*v1.Pod) error
+	) func(*v1.Pod) (bool, error)
 
 	PostStartupPodMutationFunc(
 		container *v1.Container,
-	) func(*v1.Pod) error
+	) func(*v1.Pod) (bool, error)
 }
 
 // Updates performs operations upon an Update collection.
 type Updates interface {
 	StartupPodMutationFuncAll(
 		container *v1.Container,
-	) []func(*v1.Pod) error
+	) []func(*v1.Pod) (bool, error)
 
 	PostStartupPodMutationFuncAll(
 		container *v1.Container,
-	) []func(*v1.Pod) error
+	) []func(*v1.Pod) (bool, error)
 
 	UpdateFor(
 		resourceName v1.ResourceName,

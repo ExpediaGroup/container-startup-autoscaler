@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scaletest"
 	"github.com/stretchr/testify/assert"
@@ -28,9 +29,12 @@ import (
 )
 
 func TestNewUpdate(t *testing.T) {
-	resourceName := v1.ResourceCPU
-	update := NewUpdate(resourceName, nil)
-	assert.Equal(t, resourceName, update.ResourceName())
+	u := NewUpdate(v1.ResourceCPU, nil)
+	expected := &update{
+		resourceName: v1.ResourceCPU,
+		config:       nil,
+	}
+	assert.Equal(t, expected, u)
 }
 
 func TestUpdateResourceName(t *testing.T) {
@@ -49,56 +53,61 @@ func TestStartupPodMutationFunc(t *testing.T) {
 		funcPod   *v1.Pod
 	}
 	tests := []struct {
-		name         string
-		fields       fields
-		args         args
-		wantErrMsg   string
-		wantRequests resource.Quantity
-		wantLimits   resource.Quantity
+		name            string
+		fields          fields
+		args            args
+		wantErrMsg      string
+		wantShouldPatch bool
+		wantRequests    resource.Quantity
+		wantLimits      resource.Quantity
 	}{
 		{
-			name: "NotEnabled",
-			fields: fields{
-				resourceName: v1.ResourceCPU,
-				config: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
+			"NotEnabled",
+			fields{
+				v1.ResourceCPU,
+				scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 					m.On("IsEnabled").Return(false)
 				}),
 			},
-			args: args{
-				funcPod: kubetest.NewPodBuilder().ResourcesStatePostStartup().Build(),
+			args{
+				nil,
+				kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
 			},
-			wantErrMsg:   "",
-			wantRequests: kubetest.PodCpuPostStartupRequestsEnabled,
-			wantLimits:   kubetest.PodCpuPostStartupLimitsEnabled,
+			"",
+			false,
+			kubetest.PodCpuPostStartupRequestsEnabled,
+			kubetest.PodCpuPostStartupLimitsEnabled,
 		},
 
 		{
-			name: "ContainerNotPreset",
-			fields: fields{
-				resourceName: v1.ResourceCPU,
-				config:       scaletest.NewMockConfiguration(nil),
+			"ContainerNotPreset",
+			fields{
+				v1.ResourceCPU,
+				scaletest.NewMockConfiguration(nil),
 			},
-			args: args{
-				container: &v1.Container{Name: ""},
-				funcPod:   kubetest.NewPodBuilder().ResourcesStatePostStartup().Build(),
+			args{
+				&v1.Container{Name: ""},
+				kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
 			},
-			wantErrMsg:   "container not present",
-			wantRequests: kubetest.PodCpuPostStartupRequestsEnabled,
-			wantLimits:   kubetest.PodCpuPostStartupLimitsEnabled,
+			"container not present",
+			false,
+			kubetest.PodCpuPostStartupRequestsEnabled,
+			kubetest.PodCpuPostStartupLimitsEnabled,
 		},
 		{
-			name: "Ok",
-			fields: fields{
-				resourceName: v1.ResourceCPU,
-				config:       scaletest.NewMockConfiguration(nil),
+			"Ok",
+			fields{
+				v1.ResourceCPU,
+				scaletest.NewMockConfiguration(nil),
 			},
-			args: args{
-				container: &kubetest.NewPodBuilder().ResourcesStatePostStartup().Build().Spec.Containers[0],
-				funcPod:   kubetest.NewPodBuilder().ResourcesStatePostStartup().Build(),
+			args{
+				&kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build().Spec.Containers[0],
+				kubetest.NewPodBuilder().ResourcesState(podcommon.StateResourcesPostStartup).Build(),
 			},
-			wantErrMsg:   "",
-			wantRequests: kubetest.PodCpuStartupEnabled,
-			wantLimits:   kubetest.PodCpuStartupEnabled,
+			"",
+			true,
+			kubetest.PodCpuStartupEnabled,
+			kubetest.PodCpuStartupEnabled,
 		},
 	}
 	for _, tt := range tests {
@@ -108,12 +117,13 @@ func TestStartupPodMutationFunc(t *testing.T) {
 				config:       tt.fields.config,
 			}
 			mutationFunc := update.StartupPodMutationFunc(tt.args.container)
-			err := mutationFunc(tt.args.funcPod)
+			got, err := mutationFunc(tt.args.funcPod)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
+			assert.Equal(t, tt.wantShouldPatch, got)
 			assert.Equal(t, tt.wantRequests, tt.args.funcPod.Spec.Containers[0].Resources.Requests[tt.fields.resourceName])
 			assert.Equal(t, tt.wantLimits, tt.args.funcPod.Spec.Containers[0].Resources.Limits[tt.fields.resourceName])
 		})
@@ -130,56 +140,61 @@ func TestPostStartupPodMutationFunc(t *testing.T) {
 		funcPod   *v1.Pod
 	}
 	tests := []struct {
-		name         string
-		fields       fields
-		args         args
-		wantErrMsg   string
-		wantRequests resource.Quantity
-		wantLimits   resource.Quantity
+		name            string
+		fields          fields
+		args            args
+		wantErrMsg      string
+		wantShouldPatch bool
+		wantRequests    resource.Quantity
+		wantLimits      resource.Quantity
 	}{
 		{
-			name: "NotEnabled",
-			fields: fields{
-				resourceName: v1.ResourceCPU,
-				config: scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
+			"NotEnabled",
+			fields{
+				v1.ResourceCPU,
+				scaletest.NewMockConfiguration(func(m *scaletest.MockConfiguration) {
 					m.On("IsEnabled").Return(false)
 				}),
 			},
-			args: args{
-				funcPod: kubetest.NewPodBuilder().Build(),
+			args{
+				nil,
+				kubetest.NewPodBuilder().Build(),
 			},
-			wantErrMsg:   "",
-			wantRequests: kubetest.PodCpuStartupEnabled,
-			wantLimits:   kubetest.PodCpuStartupEnabled,
+			"",
+			false,
+			kubetest.PodCpuStartupEnabled,
+			kubetest.PodCpuStartupEnabled,
 		},
 
 		{
-			name: "ContainerNotPreset",
-			fields: fields{
-				resourceName: v1.ResourceCPU,
-				config:       scaletest.NewMockConfiguration(nil),
+			"ContainerNotPreset",
+			fields{
+				v1.ResourceCPU,
+				scaletest.NewMockConfiguration(nil),
 			},
-			args: args{
-				container: &v1.Container{Name: ""},
-				funcPod:   kubetest.NewPodBuilder().Build(),
+			args{
+				&v1.Container{Name: ""},
+				kubetest.NewPodBuilder().Build(),
 			},
-			wantErrMsg:   "container not present",
-			wantRequests: kubetest.PodCpuStartupEnabled,
-			wantLimits:   kubetest.PodCpuStartupEnabled,
+			"container not present",
+			false,
+			kubetest.PodCpuStartupEnabled,
+			kubetest.PodCpuStartupEnabled,
 		},
 		{
-			name: "Ok",
-			fields: fields{
-				resourceName: v1.ResourceCPU,
-				config:       scaletest.NewMockConfiguration(nil),
+			"Ok",
+			fields{
+				v1.ResourceCPU,
+				scaletest.NewMockConfiguration(nil),
 			},
-			args: args{
-				container: &kubetest.NewPodBuilder().Build().Spec.Containers[0],
-				funcPod:   kubetest.NewPodBuilder().Build(),
+			args{
+				&kubetest.NewPodBuilder().Build().Spec.Containers[0],
+				kubetest.NewPodBuilder().Build(),
 			},
-			wantErrMsg:   "",
-			wantRequests: kubetest.PodCpuPostStartupRequestsEnabled,
-			wantLimits:   kubetest.PodCpuPostStartupLimitsEnabled,
+			"",
+			true,
+			kubetest.PodCpuPostStartupRequestsEnabled,
+			kubetest.PodCpuPostStartupLimitsEnabled,
 		},
 	}
 	for _, tt := range tests {
@@ -189,12 +204,13 @@ func TestPostStartupPodMutationFunc(t *testing.T) {
 				config:       tt.fields.config,
 			}
 			mutationFunc := update.PostStartupPodMutationFunc(tt.args.container)
-			err := mutationFunc(tt.args.funcPod)
+			got, err := mutationFunc(tt.args.funcPod)
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
+			assert.Equal(t, tt.wantShouldPatch, got)
 			assert.Equal(t, tt.wantRequests, tt.args.funcPod.Spec.Containers[0].Resources.Requests[tt.fields.resourceName])
 			assert.Equal(t, tt.wantLimits, tt.args.funcPod.Spec.Containers[0].Resources.Limits[tt.fields.resourceName])
 		})

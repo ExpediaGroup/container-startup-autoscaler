@@ -34,7 +34,7 @@ type PodHelper interface {
 	Patch(
 		ctx context.Context,
 		pod *v1.Pod,
-		podMutationFuncs []func(*v1.Pod) error,
+		podMutationFuncs []func(*v1.Pod) (bool, error),
 		patchResize bool,
 		mustSyncCache bool,
 	) (*v1.Pod, error)
@@ -61,9 +61,13 @@ type PodHelper interface {
 		containerName string,
 	) bool
 
-	ResizeStatus(
+	ResizeConditions(
 		pod *v1.Pod,
-	) v1.PodResizeStatus
+	) []v1.PodCondition
+
+	QOSClass(
+		pod *v1.Pod,
+	) (v1.PodQOSClass, error)
 }
 
 // ContainerHelper performs operations relating to Kube containers.

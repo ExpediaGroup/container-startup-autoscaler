@@ -60,6 +60,7 @@ func (m *MockTargetContainerState) StatesDefault() {
 			podcommon.StateBoolTrue,
 			podcommon.StateResourcesStartup,
 			podcommon.StateStatusResourcesContainerResourcesMatch,
+			podcommon.NewResizeState(podcommon.StateResizeNotStartedOrCompleted, ""),
 		),
 		nil,
 	)

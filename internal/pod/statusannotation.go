@@ -20,30 +20,30 @@ import (
 	"encoding/json"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	v1 "k8s.io/api/core/v1"
 )
 
 // StatusAnnotation holds status information that's serialized to JSON for status reporting.
 type StatusAnnotation struct {
 	Status      string                `json:"status"`
-	States      podcommon.States      `json:"states"`
 	Scale       StatusAnnotationScale `json:"scale"`
 	LastUpdated string                `json:"lastUpdated"`
 }
 
 func NewStatusAnnotation(
 	status string,
-	states podcommon.States,
 	scale StatusAnnotationScale,
 	lastUpdated string,
 ) StatusAnnotation {
 	return StatusAnnotation{
 		status,
-		states,
 		scale,
 		lastUpdated,
 	}
+}
+
+func NewEmptyStatusAnnotation() StatusAnnotation {
+	return StatusAnnotation{}
 }
 
 // Json returns a JSON string.
@@ -55,9 +55,7 @@ func (s StatusAnnotation) Json() string {
 // Equal returns whether this is to equal to another.
 func (s StatusAnnotation) Equal(to StatusAnnotation) bool {
 	// Ignore s.LastUpdated.
-	return s.Status == to.Status &&
-		common.AreStructsEqual(s.States, to.States) &&
-		common.AreStructsEqual(s.Scale, to.Scale)
+	return s.Status == to.Status && common.AreStructsEqual(s.Scale, to.Scale)
 }
 
 // StatusAnnotationFromString returns a status annotation from s.
@@ -85,7 +83,7 @@ func NewStatusAnnotationScale(
 	lastFailed string,
 ) StatusAnnotationScale {
 	return StatusAnnotationScale{
-		enabledForResources,
+		fixedEnabledForResources(enabledForResources),
 		lastCommanded,
 		lastEnacted,
 		lastFailed,
@@ -94,6 +92,16 @@ func NewStatusAnnotationScale(
 
 func NewEmptyStatusAnnotationScale(enabledForResources []v1.ResourceName) StatusAnnotationScale {
 	return StatusAnnotationScale{
-		EnabledForResources: enabledForResources,
+		EnabledForResources: fixedEnabledForResources(enabledForResources),
 	}
+}
+
+// fixedEnabledForResources explicitly returns an empty slice if enabledForResources is nil, otherwise the original
+// slice. This ensures that the JSON output is always an array type, rather than null.
+func fixedEnabledForResources(enabledForResources []v1.ResourceName) []v1.ResourceName {
+	if enabledForResources == nil {
+		return []v1.ResourceName{}
+	}
+
+	return enabledForResources
 }

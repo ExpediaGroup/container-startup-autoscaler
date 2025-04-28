@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG BASE_IMAGE=kindest/base:v20241108-5c6d2daf
+ARG BASE_IMAGE=kindest/base:v20250214-acbabc1a
 
 FROM ${BASE_IMAGE}
 ARG EXTRA_CA_CERT_FILENAME

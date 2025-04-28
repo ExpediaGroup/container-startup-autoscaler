@@ -58,46 +58,23 @@ func (m *MockStatus) Update(
 	states podcommon.States,
 	statusScaleState podcommon.StatusScaleState,
 	scaleConfigs scalecommon.Configurations,
+	failReason string,
 ) (*v1.Pod, error) {
-	args := m.Called(ctx, pod, status, states, statusScaleState, scaleConfigs)
+	args := m.Called(ctx, pod, status, states, statusScaleState, scaleConfigs, failReason)
 	return args.Get(0).(*v1.Pod), args.Error(1)
 }
 
-func (m *MockStatus) PodMutationFunc(
-	ctx context.Context,
-	status string,
-	states podcommon.States,
-	statusScaleState podcommon.StatusScaleState,
-	scaleConfigs scalecommon.Configurations,
-) func(pod *v1.Pod) error {
-	args := m.Called(ctx, status, states, statusScaleState, scaleConfigs)
-	return args.Get(0).(func(pod *v1.Pod) error)
-}
-
 func (m *MockStatus) UpdateDefault() {
-	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(&v1.Pod{}, nil)
 }
 
 func (m *MockStatus) UpdateDefaultAndRun(run func()) {
-	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(&v1.Pod{}, nil).
 		Run(func(args mock.Arguments) { run() })
 }
 
-func (m *MockStatus) PodMutationFuncDefault() {
-	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
-		func(pod *v1.Pod) error { return nil },
-	)
-}
-
-func (m *MockStatus) PodMutationFuncDefaultAndRun(run func()) {
-	m.On("PodMutationFunc", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
-		func(pod *v1.Pod) error { return nil },
-	).Run(func(args mock.Arguments) { run() })
-}
-
 func (m *MockStatus) AllDefaults() {
 	m.UpdateDefault()
-	m.PodMutationFuncDefault()
 }

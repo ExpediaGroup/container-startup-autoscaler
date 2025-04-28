@@ -31,23 +31,44 @@ func TestNewStates(t *testing.T) {
 		StateBoolUnknown,
 		StateResourcesUnknown,
 		StateStatusResourcesUnknown,
+		NewResizeState(StateResizeNotStartedOrCompleted, ""),
 	)
-	assert.Equal(t, StateBoolUnknown, s.StartupProbe)
-	assert.Equal(t, StateBoolUnknown, s.ReadinessProbe)
-	assert.Equal(t, StateContainerUnknown, s.Container)
-	assert.Equal(t, StateBoolUnknown, s.Started)
-	assert.Equal(t, StateBoolUnknown, s.Ready)
-	assert.Equal(t, StateResourcesUnknown, s.Resources)
-	assert.Equal(t, StateStatusResourcesUnknown, s.StatusResources)
+	expected := States{
+		StartupProbe:    StateBoolUnknown,
+		ReadinessProbe:  StateBoolUnknown,
+		Container:       StateContainerUnknown,
+		Started:         StateBoolUnknown,
+		Ready:           StateBoolUnknown,
+		Resources:       StateResourcesUnknown,
+		StatusResources: StateStatusResourcesUnknown,
+		Resize:          NewResizeState(StateResizeNotStartedOrCompleted, ""),
+	}
+	assert.Equal(t, expected, s)
 }
 
 func TestNewStatesAllUnknown(t *testing.T) {
 	s := NewStatesAllUnknown()
-	assert.Equal(t, StateBoolUnknown, s.StartupProbe)
-	assert.Equal(t, StateBoolUnknown, s.ReadinessProbe)
-	assert.Equal(t, StateContainerUnknown, s.Container)
-	assert.Equal(t, StateBoolUnknown, s.Started)
-	assert.Equal(t, StateBoolUnknown, s.Ready)
-	assert.Equal(t, StateResourcesUnknown, s.Resources)
-	assert.Equal(t, StateStatusResourcesUnknown, s.StatusResources)
+	expected := States{
+		StartupProbe:    StateBoolUnknown,
+		ReadinessProbe:  StateBoolUnknown,
+		Container:       StateContainerUnknown,
+		Started:         StateBoolUnknown,
+		Ready:           StateBoolUnknown,
+		Resources:       StateResourcesUnknown,
+		StatusResources: StateStatusResourcesUnknown,
+		Resize:          NewResizeState(StateResizeUnknown, ""),
+	}
+	assert.Equal(t, expected, s)
+}
+
+func TestNewResizeState(t *testing.T) {
+	rs := NewResizeState(
+		StateResizeUnknown,
+		"test",
+	)
+	expected := ResizeState{
+		State:   StateResizeUnknown,
+		Message: "test",
+	}
+	assert.Equal(t, expected, rs)
 }

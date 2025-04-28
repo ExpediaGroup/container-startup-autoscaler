@@ -30,19 +30,19 @@ func TestStateBoolBool(t *testing.T) {
 		want bool
 	}{
 		{
-			name: string(StateBoolTrue),
-			s:    StateBoolTrue,
-			want: true,
+			string(StateBoolTrue),
+			StateBoolTrue,
+			true,
 		},
 		{
-			name: string(StateBoolFalse),
-			s:    StateBoolFalse,
-			want: false,
+			string(StateBoolFalse),
+			StateBoolFalse,
+			false,
 		},
 		{
-			name: string(StateBoolUnknown),
-			s:    StateBoolFalse,
-			want: false,
+			string(StateBoolUnknown),
+			StateBoolFalse,
+			false,
 		},
 	}
 	for _, tt := range tests {
@@ -60,19 +60,22 @@ func TestStateResourcesDirection(t *testing.T) {
 		want            metricscommon.Direction
 	}{
 		{
-			name: string(StateResourcesStartup),
-			s:    StateResourcesStartup,
-			want: metricscommon.DirectionUp,
+			string(StateResourcesStartup),
+			StateResourcesStartup,
+			"",
+			metricscommon.DirectionUp,
 		},
 		{
-			name: string(StateResourcesPostStartup),
-			s:    StateResourcesPostStartup,
-			want: metricscommon.DirectionDown,
+			string(StateResourcesPostStartup),
+			StateResourcesPostStartup,
+			"",
+			metricscommon.DirectionDown,
 		},
 		{
-			name:            "NotSupported",
-			s:               StateResources("test"),
-			wantPanicErrMsg: "'test' not supported",
+			"NotSupported",
+			StateResources("test"),
+			"'test' not supported",
+			metricscommon.Direction(""),
 		},
 	}
 	for _, tt := range tests {
@@ -94,14 +97,14 @@ func TestStateResourcesHumanReadable(t *testing.T) {
 		want string
 	}{
 		{
-			name: string(StateResourcesPostStartup),
-			s:    StateResourcesPostStartup,
-			want: "post-startup",
+			string(StateResourcesPostStartup),
+			StateResourcesPostStartup,
+			"post-startup",
 		},
 		{
-			name: string(StateResourcesStartup),
-			s:    StateResourcesStartup,
-			want: string(StateResourcesStartup),
+			string(StateResourcesStartup),
+			StateResourcesStartup,
+			string(StateResourcesStartup),
 		},
 	}
 	for _, tt := range tests {

@@ -19,7 +19,6 @@ package pod
 import (
 	"testing"
 
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 )
@@ -27,29 +26,32 @@ import (
 func TestNewStatusAnnotation(t *testing.T) {
 	statAnn := NewStatusAnnotation(
 		"status",
-		podcommon.States{},
 		StatusAnnotationScale{},
 		"lastUpdated",
 	)
-	assert.Equal(t, "status", statAnn.Status)
-	assert.Equal(t, podcommon.States{}, statAnn.States)
-	assert.Equal(t, StatusAnnotationScale{}, statAnn.Scale)
-	assert.Equal(t, "lastUpdated", statAnn.LastUpdated)
+	expected := StatusAnnotation{
+		Status:      "status",
+		Scale:       StatusAnnotationScale{},
+		LastUpdated: "lastUpdated",
+	}
+	assert.Equal(t, expected, statAnn)
+}
+
+func TestNewEmptyStatusAnnotation(t *testing.T) {
+	assert.Equal(t, StatusAnnotation{}, NewEmptyStatusAnnotation())
 }
 
 func TestStatusAnnotationJson(t *testing.T) {
 	j := NewStatusAnnotation(
 		"status",
-		podcommon.NewStates("1", "2", "3", "4", "5", "6", "7"),
-		NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, "lastCommanded", "lastEnacted", "lastFailed"),
-		"lastUpdated",
+		NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, "1", "2", "3"),
+		"4",
 	).Json()
 	assert.Equal(
 		t,
-		"{\"status\":\"status\","+
-			"\"states\":{\"startupProbe\":\"1\",\"readinessProbe\":\"2\",\"container\":\"3\",\"started\":\"4\",\"ready\":\"5\",\"resources\":\"6\",\"statusResources\":\"7\"},"+
-			"\"scale\":{\"enabledForResources\":[\"cpu\"],\"lastCommanded\":\"lastCommanded\",\"lastEnacted\":\"lastEnacted\",\"lastFailed\":\"lastFailed\"},"+
-			"\"lastUpdated\":\"lastUpdated\"}",
+		`{"status":"status",`+
+			`"scale":{"enabledForResources":["cpu"],"lastCommanded":"1","lastEnacted":"2","lastFailed":"3"},`+
+			`"lastUpdated":"4"}`,
 		j,
 	)
 }
@@ -69,14 +71,14 @@ func TestStatusAnnotationEqual(t *testing.T) {
 	}{
 		{
 			"TrueLastUpdatedSame",
-			fields{Status: "status"},
-			args{to: StatusAnnotation{Status: "status"}},
+			fields{"status"},
+			args{StatusAnnotation{Status: "status"}},
 			true,
 		},
 		{
 			"TrueLastUpdatedDifferent",
-			fields{Status: "status"},
-			args{to: StatusAnnotation{
+			fields{"status"},
+			args{StatusAnnotation{
 				Status:      "status",
 				LastUpdated: "lastUpdated",
 			}},
@@ -84,8 +86,8 @@ func TestStatusAnnotationEqual(t *testing.T) {
 		},
 		{
 			"False",
-			fields{Status: "status1"},
-			args{to: StatusAnnotation{Status: "status2"}},
+			fields{"status1"},
+			args{StatusAnnotation{Status: "status2"}},
 			false,
 		},
 	}
@@ -100,25 +102,23 @@ func TestStatusAnnotationEqual(t *testing.T) {
 func TestStatusAnnotationFromString(t *testing.T) {
 	t.Run("UnableToUnmarshal", func(t *testing.T) {
 		got, err := StatusAnnotationFromString("test")
-		assert.Contains(t, err.Error(), "unable to unmarshal")
+		assert.ErrorContains(t, err, "unable to unmarshal")
 		assert.Equal(t, StatusAnnotation{}, got)
 	})
 
 	t.Run("Ok", func(t *testing.T) {
 		got, err := StatusAnnotationFromString(
-			"{\"status\":\"status\"," +
-				"\"states\":{\"startupProbe\":\"1\",\"readinessProbe\":\"2\",\"container\":\"3\",\"started\":\"4\",\"ready\":\"5\",\"resources\":\"6\",\"statusResources\":\"7\"}," +
-				"\"scale\":{\"enabledForResources\":[\"cpu\"],\"lastCommanded\":\"lastCommanded\",\"lastEnacted\":\"lastEnacted\",\"lastFailed\":\"lastFailed\"}," +
-				"\"lastUpdated\":\"lastUpdated\"}",
+			`{"status":"status",` +
+				`"scale":{"enabledForResources":["cpu"],"lastCommanded":"1","lastEnacted":"2","lastFailed":"3"},` +
+				`"lastUpdated":"4"}`,
 		)
-		assert.Nil(t, err)
+		assert.NoError(t, err)
 		assert.Equal(
 			t,
 			NewStatusAnnotation(
 				"status",
-				podcommon.NewStates("1", "2", "3", "4", "5", "6", "7"),
-				NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, "lastCommanded", "lastEnacted", "lastFailed"),
-				"lastUpdated",
+				NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, "1", "2", "3"),
+				"4",
 			),
 			got,
 		)
@@ -126,17 +126,41 @@ func TestStatusAnnotationFromString(t *testing.T) {
 }
 
 func TestNewStatusAnnotationScale(t *testing.T) {
-	statAnn := NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, "lastCommanded", "lastEnacted", "lastFailed")
-	assert.Equal(t, []v1.ResourceName{v1.ResourceCPU}, statAnn.EnabledForResources)
-	assert.Equal(t, "lastCommanded", statAnn.LastCommanded)
-	assert.Equal(t, "lastEnacted", statAnn.LastEnacted)
-	assert.Equal(t, "lastFailed", statAnn.LastFailed)
+	statAnn := NewStatusAnnotationScale(
+		[]v1.ResourceName{v1.ResourceCPU},
+		"lastCommanded",
+		"lastEnacted",
+		"lastFailed",
+	)
+	expected := StatusAnnotationScale{
+		EnabledForResources: []v1.ResourceName{v1.ResourceCPU},
+		LastCommanded:       "lastCommanded",
+		LastEnacted:         "lastEnacted",
+		LastFailed:          "lastFailed",
+	}
+	assert.Equal(t, expected, statAnn)
 }
 
 func TestNewEmptyStatusAnnotationScale(t *testing.T) {
 	statAnn := NewEmptyStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU})
-	assert.Equal(t, []v1.ResourceName{v1.ResourceCPU}, statAnn.EnabledForResources)
-	assert.Empty(t, statAnn.LastCommanded)
-	assert.Empty(t, statAnn.LastEnacted)
-	assert.Empty(t, statAnn.LastFailed)
+	expected := StatusAnnotationScale{
+		EnabledForResources: []v1.ResourceName{v1.ResourceCPU},
+		LastCommanded:       "",
+		LastEnacted:         "",
+		LastFailed:          "",
+	}
+	assert.Equal(t, expected, statAnn)
+}
+
+func TestFixedEnabledForResources(t *testing.T) {
+	t.Run("Nil", func(t *testing.T) {
+		got := fixedEnabledForResources(nil)
+		assert.NotNil(t, got)
+	})
+
+	t.Run("NotNil", func(t *testing.T) {
+		resources := []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory}
+		got := fixedEnabledForResources(resources)
+		assert.Equal(t, resources, got)
+	})
 }

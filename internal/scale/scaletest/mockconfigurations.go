@@ -53,8 +53,8 @@ func (m *MockConfigurations) ValidateAll(container *v1.Container) error {
 	return args.Error(0)
 }
 
-func (m *MockConfigurations) ValidateCollection(container *v1.Container) error {
-	args := m.Called(container)
+func (m *MockConfigurations) ValidateCollection() error {
+	args := m.Called()
 	return args.Error(0)
 }
 
@@ -96,7 +96,7 @@ func (m *MockConfigurations) ValidateAllDefault() {
 }
 
 func (m *MockConfigurations) ValidateCollectionDefault() {
-	m.On("ValidateCollection", mock.Anything).Return(nil)
+	m.On("ValidateCollection").Return(nil)
 }
 
 func (m *MockConfigurations) ConfigForDefault() {

@@ -63,97 +63,95 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 	tests := []struct {
 		name                    string
 		configMapFunc           func(cmap.ConcurrentMap[string, any], string)
-		configMetricAssertsFunc func(t *testing.T)
 		fields                  fields
 		mocks                   mocks
 		podNamespace            string
 		podName                 string
-		want                    reconcile.Result
 		wantErrMsg              string
-		wantLogMsg              string
+		want                    reconcile.Result
 		wantEmptyMap            bool
+		configMetricAssertsFunc func(t *testing.T)
 	}{
 		{
-			name: "ExistingReconcileInProgress",
-			configMapFunc: func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {
+			"ExistingReconcileInProgress",
+			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {
 				cmap.Set(podNamespacedName, nil)
 			},
-			configMetricAssertsFunc: func(t *testing.T) {
+			fields{controllercommon.ControllerConfig{RequeueDurationSecs: 10}},
+			mocks{},
+			"namespace",
+			"name",
+			"",
+			reconcile.Result{RequeueAfter: 10 * time.Second},
+			false,
+			func(t *testing.T) {
 				metricVal, _ := testutil.GetCounterMetricValue(reconciler.ExistingInProgress())
 				assert.Equal(t, float64(1), metricVal)
 			},
-			fields:       fields{controllercommon.ControllerConfig{RequeueDurationSecs: 10}},
-			podNamespace: "namespace",
-			podName:      "name",
-			want:         reconcile.Result{RequeueAfter: 10 * time.Second},
-			wantLogMsg:   "existing reconcile in progress (will requeue)",
-			wantEmptyMap: false,
 		},
 		{
-			name: "UnableToGetPod",
-			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonUnableToGetPod))
-				assert.Equal(t, float64(1), metricVal)
-			},
-			fields: fields{controllercommon.ControllerConfig{RequeueDurationSecs: 10}},
-			mocks: mocks{
+			"UnableToGetPod",
+			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
+			fields{controllercommon.ControllerConfig{RequeueDurationSecs: 10}},
+			mocks{
 				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
 					m.On("Get", mock.Anything, mock.Anything).Return(false, &v1.Pod{}, errors.New(""))
 				}),
 			},
-			podNamespace: "namespace",
-			podName:      "name",
-			want:         reconcile.Result{RequeueAfter: 10 * time.Second},
-			wantLogMsg:   "unable to get pod (will requeue)",
-			wantEmptyMap: true,
-		},
-		{
-			name: "PodDoesntExist",
-			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonPodDoesNotExist))
+			"namespace",
+			"name",
+			"",
+			reconcile.Result{RequeueAfter: 10 * time.Second},
+			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonUnableToGetPod))
 				assert.Equal(t, float64(1), metricVal)
 			},
-			fields: fields{},
-			mocks: mocks{
+		},
+		{
+			"PodDoesntExist",
+			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
+			fields{},
+			mocks{
 				podHelper: kubetest.NewMockPodHelper(func(m *kubetest.MockPodHelper) {
 					m.On("Get", mock.Anything, mock.Anything).Return(false, &v1.Pod{}, nil)
 				}),
 			},
-			podNamespace: "namespace",
-			podName:      "name",
-			want:         reconcile.Result{},
-			wantErrMsg:   "pod doesn't exist (won't requeue)",
-			wantLogMsg:   "pod doesn't exist (won't requeue)",
-			wantEmptyMap: true,
-		},
-		{
-			name: "UnableToConfigurePod",
-			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonConfiguration))
+			"namespace",
+			"name",
+			"pod doesn't exist (won't requeue)",
+			reconcile.Result{},
+			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonPodDoesNotExist))
 				assert.Equal(t, float64(1), metricVal)
 			},
-			fields: fields{},
-			mocks: mocks{
+		},
+		{
+			"UnableToConfigurePod",
+			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
+			fields{},
+			mocks{
 				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
 					m.On("Configure", mock.Anything).Return(scaletest.NewMockConfigurations(nil), errors.New(""))
 				}),
 				podHelper: kubetest.NewMockPodHelper(nil),
 			},
-			podNamespace: "namespace",
-			podName:      "name",
-			want:         reconcile.Result{},
-			wantErrMsg:   "unable to configure pod (won't requeue)",
-			wantLogMsg:   "unable to configure pod (won't requeue)",
-			wantEmptyMap: true,
+			"namespace",
+			"name",
+			"unable to configure pod (won't requeue)",
+			reconcile.Result{},
+			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonConfiguration))
+				assert.Equal(t, float64(1), metricVal)
+			},
 		},
 		{
-			name: "UnableToGetTargetContainerName",
-			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonConfiguration))
-				assert.Equal(t, float64(2), metricVal)
-			},
-			fields: fields{},
-			mocks: mocks{
+			"UnableToGetTargetContainerName",
+			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
+			fields{},
+			mocks{
 				configuration: podtest.NewMockConfiguration(func(m *podtest.MockConfiguration) {
 					m.On("Configure", mock.Anything).Return(
 						scaletest.NewMockConfigurations(func(m *scaletest.MockConfigurations) {
@@ -164,21 +162,21 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 				}),
 				podHelper: kubetest.NewMockPodHelper(nil),
 			},
-			podNamespace: "namespace",
-			podName:      "name",
-			want:         reconcile.Result{},
-			wantErrMsg:   "unable to get target container name (won't requeue)",
-			wantLogMsg:   "unable to get target container name (won't requeue)",
-			wantEmptyMap: true,
+			"namespace",
+			"name",
+			"unable to get target container name (won't requeue)",
+			reconcile.Result{},
+			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonConfiguration))
+				assert.Equal(t, float64(2), metricVal)
+			},
 		},
 		{
-			name: "UnableToValidatePod",
-			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonValidation))
-				assert.Equal(t, float64(1), metricVal)
-			},
-			fields: fields{},
-			mocks: mocks{
+			"UnableToValidatePod",
+			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
+			fields{},
+			mocks{
 				configuration: podtest.NewMockConfiguration(nil),
 				validation: podtest.NewMockValidation(func(m *podtest.MockValidation) {
 					m.On("Validate", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
@@ -186,21 +184,21 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 				}),
 				podHelper: kubetest.NewMockPodHelper(nil),
 			},
-			podNamespace: "namespace",
-			podName:      "name",
-			want:         reconcile.Result{},
-			wantErrMsg:   "unable to validate pod (won't requeue)",
-			wantLogMsg:   "unable to validate pod (won't requeue)",
-			wantEmptyMap: true,
-		},
-		{
-			name: "UnableToDetermineTargetContainerStates",
-			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonStatesDetermination))
+			"namespace",
+			"name",
+			"unable to validate pod (won't requeue)",
+			reconcile.Result{},
+			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonValidation))
 				assert.Equal(t, float64(1), metricVal)
 			},
-			fields: fields{},
-			mocks: mocks{
+		},
+		{
+			"UnableToDetermineTargetContainerStates",
+			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
+			fields{},
+			mocks{
 				configuration: podtest.NewMockConfiguration(nil),
 				validation:    podtest.NewMockValidation(nil),
 				targetContainerState: podtest.NewMockTargetContainerState(func(m *podtest.MockTargetContainerState) {
@@ -209,21 +207,21 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 				}),
 				podHelper: kubetest.NewMockPodHelper(nil),
 			},
-			podNamespace: "namespace",
-			podName:      "name",
-			want:         reconcile.Result{},
-			wantErrMsg:   "unable to determine target container states (won't requeue)",
-			wantLogMsg:   "unable to determine target container states (won't requeue)",
-			wantEmptyMap: true,
-		},
-		{
-			name: "UnableToActionTargetContainerStates",
-			configMetricAssertsFunc: func(t *testing.T) {
-				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonStatesAction))
+			"namespace",
+			"name",
+			"unable to determine target container states (won't requeue)",
+			reconcile.Result{},
+			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonStatesDetermination))
 				assert.Equal(t, float64(1), metricVal)
 			},
-			fields: fields{},
-			mocks: mocks{
+		},
+		{
+			"UnableToActionTargetContainerStates",
+			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
+			fields{},
+			mocks{
 				configuration:        podtest.NewMockConfiguration(nil),
 				validation:           podtest.NewMockValidation(nil),
 				targetContainerState: podtest.NewMockTargetContainerState(nil),
@@ -233,27 +231,33 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 				}),
 				podHelper: kubetest.NewMockPodHelper(nil),
 			},
-			podNamespace: "namespace",
-			podName:      "name",
-			want:         reconcile.Result{},
-			wantErrMsg:   "unable to action target container states (won't requeue)",
-			wantLogMsg:   "unable to action target container states (won't requeue)",
-			wantEmptyMap: true,
+			"namespace",
+			"name",
+			"unable to action target container states (won't requeue)",
+			reconcile.Result{},
+			true,
+			func(t *testing.T) {
+				metricVal, _ := testutil.GetCounterMetricValue(reconciler.Failure(reconciler.FailureReasonStatesAction))
+				assert.Equal(t, float64(1), metricVal)
+			},
 		},
 		{
-			name:   "Ok",
-			fields: fields{},
-			mocks: mocks{
+			"Ok",
+			func(cmap cmap.ConcurrentMap[string, any], podNamespacedName string) {},
+			fields{},
+			mocks{
 				configuration:         podtest.NewMockConfiguration(nil),
 				validation:            podtest.NewMockValidation(nil),
 				targetContainerState:  podtest.NewMockTargetContainerState(nil),
 				targetContainerAction: podtest.NewMockTargetContainerAction(nil),
 				podHelper:             kubetest.NewMockPodHelper(nil),
 			},
-			podNamespace: "namespace",
-			podName:      "name",
-			want:         reconcile.Result{},
-			wantEmptyMap: true,
+			"namespace",
+			"name",
+			"",
+			reconcile.Result{},
+			true,
+			nil,
 		},
 	}
 	for _, tt := range tests {
@@ -285,9 +289,9 @@ func TestContainerStartupAutoscalerReconcilerReconcile(t *testing.T) {
 			got, err := r.Reconcile(ctx, reconcile.Request{NamespacedName: namespacedName})
 
 			if tt.wantErrMsg != "" {
-				assert.Contains(t, err.Error(), tt.wantErrMsg)
+				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, got)
 			assert.Equal(t, tt.wantEmptyMap, c.IsEmpty())
