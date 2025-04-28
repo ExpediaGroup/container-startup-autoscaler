@@ -204,7 +204,7 @@ func (a *targetContainerAction) notStartedWithPostStartupResAction(
 	scaleConfigs scalecommon.Configurations,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).StartupPodMutationFuncAll(targetContainer)
-	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
+	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
 	}
@@ -232,7 +232,7 @@ func (a *targetContainerAction) startedWithStartupResAction(
 	scaleConfigs scalecommon.Configurations,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).PostStartupPodMutationFuncAll(targetContainer)
-	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
+	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
 	}
@@ -273,7 +273,7 @@ func (a *targetContainerAction) notStartedWithUnknownResAction(
 	scaleConfigs scalecommon.Configurations,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).StartupPodMutationFuncAll(targetContainer)
-	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
+	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
 	}
@@ -302,7 +302,7 @@ func (a *targetContainerAction) startedWithUnknownResAction(
 	scaleConfigs scalecommon.Configurations,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).PostStartupPodMutationFuncAll(targetContainer)
-	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true, false)
+	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
 	}

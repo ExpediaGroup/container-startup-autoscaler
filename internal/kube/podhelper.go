@@ -36,8 +36,8 @@ import (
 )
 
 const (
-	waitForCacheUpdatePollMillis  = 100
-	waitForCacheUpdateMaxWaitSecs = 3
+	waitForCacheUpdatePollMillis  = 200
+	waitForCacheUpdateMaxWaitSecs = 5
 )
 
 type mapFor string
@@ -75,27 +75,28 @@ func (h *podHelper) Get(ctx context.Context, name types.NamespacedName) (bool, *
 	return true, pod, nil
 }
 
-// Patch applies the mutations dictated by mutatePodFuncs to either the 'resize' subresource of the supplied pod, or the
-// pod itself. If mustSyncCache is true, it waits for the patched pod to be updated in the informer cache. It returns
-// the new server representation of the pod. The patch is retried and specially handled if there's a conflict: the
-// latest version is retrieved and the mutations are reapplied before attempting again. The supplied pod is never
-// mutated.
+// Patch applies the mutations dictated by podMutationFuncs to either the 'resize' subresource of the supplied pod, or
+// the pod itself. If waitCacheConditionsMetFunc is not nil, it waits for the patched pod to be updated in the informer
+// cache using the conditions specified in this function. It returns the new server representation of the pod. The
+// patch is retried and specially handled if there's a conflict: the latest version is retrieved and the mutations are
+// reapplied before attempting again. The supplied pod is never mutated.
 func (h *podHelper) Patch(
 	ctx context.Context,
 	pod *v1.Pod,
-	podMutationFuncs []func(*v1.Pod) (bool, error),
+	podMutationFuncs []func(podToMutate *v1.Pod) (bool, func(currentPod *v1.Pod) bool, error),
 	patchResize bool,
-	mustSyncCache bool,
 ) (*v1.Pod, error) {
-	// Apply mutations to a copy.
-	mutatedPod := pod.DeepCopy()
+	mutatedPod := pod.DeepCopy() // Apply mutations to a copy.
+	var waitCacheConditionsMetFuncs []func(*v1.Pod) bool
 	shouldPatch := false
 
 	for _, podMutationFunc := range podMutationFuncs {
-		shouldPatchFunc, err := podMutationFunc(mutatedPod)
+		shouldPatchFunc, waitCacheConditionsMetFunc, err := podMutationFunc(mutatedPod)
 		if err != nil {
 			return nil, common.WrapErrorf(err, "unable to mutate pod")
 		}
+
+		waitCacheConditionsMetFuncs = append(waitCacheConditionsMetFuncs, waitCacheConditionsMetFunc)
 		shouldPatch = shouldPatch || shouldPatchFunc
 	}
 
@@ -130,7 +131,7 @@ func (h *podHelper) Patch(
 				// Reapply mutations to latest pod.
 				mutatedPod = latestPod
 				for _, podMutationFunc := range podMutationFuncs {
-					_, _ = podMutationFunc(mutatedPod)
+					_, _, _ = podMutationFunc(mutatedPod)
 				}
 			}
 
@@ -145,13 +146,12 @@ func (h *podHelper) Patch(
 		return nil, common.WrapErrorf(err, "unable to patch pod")
 	}
 
-	if mustSyncCache {
-		// Wait for the patched pod to be updated in the informer cache. For example, this is necessary when updating
-		// the status annotation since the cache may not be updated immediately upon the next reconciliation, leading
-		// to inaccurate status updates that rely on accurate current status. The reconciler doesn't allow concurrent
-		// reconciles for same pod so subsequent reconciles will not start until this wait has completed.
-		_ = h.waitForCacheUpdate(ctx, mutatedPod)
-	}
+	// If indicated, wait for the patched pod to be updated in the informer cache. For example, this is necessary
+	// when updating the status annotation since the cache may not be updated immediately upon the next
+	// reconciliation, leading to inaccurate status updates that rely on accurate current status. The reconciler
+	// doesn't allow concurrent reconciles for same pod so subsequent reconciles will not start until this wait has
+	// completed.
+	_ = h.waitForCacheUpdate(ctx, mutatedPod, waitCacheConditionsMetFuncs)
 
 	return mutatedPod, nil
 }
@@ -240,9 +240,29 @@ func (h *podHelper) expectedLabelOrAnnotationAs(
 	panic(fmt.Errorf("as '%s' not supported", as))
 }
 
-// waitForCacheUpdate waits for the informer cache to update a pod with at least the resource version indicated by the
-// supplied pod. Returns the new representation of the pod if found within a timeout period, otherwise nil.
-func (h *podHelper) waitForCacheUpdate(ctx context.Context, pod *v1.Pod) *v1.Pod {
+// waitForCacheUpdate waits for the local informer cache to reflect the pod with 1) at least the resource version
+// indicated by the supplied pod and 2) the condition specified within conditionsMetFuncs. Returns the new
+// representation of the pod if found within a timeout period, otherwise nil.
+func (h *podHelper) waitForCacheUpdate(
+	ctx context.Context,
+	pod *v1.Pod,
+	conditionsMetFuncs []func(*v1.Pod) bool,
+) *v1.Pod {
+	if len(conditionsMetFuncs) == 0 {
+		return pod
+	}
+
+	allNil := true
+	for _, conditionsMetFunc := range conditionsMetFuncs {
+		if conditionsMetFunc != nil {
+			allNil = false
+			break
+		}
+	}
+	if allNil {
+		return pod
+	}
+
 	ticker := time.NewTicker(waitForCacheUpdatePollMillis * time.Millisecond)
 	defer ticker.Stop()
 	timeout := time.After(waitForCacheUpdateMaxWaitSecs * time.Second)
@@ -254,9 +274,18 @@ func (h *podHelper) waitForCacheUpdate(ctx context.Context, pod *v1.Pod) *v1.Pod
 			pollCount++
 			exists, podFromCache, err := h.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name})
 			if err == nil && exists && podFromCache.ResourceVersion >= pod.ResourceVersion {
-				logging.Infof(ctx, logging.VDebug, "pod polled from cache %d time(s) in total", pollCount)
-				informercache.SyncPoll().Observe(float64(pollCount))
-				return podFromCache
+				allConditionsMet := true
+				for _, conditionsMetFunc := range conditionsMetFuncs {
+					if !conditionsMetFunc(podFromCache) {
+						allConditionsMet = false
+					}
+				}
+
+				if allConditionsMet {
+					logging.Infof(ctx, logging.VDebug, "pod polled from cache %d time(s) in total", pollCount)
+					informercache.SyncPoll().Observe(float64(pollCount))
+					return podFromCache
+				}
 			}
 
 		case <-timeout:

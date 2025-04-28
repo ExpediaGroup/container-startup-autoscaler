@@ -423,7 +423,7 @@ version of the pod and reapplies the update, before trying again (subject to ret
 
 ## Informer Cache Sync
 The CSA [status](#status) includes timestamps that CSA uses itself internally, such as for calculating scale durations.
-When status is updated, CSA waits for the updated pod to be reflected in the informer cache before finishing
+When status is updated, CSA waits for the updated pod to be reflected in the local informer cache before finishing
 the reconciliation to ensure following reconciles have the latest status available to work upon. Without this mechanism,
 the rapid pace of pod updates during resizes can prevent later reconciles from retrieving the latest status. This
 occurs because the informer may not have cached the updated pod in time, resulting in inaccurate status updates.
@@ -437,7 +437,7 @@ updated (synced) after the status is updated, and whether any timeouts occur:
 - `patch_sync_poll`: the number of cache polls that were required to confirm the cache was populated with the updated
   pod. The cache is polled periodically per the `waitForCacheUpdatePollMillis` configuration [here](internal/kube/podhelper.go).
   Higher values indicate longer cache sync times.
-- `patch_sync_timeout`: the number of times the cache sync timed out per the`waitForCacheUpdateTimeoutMillis`
+- `patch_sync_timeout`: the number of times the cache sync timed out per the `waitForCacheUpdateTimeoutMillis`
   configuration [here](internal/kube/podhelper.go). Timeouts do not result in an error or termination of the
   reconcilation, but may result in inconsistent CSA status updates.  
 

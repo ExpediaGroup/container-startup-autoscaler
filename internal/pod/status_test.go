@@ -207,7 +207,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 		wantLastScaleEnacted    bool
 		wantLastScaleFailed     bool
 		wantEventMsg            string
-		wantPause               bool
 		configMetricAssertsFunc func(t *testing.T)
 	}{
 		{
@@ -224,7 +223,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			true,
 			true,
 			"",
-			false,
 			nil,
 		},
 		{
@@ -239,7 +237,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			false,
 			"Normal Scaling Test",
-			false,
 			nil,
 		},
 		{
@@ -256,7 +253,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			false,
 			"Normal Scaling Test",
-			true,
 			nil,
 		},
 		{
@@ -271,7 +267,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			false,
 			"Normal Scaling Test",
-			false,
 			func(t *testing.T) {
 				metricVal, _ := testutil.GetCounterMetricValue(scale.CommandedUnknownRes())
 				assert.Equal(t, float64(1), metricVal)
@@ -291,7 +286,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			false,
 			"Normal Scaling Test",
-			true,
 			func(t *testing.T) {
 				metricVal, _ := testutil.GetCounterMetricValue(scale.CommandedUnknownRes())
 				assert.Equal(t, float64(1), metricVal)
@@ -311,7 +305,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			false,
 			"",
-			false,
 			func(t *testing.T) {
 				metricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeSuccess))
 				assert.Equal(t, uint64(0), metricVal)
@@ -331,7 +324,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			true,
 			false,
 			"Normal Scaling Test",
-			false,
 			func(t *testing.T) {
 				metricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeSuccess))
 				assert.Equal(t, uint64(1), metricVal)
@@ -351,7 +343,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			true,
 			false,
 			"",
-			false,
 			func(t *testing.T) {
 				metricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeSuccess))
 				assert.Equal(t, uint64(0), metricVal)
@@ -371,7 +362,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			true,
 			"Warning Scaling Test",
-			false,
 			func(t *testing.T) {
 				durationMetricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeFailure))
 				assert.Equal(t, uint64(1), durationMetricVal)
@@ -393,7 +383,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			true,
 			"",
-			false,
 			func(t *testing.T) {
 				durationMetricVal, _ := testutil.GetHistogramMetricCount(scale.Duration(metricscommon.DirectionUp, metricscommon.OutcomeFailure))
 				assert.Equal(t, uint64(0), durationMetricVal)
@@ -413,7 +402,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			false,
 			false,
 			"",
-			false,
 			nil,
 		},
 	}
@@ -448,7 +436,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 				return
 			}
 
-			currentTimeMillis := time.Now().UnixMilli()
 			got, err := s.Update(
 				ctx,
 				tt.args.pod,
@@ -458,7 +445,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 				scaletest.NewMockConfigurations(nil),
 				tt.args.failReason,
 			)
-			durationMillis := time.Now().UnixMilli() - currentTimeMillis
 			assert.NoError(t, err)
 
 			stat := &StatusAnnotation{}
@@ -491,11 +477,6 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 					t.Fatalf("event unexpectedly generated")
 				case <-time.After(1 * time.Second):
 				}
-			}
-			if tt.wantPause {
-				assert.GreaterOrEqual(t, durationMillis, int64(postPatchPauseSecs*1000))
-			} else {
-				assert.Less(t, durationMillis, int64(postPatchPauseSecs*1000))
 			}
 			if tt.configMetricAssertsFunc != nil {
 				tt.configMetricAssertsFunc(t)

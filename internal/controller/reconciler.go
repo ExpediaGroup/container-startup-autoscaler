@@ -63,8 +63,9 @@ func (r *containerStartupAutoscalerReconciler) Reconcile(
 ) (reconcile.Result, error) {
 	namespacedName := request.NamespacedName.String()
 
-	// Don't allow concurrent reconciles for same pod to prevent overlap - requeue if necessary. Map get/set must be
-	// done exclusively (atomically).
+	// Prevent concurrent reconciles for the same pod to avoid overlap — requeue if necessary. Although
+	// controller-runtime currently guarantees this, this serves as a fail-safe in case its behavior changes in the
+	// future. Map get/set must be done exclusively (atomically).
 	r.mutex.Lock()
 
 	_, exists := r.reconcilingPods.Get(namespacedName)

@@ -50,11 +50,10 @@ func (m *MockPodHelper) Get(ctx context.Context, name types.NamespacedName) (boo
 func (m *MockPodHelper) Patch(
 	ctx context.Context,
 	pod *v1.Pod,
-	podMutationFuncs []func(*v1.Pod) (bool, error),
+	podMutationFuncs []func(podToMutate *v1.Pod) (bool, func(currentPod *v1.Pod) bool, error),
 	patchResize bool,
-	mustSyncCache bool,
 ) (*v1.Pod, error) {
-	args := m.Called(ctx, pod, podMutationFuncs, patchResize, mustSyncCache)
+	args := m.Called(ctx, pod, podMutationFuncs, patchResize)
 	return args.Get(0).(*v1.Pod), args.Error(1)
 }
 
