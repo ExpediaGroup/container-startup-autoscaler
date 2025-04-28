@@ -2,6 +2,26 @@ apiVersion: v1
 entries:
   container-startup-autoscaler:
   - apiVersion: v2
+    appVersion: 0.7.0
+    created: "2025-04-28T11:15:16.576976752Z"
+    description: 'container-startup-autoscaler is a Kubernetes controller that modifies
+      the CPU and/or memory resources of containers depending on whether they''re
+      starting up. '
+    digest: 8fafa05cff5a71a8316365bbd93116637279bb71b86e9201eafbc2380443c472
+    home: https://github.com/ExpediaGroup/container-startup-autoscaler/README.md
+    keywords:
+    - kubernetes
+    - startup
+    - scale
+    - cpu
+    - memory
+    name: container-startup-autoscaler
+    sources:
+    - https://github.com/ExpediaGroup/container-startup-autoscaler
+    urls:
+    - https://github.com/ExpediaGroup/container-startup-autoscaler/releases/download/chart-1.6.0/container-startup-autoscaler-1.6.0.tgz
+    version: 1.6.0
+  - apiVersion: v2
     appVersion: 0.6.0
     created: "2025-03-07T14:15:31.499780551Z"
     description: 'container-startup-autoscaler is a Kubernetes controller that modifies
@@ -121,4 +141,4 @@ entries:
     urls:
     - https://github.com/ExpediaGroup/container-startup-autoscaler/releases/download/chart-1.0.0/container-startup-autoscaler-1.0.0.tgz
     version: 1.0.0
-generated: "2025-03-07T14:15:31.499810256Z"
+generated: "2025-04-28T11:15:16.57700809Z"
