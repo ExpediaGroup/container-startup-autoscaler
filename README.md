@@ -1,8 +1,8 @@
 # container-startup-autoscaler 🚀
 container-startup-autoscaler (CSA) is a Kubernetes [controller](https://kubernetes.io/docs/concepts/architecture/controller/)
-that modifies the CPU and/or memory<sup>1</sup> resources of containers depending on whether they're starting up,
-according to the startup/post-startup settings you supply. CSA works at the pod level and is agnostic to how the pod is
-managed; it works with deployments, statefulsets, daemonsets and other workload management APIs.
+that modifies the CPU and/or memory<sup>1</sup> resources of containers based on whether they're starting up, according
+to the startup/post-startup settings you provide. CSA works at the pod level and is agnostic to how the pod is managed;
+it works with deployments, statefulsets, daemonsets and other workload management APIs.
 
 ![An overview diagram of CSA showing when target containers are scaled](assets/images/overview.png "CSA overview diagram")
 
