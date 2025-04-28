@@ -877,7 +877,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			},
 			"",
 			"",
-			false,
+			true,
 			"target container current cpu and/or memory resources currently missing",
 		},
 		{
@@ -889,7 +889,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			},
 			"",
 			"",
-			false,
+			true,
 			"target container current cpu and/or memory resources currently don't match target container's 'requests'",
 		},
 		{
@@ -901,7 +901,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			},
 			"",
 			"",
-			false,
+			true,
 			"target container current cpu and/or memory resources currently unknown",
 		},
 		{

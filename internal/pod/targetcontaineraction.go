@@ -334,15 +334,13 @@ func (a *targetContainerAction) processConfigEnacted(
 		// Examine additional status later that will confirm whether not started or completed.
 
 	case podcommon.StateResizeInProgress:
-		a.updateStatusAndLogInfo(
+		a.updateStatusInProgressAndLogInfo(
 			ctx,
 			logging.VInfo,
 			pod,
 			states.Resources.HumanReadable()+" scale not yet completed - in progress",
 			states,
-			podcommon.StatusScaleStateNotApplicable,
 			scaleConfigs,
-			"",
 		)
 		return nil
 
@@ -394,27 +392,44 @@ func (a *targetContainerAction) processConfigEnacted(
 	// Resize is either not started or completed (StateResizeNotStartedOrCompleted), so examine StatusResources.
 	switch states.StatusResources {
 	case podcommon.StateStatusResourcesIncomplete:
-		// Target container current CPU and/or memory resources are missing. Log and return with the expectation that
-		// the missing items become available in the future.
-		logging.Infof(ctx, logging.VDebug, "target container current cpu and/or memory resources currently missing")
+		// Target container current CPU and/or memory resources are missing. Update status, log and return with the
+		// expectation that the missing items become available in the future.
+		a.updateStatusInProgressAndLogInfo(
+			ctx,
+			logging.VDebug,
+			pod,
+			"target container current cpu and/or memory resources currently missing",
+			states,
+			scaleConfigs,
+		)
 		return nil
 
 	case podcommon.StateStatusResourcesContainerResourcesMatch: // Want this, but here so we can panic on default below.
 
 	case podcommon.StateStatusResourcesContainerResourcesMismatch:
-		// Target container current CPU and/or memory resources don't match target container's 'requests'. Log and
-		// return with the expectation that they match in the future.
-		logging.Infof(
+		// Target container current CPU and/or memory resources don't match target container's 'requests'. Update
+		// status, log and return with the expectation that they match in the future.
+		a.updateStatusInProgressAndLogInfo(
 			ctx,
 			logging.VDebug,
+			pod,
 			"target container current cpu and/or memory resources currently don't match target container's 'requests'",
+			states,
+			scaleConfigs,
 		)
 		return nil
 
 	case podcommon.StateStatusResourcesUnknown:
-		// Target container current CPU and/or memory resources are unknown. Log and return with the expectation that
-		// they become known in the future.
-		logging.Infof(ctx, logging.VDebug, "target container current cpu and/or memory resources currently unknown")
+		// Target container current CPU and/or memory resources are unknown. Update status, log and return with the
+		// expectation that they become known in the future.
+		a.updateStatusInProgressAndLogInfo(
+			ctx,
+			logging.VDebug,
+			pod,
+			"target container current cpu and/or memory resources currently unknown",
+			states,
+			scaleConfigs,
+		)
 		return nil
 
 	default:
@@ -486,4 +501,25 @@ func (a *targetContainerAction) updateStatusAndLogInfo(
 ) {
 	a.updateStatus(ctx, pod, message, states, scaleState, scaleConfigs, failReason)
 	logging.Infof(ctx, v, message)
+}
+
+// updateStatusInProgressAndLogInfo updates status when in progress and logs an info message.
+func (a *targetContainerAction) updateStatusInProgressAndLogInfo(
+	ctx context.Context,
+	v logging.V,
+	pod *v1.Pod,
+	logMessage string,
+	states podcommon.States,
+	scaleConfigs scalecommon.Configurations,
+) {
+	a.updateStatus(
+		ctx,
+		pod,
+		states.Resources.HumanReadable()+" scale not yet completed - in progress",
+		states,
+		podcommon.StatusScaleStateNotApplicable,
+		scaleConfigs,
+		"",
+	)
+	logging.Infof(ctx, v, logMessage)
 }
