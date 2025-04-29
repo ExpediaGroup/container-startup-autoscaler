@@ -405,7 +405,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 				podcommon.StatusScaleState("test"),
 				"",
 			},
-			"statusScaleState 'test' not supported",
+			"scaleState 'test' not supported",
 			false,
 			false,
 			false,
