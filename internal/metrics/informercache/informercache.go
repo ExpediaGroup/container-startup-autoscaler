@@ -35,7 +35,7 @@ var (
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      syncTimeoutName,
-		Help:      "Number of informer cache sync timeouts after a pod mutation was performed via the Kube API (may result in inconsistent CSA status updates)",
+		Help:      "Number of informer cache sync timeouts after a pod mutation was performed via the Kubernetes API (may result in CSA status inaccuracies)",
 	}, []string{})
 )
 

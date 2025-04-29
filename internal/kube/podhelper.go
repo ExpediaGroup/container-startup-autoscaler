@@ -37,10 +37,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	waitForCacheUpdateMaxWaitSecs = 3
-)
-
 type mapFor string
 
 const (
@@ -289,7 +285,7 @@ func (h *podHelper) waitForCacheUpdate(
 	conditionsMetFuncs []func(*v1.Pod) bool,
 	podEventCh <-chan eventcommon.PodEvent,
 ) *v1.Pod {
-	var timeoutDuration = waitForCacheUpdateMaxWaitSecs * time.Second
+	var timeoutDuration = common.WaitForCacheUpdateMaxWaitSecs * time.Second
 	timeoutOverride := ccontext.TimeoutOverride(ctx)
 	if timeoutOverride != 0 {
 		timeoutDuration = timeoutOverride

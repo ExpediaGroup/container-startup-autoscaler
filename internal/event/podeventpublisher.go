@@ -21,14 +21,14 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	ccontext "github.com/ExpediaGroup/container-startup-autoscaler/internal/context"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event/eventcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 )
 
 const (
-	subscriberChannelBufferSize       = 10
-	subscriberChannelWriteTimeoutSecs = 3
+	subscriberChannelBufferSize = 10
 )
 
 var DefaultPodEventPublisher = newPodEventPublisher()
@@ -90,7 +90,7 @@ func (p *podEventPublisher) Publish(ctx context.Context, event eventcommon.PodEv
 	p.mu.RLock()
 	defer p.mu.RUnlock()
 
-	timeoutDuration := subscriberChannelWriteTimeoutSecs * time.Second
+	timeoutDuration := common.SubscriberChannelWriteTimeoutSecs * time.Second
 	if ctx != nil {
 		timeoutOverride := ccontext.TimeoutOverride(ctx)
 		if timeoutOverride != 0 {
