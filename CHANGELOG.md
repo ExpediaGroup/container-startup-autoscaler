@@ -6,7 +6,7 @@
 2025-04-29
 
 ### Changed
-- Enhances informer cache synchronization with configurable conditions.
+- Enhance informer cache synchronization with configurable conditions.
 - Move informer cache synchronization from a poll-based model to an event-based model.
 
 ### Helm Chart
