@@ -98,8 +98,7 @@ func (h *podHelper) Patch(
 		shouldPatch = shouldPatch || shouldPatchFunc
 	}
 
-	// Only patch if at least one podMutationFunc indicated to do so.
-	if !shouldPatch {
+	if !shouldPatch { // Don't patch if not necessary.
 		return pod, nil
 	}
 
