@@ -38,7 +38,7 @@ import (
 )
 
 const (
-	waitForCacheUpdateMaxWaitSecs = 5
+	waitForCacheUpdateMaxWaitSecs = 3
 )
 
 type mapFor string

@@ -28,7 +28,7 @@ import (
 
 const (
 	subscriberChannelBufferSize       = 10
-	subscriberChannelWriteTimeoutSecs = 5
+	subscriberChannelWriteTimeoutSecs = 3
 )
 
 var DefaultPodEventPublisher = newPodEventPublisher()
