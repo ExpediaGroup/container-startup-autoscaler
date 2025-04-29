@@ -161,9 +161,8 @@ func (h *podHelper) Patch(
 
 	// If indicated, wait for the patched pod to be updated in the informer cache. For example, this is necessary
 	// when updating the status annotation since the cache may not be updated immediately upon the next
-	// reconciliation, leading to inaccurate status updates that rely on accurate current status. The reconciler
-	// doesn't allow concurrent reconciles for same pod so subsequent reconciles will not start until this wait has
-	// completed.
+	// reconcile, leading to inaccurate status updates that rely on accurate current status. The reconciler doesn't
+	// allow concurrent reconciles for same pod so subsequent reconciles will not start until this wait has completed.
 	if shouldWaitForCacheUpdate {
 		mutatedPod = h.waitForCacheUpdate(ctx, mutatedPod, waitCacheConditionsMetFuncs, podEventCh)
 	}

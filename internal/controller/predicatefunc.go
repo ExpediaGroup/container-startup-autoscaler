@@ -53,8 +53,8 @@ import (
 	- See https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/predicate for information on controller-runtime
 	  predicates.
 
-	- All predicate functions publish events to an event publisher, which reconciliation logic can subscribe to if
-	  there's a need to observe events during operation.
+	- All predicate functions publish events to an event publisher, which reconcile logic can subscribe to if there's a
+	  need to observe events during operation.
 */
 
 // PredicateCreateFunc returns whether create events should be reconciled.

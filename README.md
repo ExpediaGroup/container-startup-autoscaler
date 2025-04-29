@@ -362,7 +362,7 @@ Prefixed with `csa_reconciler_`:
 
 | Metric Name                  | Type    | Labels               | Description                                                                                                          |
 |------------------------------|---------|----------------------|----------------------------------------------------------------------------------------------------------------------|
-| `skipped_only_status_change` | Counter | None                 | Number of reconciles that were skipped because only the scaler controller status changed.                            |
+| `skipped_only_status_change` | Counter | None                 | Number of reconciles that were skipped because only the status changed.                                              |
 | `existing_in_progress`       | Counter | None                 | Number of attempted reconciles where one was already in progress for the same namespace/name (results in a requeue). |
 | `failure`                    | Counter | `reason`<sup>1</sup> | Number of reconciles where there was a failure.                                                                      |
 
@@ -422,9 +422,9 @@ version of the pod and reapplies the update, before trying again (subject to ret
 ## Informer Cache Sync
 The CSA [status](#status) includes timestamps that CSA uses itself internally, such as for calculating scale durations.
 When status is updated, CSA waits for the updated pod to be reflected in the local informer cache before finishing
-the reconciliation to ensure following reconciles have the latest status available to work upon. Without this mechanism,
-the rapid pace of pod updates during resizes can prevent later reconciles from retrieving the latest status. This
-occurs because the informer may not have cached the updated pod in time, resulting in inaccurate status updates.
+the reconcile to ensure following reconciles have the latest status available to work upon. Without this mechanism, the
+rapid pace of pod updates during resizes can prevent later reconciles from retrieving the latest status. This occurs
+because the informer may not have cached the updated pod in time, resulting in inaccurate status updates.
 
 The CSA reconciler doesn't allow concurrent reconciles for the same pod, so later reconciles will not start until
 this wait described above has completed.

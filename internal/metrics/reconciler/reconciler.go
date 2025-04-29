@@ -48,7 +48,7 @@ var (
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      skippedOnlyStatusChangeName,
-		Help:      "Number of reconciles that were skipped because only the scaler controller status changed",
+		Help:      "Number of reconciles that were skipped because only the status changed",
 	}, []string{})
 
 	existingInProgress = prometheus.NewCounterVec(prometheus.CounterOpts{
