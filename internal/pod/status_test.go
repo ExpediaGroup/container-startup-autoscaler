@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event/eventtest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
@@ -37,6 +38,8 @@ import (
 	"k8s.io/component-base/metrics/testutil"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
+
+const timeoutOverride = 10 * time.Millisecond
 
 func TestNewStatus(t *testing.T) {
 	recorder := &record.FakeRecorder{}
@@ -54,6 +57,7 @@ func TestStatusUpdateCore(t *testing.T) {
 
 		fun := func() {
 			_, _ = s.Update(
+				nil,
 				nil,
 				nil,
 				"",
@@ -79,6 +83,7 @@ func TestStatusUpdateCore(t *testing.T) {
 
 		got, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
+			eventtest.NewMockPodEventPublisher(nil),
 			kubetest.NewPodBuilder().Build(),
 			"test",
 			podcommon.States{},
@@ -103,7 +108,8 @@ func TestStatusUpdateCore(t *testing.T) {
 		)
 
 		got, err := s.Update(
-			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
+			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).TimeoutOverride(timeoutOverride).Build(),
+			eventtest.NewMockPodEventPublisher(nil),
 			kubetest.NewPodBuilder().AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: "test"}).Build(),
 			"test",
 			podcommon.States{},
@@ -137,7 +143,8 @@ func TestStatusUpdateCore(t *testing.T) {
 		)
 
 		got, err := s.Update(
-			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
+			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).TimeoutOverride(timeoutOverride).Build(),
+			eventtest.NewMockPodEventPublisher(nil),
 			kubetest.NewPodBuilder().Build(),
 			"test",
 			podcommon.States{},
@@ -178,6 +185,7 @@ func TestStatusUpdateCore(t *testing.T) {
 		).Json()
 		got, err := s.Update(
 			contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build(),
+			nil,
 			kubetest.NewPodBuilder().AdditionalAnnotations(map[string]string{kubecommon.AnnotationStatus: previousStat}).Build(),
 			"test",
 			podcommon.States{},
@@ -419,12 +427,15 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 					),
 				),
 			)
-			ctx := contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).Build()
+			ctx := contexttest.NewCtxBuilder(contexttest.NewNoRetryCtxConfig(nil)).
+				TimeoutOverride(timeoutOverride).
+				Build()
 
 			if tt.wantPanicErrMsg != "" {
 				assert.PanicsWithError(t, tt.wantPanicErrMsg, func() {
 					_, _ = s.Update(
 						ctx,
+						nil,
 						tt.args.pod,
 						"test",
 						podcommon.States{Resources: podcommon.StateResourcesStartup},
@@ -438,6 +449,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 
 			got, err := s.Update(
 				ctx,
+				eventtest.NewMockPodEventPublisher(nil),
 				tt.args.pod,
 				"test",
 				podcommon.States{Resources: podcommon.StateResourcesStartup},
@@ -468,14 +480,14 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 				select {
 				case res := <-eventRecorder.Events:
 					assert.Contains(t, res, tt.wantEventMsg)
-				case <-time.After(1 * time.Second):
+				case <-time.After(500 * time.Millisecond):
 					t.Fatalf("event not generated")
 				}
 			} else {
 				select {
 				case <-eventRecorder.Events:
 					t.Fatalf("event unexpectedly generated")
-				case <-time.After(1 * time.Second):
+				case <-time.After(500 * time.Millisecond):
 				}
 			}
 			if tt.configMetricAssertsFunc != nil {

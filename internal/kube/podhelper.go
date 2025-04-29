@@ -24,6 +24,8 @@ import (
 	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
+	ccontext "github.com/ExpediaGroup/container-startup-autoscaler/internal/context"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event/eventcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/informercache"
@@ -36,7 +38,6 @@ import (
 )
 
 const (
-	waitForCacheUpdatePollMillis  = 200
 	waitForCacheUpdateMaxWaitSecs = 5
 )
 
@@ -76,12 +77,13 @@ func (h *podHelper) Get(ctx context.Context, name types.NamespacedName) (bool, *
 }
 
 // Patch applies the mutations dictated by podMutationFuncs to either the 'resize' subresource of the supplied pod, or
-// the pod itself. If waitCacheConditionsMetFunc is not nil, it waits for the patched pod to be updated in the informer
-// cache using the conditions specified in this function. It returns the new server representation of the pod. The
-// patch is retried and specially handled if there's a conflict: the latest version is retrieved and the mutations are
-// reapplied before attempting again. The supplied pod is never mutated.
+// the pod itself. If any podMutationFunc specifies a non-nil function return value, it waits for the patched pod to be
+// updated in the informer cache using the conditions specified by these functions.  It returns the new server
+// representation of the pod. The patch is retried and specially handled if there's a conflict: the latest version is
+// retrieved and the mutations are reapplied before attempting again. The supplied pod is never mutated.
 func (h *podHelper) Patch(
 	ctx context.Context,
+	podEventPublisher eventcommon.PodEventPublisher,
 	pod *v1.Pod,
 	podMutationFuncs []func(podToMutate *v1.Pod) (bool, func(currentPod *v1.Pod) bool, error),
 	patchResize bool,
@@ -105,8 +107,23 @@ func (h *podHelper) Patch(
 		return pod, nil
 	}
 
+	var podEventCh <-chan eventcommon.PodEvent
+	shouldWaitForCacheUpdate := h.shouldWaitForCacheUpdate(waitCacheConditionsMetFuncs)
+	if shouldWaitForCacheUpdate {
+		defer func() { podEventPublisher.Unsubscribe(podEventCh) }()
+	}
+
 	var err error
 	retryableFunc := func() error {
+		if shouldWaitForCacheUpdate {
+			// Subscribe to pod update events for later informer cache waiting.
+			podEventCh = podEventPublisher.Subscribe(
+				mutatedPod.Namespace,
+				mutatedPod.Name,
+				[]eventcommon.PodEventType{eventcommon.PodEventTypeUpdate},
+			)
+		}
+
 		if patchResize {
 			err = h.client.SubResource("resize").Patch(ctx, mutatedPod, client.MergeFrom(pod))
 		} else {
@@ -151,7 +168,9 @@ func (h *podHelper) Patch(
 	// reconciliation, leading to inaccurate status updates that rely on accurate current status. The reconciler
 	// doesn't allow concurrent reconciles for same pod so subsequent reconciles will not start until this wait has
 	// completed.
-	_ = h.waitForCacheUpdate(ctx, mutatedPod, waitCacheConditionsMetFuncs)
+	if shouldWaitForCacheUpdate {
+		mutatedPod = h.waitForCacheUpdate(ctx, mutatedPod, waitCacheConditionsMetFuncs, podEventCh)
+	}
 
 	return mutatedPod, nil
 }
@@ -240,16 +259,11 @@ func (h *podHelper) expectedLabelOrAnnotationAs(
 	panic(fmt.Errorf("as '%s' not supported", as))
 }
 
-// waitForCacheUpdate waits for the local informer cache to reflect the pod with 1) at least the resource version
-// indicated by the supplied pod and 2) the condition specified within conditionsMetFuncs. Returns the new
-// representation of the pod if found within a timeout period, otherwise nil.
-func (h *podHelper) waitForCacheUpdate(
-	ctx context.Context,
-	pod *v1.Pod,
-	conditionsMetFuncs []func(*v1.Pod) bool,
-) *v1.Pod {
+// shouldWaitForCacheUpdate determines whether the local informer cache should be waited upon based on the supplied
+// conditions functions.
+func (h *podHelper) shouldWaitForCacheUpdate(conditionsMetFuncs []func(*v1.Pod) bool) bool {
 	if len(conditionsMetFuncs) == 0 {
-		return pod
+		return false
 	}
 
 	allNil := true
@@ -260,38 +274,49 @@ func (h *podHelper) waitForCacheUpdate(
 		}
 	}
 	if allNil {
-		return pod
+		return false
 	}
 
-	ticker := time.NewTicker(waitForCacheUpdatePollMillis * time.Millisecond)
-	defer ticker.Stop()
-	timeout := time.After(waitForCacheUpdateMaxWaitSecs * time.Second)
+	return true
+}
 
-	pollCount := 0
+// waitForCacheUpdate waits for the local informer cache to reflect the pod with the conditions specified within
+// conditionsMetFuncs. Returns the new representation of the pod if found within a timeout period, otherwise the
+// original pod.
+func (h *podHelper) waitForCacheUpdate(
+	ctx context.Context,
+	pod *v1.Pod,
+	conditionsMetFuncs []func(*v1.Pod) bool,
+	podEventCh <-chan eventcommon.PodEvent,
+) *v1.Pod {
+	var timeoutDuration = waitForCacheUpdateMaxWaitSecs * time.Second
+	timeoutOverride := ccontext.TimeoutOverride(ctx)
+	if timeoutOverride != 0 {
+		timeoutDuration = timeoutOverride
+		logging.Infof(ctx, logging.VInfo, "default cache update timeout overridden")
+	}
+
 	for {
 		select {
-		case <-ticker.C:
-			pollCount++
-			exists, podFromCache, err := h.Get(ctx, types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name})
-			if err == nil && exists && podFromCache.ResourceVersion >= pod.ResourceVersion {
-				allConditionsMet := true
-				for _, conditionsMetFunc := range conditionsMetFuncs {
-					if !conditionsMetFunc(podFromCache) {
-						allConditionsMet = false
-					}
-				}
-
-				if allConditionsMet {
-					logging.Infof(ctx, logging.VDebug, "pod polled from cache %d time(s) in total", pollCount)
-					informercache.SyncPoll().Observe(float64(pollCount))
-					return podFromCache
-				}
+		case event := <-podEventCh:
+			if event.EventType != eventcommon.PodEventTypeUpdate {
+				panic(fmt.Errorf("unexpected event type '%s'", event.EventType))
 			}
 
-		case <-timeout:
+			allConditionsMet := true
+			for _, conditionsMetFunc := range conditionsMetFuncs {
+				if !conditionsMetFunc(event.Pod) {
+					allConditionsMet = false
+				}
+			}
+			if allConditionsMet {
+				return event.Pod
+			}
+
+		case <-time.After(timeoutDuration):
 			logging.Infof(ctx, logging.VDebug, "cache wasn't updated in time")
 			informercache.SyncTimeout().Inc()
-			return nil
+			return pod
 		}
 	}
 }

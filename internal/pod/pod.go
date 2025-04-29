@@ -18,6 +18,7 @@ package pod
 
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
@@ -48,9 +49,9 @@ func NewPod(
 
 	return &Pod{
 		Configuration:         newConfiguration(podHelper, containerHelper),
-		Validation:            newValidation(stat, podHelper, containerHelper),
+		Validation:            newValidation(stat, podHelper, containerHelper, event.DefaultPodEventPublisher),
 		TargetContainerState:  newTargetContainerState(podHelper, containerHelper),
-		TargetContainerAction: newTargetContainerAction(controllerConfig, stat, podHelper),
+		TargetContainerAction: newTargetContainerAction(controllerConfig, stat, podHelper, event.DefaultPodEventPublisher),
 		Status:                stat,
 		PodHelper:             podHelper,
 		ContainerHelper:       containerHelper,

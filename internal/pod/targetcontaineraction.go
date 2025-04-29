@@ -23,6 +23,7 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event/eventcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
@@ -35,20 +36,23 @@ const eventReasonScaling = "Scaling"
 
 // targetContainerAction is the default implementation of podcommon.TargetContainerAction.
 type targetContainerAction struct {
-	controllerConfig controllercommon.ControllerConfig
-	status           podcommon.Status
-	podHelper        kubecommon.PodHelper
+	controllerConfig  controllercommon.ControllerConfig
+	status            podcommon.Status
+	podHelper         kubecommon.PodHelper
+	podEventPublisher eventcommon.PodEventPublisher
 }
 
 func newTargetContainerAction(
 	controllerConfig controllercommon.ControllerConfig,
 	status podcommon.Status,
 	podHelper kubecommon.PodHelper,
+	podEventPublisher eventcommon.PodEventPublisher,
 ) *targetContainerAction {
 	return &targetContainerAction{
-		controllerConfig: controllerConfig,
-		status:           status,
-		podHelper:        podHelper,
+		controllerConfig:  controllerConfig,
+		status:            status,
+		podHelper:         podHelper,
+		podEventPublisher: podEventPublisher,
 	}
 }
 
@@ -204,7 +208,7 @@ func (a *targetContainerAction) notStartedWithPostStartupResAction(
 	scaleConfigs scalecommon.Configurations,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).StartupPodMutationFuncAll(targetContainer)
-	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true)
+	newPod, err := a.podHelper.Patch(ctx, a.podEventPublisher, pod, resizeFuncs, true)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
 	}
@@ -232,7 +236,7 @@ func (a *targetContainerAction) startedWithStartupResAction(
 	scaleConfigs scalecommon.Configurations,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).PostStartupPodMutationFuncAll(targetContainer)
-	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true)
+	newPod, err := a.podHelper.Patch(ctx, a.podEventPublisher, pod, resizeFuncs, true)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
 	}
@@ -273,7 +277,7 @@ func (a *targetContainerAction) notStartedWithUnknownResAction(
 	scaleConfigs scalecommon.Configurations,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).StartupPodMutationFuncAll(targetContainer)
-	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true)
+	newPod, err := a.podHelper.Patch(ctx, a.podEventPublisher, pod, resizeFuncs, true)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
 	}
@@ -302,7 +306,7 @@ func (a *targetContainerAction) startedWithUnknownResAction(
 	scaleConfigs scalecommon.Configurations,
 ) error {
 	resizeFuncs := scale.NewUpdates(scaleConfigs).PostStartupPodMutationFuncAll(targetContainer)
-	newPod, err := a.podHelper.Patch(ctx, pod, resizeFuncs, true)
+	newPod, err := a.podHelper.Patch(ctx, a.podEventPublisher, pod, resizeFuncs, true)
 	if err != nil {
 		return common.WrapErrorf(err, "unable to patch container resources")
 	}
@@ -482,7 +486,7 @@ func (a *targetContainerAction) updateStatus(
 	scaleConfigs scalecommon.Configurations,
 	failReason string,
 ) {
-	_, err := a.status.Update(ctx, pod, status, states, scaleState, scaleConfigs, failReason)
+	_, err := a.status.Update(ctx, a.podEventPublisher, pod, status, states, scaleState, scaleConfigs, failReason)
 	if err != nil {
 		logging.Errorf(ctx, err, "unable to update status (will continue)")
 	}

@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event/eventcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
@@ -29,20 +30,23 @@ import (
 
 // validation is the default implementation of podcommon.Validation.
 type validation struct {
-	status          podcommon.Status
-	podHelper       kubecommon.PodHelper
-	containerHelper kubecommon.ContainerHelper
+	status            podcommon.Status
+	podHelper         kubecommon.PodHelper
+	containerHelper   kubecommon.ContainerHelper
+	podEventPublisher eventcommon.PodEventPublisher
 }
 
 func newValidation(
 	status podcommon.Status,
 	podHelper kubecommon.PodHelper,
 	containerHelper kubecommon.ContainerHelper,
+	podEventPublisher eventcommon.PodEventPublisher,
 ) *validation {
 	return &validation{
-		status:          status,
-		podHelper:       podHelper,
-		containerHelper: containerHelper,
+		status:            status,
+		podHelper:         podHelper,
+		containerHelper:   containerHelper,
+		podEventPublisher: podEventPublisher,
 	}
 }
 
@@ -121,6 +125,7 @@ func (v *validation) updateStatusAndGetError(
 
 	_, err := v.status.Update(
 		ctx,
+		v.podEventPublisher,
 		pod,
 		ret.Error(),
 		podcommon.NewStatesAllUnknown(),

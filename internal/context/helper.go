@@ -19,6 +19,7 @@ package context
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 )
@@ -81,4 +82,19 @@ func TargetContainerStates(ctx context.Context) podcommon.States {
 	}
 
 	return ctx.Value(KeyTargetContainerStates).(podcommon.States)
+}
+
+// WithTimeoutOverride adds or replaces KeyTimeoutOverride to/in ctx.
+func WithTimeoutOverride(ctx context.Context, duration time.Duration) context.Context {
+	return context.WithValue(ctx, KeyTimeoutOverride, duration)
+}
+
+// TimeoutOverride retrieves KeyTimeoutOverride from ctx.
+func TimeoutOverride(ctx context.Context) time.Duration {
+	value := ctx.Value(KeyTimeoutOverride)
+	if value == nil {
+		return time.Duration(0)
+	}
+
+	return ctx.Value(KeyTimeoutOverride).(time.Duration)
 }

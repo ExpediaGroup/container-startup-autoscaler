@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event/eventcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/metricscommon"
@@ -60,6 +61,7 @@ func newStatus(
 // the new server representation of the pod.
 func (s *status) Update(
 	ctx context.Context,
+	podEventPublisher eventcommon.PodEventPublisher,
 	pod *v1.Pod,
 	status string,
 	states podcommon.States,
@@ -83,7 +85,13 @@ func (s *status) Update(
 		failReason,
 	)
 
-	newPod, err := s.podHelper.Patch(ctx, pod, []func(*v1.Pod) (bool, func(*v1.Pod) bool, error){mutatePodFunc}, false)
+	newPod, err := s.podHelper.Patch(
+		ctx,
+		podEventPublisher,
+		pod,
+		[]func(*v1.Pod) (bool, func(*v1.Pod) bool, error){mutatePodFunc},
+		false,
+	)
 	if err != nil {
 		return nil, common.WrapErrorf(err, "unable to patch pod")
 	}
@@ -208,8 +216,7 @@ func (s *status) podMutationFunc(
 
 		var waitCacheConditionsMetFunc func(*v1.Pod) bool
 		if shouldWaitNoConditions {
-			// Wait for Kubelet to remove conditions, which could otherwise result in spurious Kube events being
-			// emitted.
+			// Wait for Kubelet to remove conditions, which could otherwise result in spurious Kube events.
 			waitCacheConditionsMetFunc = func(currentPod *v1.Pod) bool {
 				resizeConditions := s.podHelper.ResizeConditions(currentPod)
 				isZeroConditions := len(resizeConditions) == 0

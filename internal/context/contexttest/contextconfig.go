@@ -18,6 +18,7 @@ package contexttest
 
 import (
 	"bytes"
+	"time"
 )
 
 const KeyUuid = "uuid"
@@ -26,6 +27,7 @@ type ctxConfig struct {
 	logBuffer              *bytes.Buffer
 	standardRetryAttempts  int
 	standardRetryDelaySecs int
+	timeoutOverride        time.Duration
 }
 
 func NewCtxConfig() ctxConfig {

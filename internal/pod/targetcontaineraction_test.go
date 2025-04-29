@@ -23,6 +23,7 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/controller/controllercommon"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
@@ -39,11 +40,13 @@ func TestNewTargetContainerAction(t *testing.T) {
 	config := controllercommon.ControllerConfig{}
 	podHelper := kube.NewPodHelper(nil)
 	stat := newStatus(recorder, podHelper)
-	action := newTargetContainerAction(config, stat, podHelper)
+	publisher := event.DefaultPodEventPublisher
+	action := newTargetContainerAction(config, stat, podHelper, publisher)
 	expected := &targetContainerAction{
-		controllerConfig: config,
-		status:           stat,
-		podHelper:        podHelper,
+		controllerConfig:  config,
+		status:            stat,
+		podHelper:         podHelper,
+		podEventPublisher: publisher,
 	}
 	assert.Equal(t, expected, action)
 }
@@ -337,6 +340,7 @@ func TestTargetContainerActionExecute(t *testing.T) {
 				controllercommon.ControllerConfig{ScaleWhenUnknownResources: tt.scaleWhenUnknownRes},
 				podtest.NewMockStatusWithRun(tt.configStatusMockFunc, run),
 				kubetest.NewMockPodHelper(nil),
+				nil,
 			)
 
 			if tt.wantPanicErrMsg != "" {
@@ -381,6 +385,7 @@ func TestTargetContainerActionContainerNotRunningAction(t *testing.T) {
 		controllercommon.ControllerConfig{},
 		configStatusMock,
 		kubetest.NewMockPodHelper(nil),
+		nil,
 	)
 
 	buffer := bytes.Buffer{}
@@ -404,6 +409,7 @@ func TestTargetContainerActionStartedUnknownAction(t *testing.T) {
 		controllercommon.ControllerConfig{},
 		configStatusMock,
 		kubetest.NewMockPodHelper(nil),
+		nil,
 	)
 
 	buffer := bytes.Buffer{}
@@ -422,6 +428,7 @@ func TestTargetContainerActionReadyUnknownAction(t *testing.T) {
 		controllercommon.ControllerConfig{},
 		configStatusMock,
 		kubetest.NewMockPodHelper(nil),
+		nil,
 	)
 
 	buffer := bytes.Buffer{}
@@ -440,6 +447,7 @@ func TestTargetContainerActionResUnknownAction(t *testing.T) {
 		controllercommon.ControllerConfig{},
 		configStatusMock,
 		kubetest.NewMockPodHelper(nil),
+		nil,
 	)
 
 	err := a.resUnknownAction(
@@ -479,6 +487,7 @@ func TestTargetContainerActionNotStartedWithStartupResAction(t *testing.T) {
 					func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
 					func() { statusUpdated = true },
 				),
+				nil,
 				nil,
 			)
 
@@ -536,6 +545,7 @@ func TestTargetContainerActionNotStartedWithPostStartupResAction(t *testing.T) {
 					func() { statusUpdated = true },
 				),
 				kubetest.NewMockPodHelper(tt.configPodHelperMockFunc),
+				nil,
 			)
 
 			err := a.notStartedWithPostStartupResAction(
@@ -592,6 +602,7 @@ func TestTargetContainerActionStartedWithStartupResAction(t *testing.T) {
 					func() { statusUpdated = true },
 				),
 				kubetest.NewMockPodHelper(tt.configPodHelperMockFunc),
+				nil,
 			)
 
 			err := a.startedWithStartupResAction(
@@ -641,6 +652,7 @@ func TestTargetContainerActionStartedWithPostStartupResAction(t *testing.T) {
 					func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
 					func() { statusUpdated = true },
 				),
+				nil,
 				nil,
 			)
 
@@ -698,6 +710,7 @@ func TestTargetContainerActionNotStartedWithUnknownResAction(t *testing.T) {
 					func() { statusUpdated = true },
 				),
 				kubetest.NewMockPodHelper(tt.configPodHelperMockFunc),
+				nil,
 			)
 
 			err := a.notStartedWithUnknownResAction(
@@ -754,6 +767,7 @@ func TestTargetContainerActionStartedWithUnknownResAction(t *testing.T) {
 					func() { statusUpdated = true },
 				),
 				kubetest.NewMockPodHelper(tt.configPodHelperMockFunc),
+				nil,
 			)
 
 			err := a.startedWithUnknownResAction(
@@ -950,6 +964,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 				controllercommon.ControllerConfig{},
 				podtest.NewMockStatusWithRun(tt.configStatusMockFunc, func() { statusUpdated = true }),
 				nil,
+				nil,
 			)
 
 			if tt.wantPanicErrMsg != "" {
@@ -989,6 +1004,7 @@ func TestTargetContainerActionContainerResourceConfig(t *testing.T) {
 		controllercommon.ControllerConfig{},
 		nil,
 		nil,
+		nil,
 	)
 
 	mockContainer := kubetest.NewContainerBuilder().Build()
@@ -1003,12 +1019,13 @@ func TestTargetContainerActionContainerResourceConfig(t *testing.T) {
 func TestTargetContainerActionUpdateStatus(t *testing.T) {
 	t.Run("UnableToUpdateStatus", func(t *testing.T) {
 		mockStatus := podtest.NewMockStatus(func(m *podtest.MockStatus) {
-			m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+			m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 				Return(&v1.Pod{}, errors.New(""))
 		})
 		a := newTargetContainerAction(
 			controllercommon.ControllerConfig{},
 			mockStatus,
+			nil,
 			nil,
 		)
 

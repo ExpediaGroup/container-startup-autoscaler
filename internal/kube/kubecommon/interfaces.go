@@ -19,6 +19,7 @@ package kubecommon
 import (
 	"context"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event/eventcommon"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
@@ -33,6 +34,7 @@ type PodHelper interface {
 
 	Patch(
 		ctx context.Context,
+		podEventPublisher eventcommon.PodEventPublisher,
 		pod *v1.Pod,
 		podMutationFuncs []func(podToMutate *v1.Pod) (bool, func(currentPod *v1.Pod) bool, error),
 		patchResize bool,

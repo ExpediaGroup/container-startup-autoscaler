@@ -20,6 +20,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event/eventcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/stretchr/testify/mock"
@@ -49,11 +50,12 @@ func (m *MockPodHelper) Get(ctx context.Context, name types.NamespacedName) (boo
 
 func (m *MockPodHelper) Patch(
 	ctx context.Context,
+	podEventPublisher eventcommon.PodEventPublisher,
 	pod *v1.Pod,
 	podMutationFuncs []func(podToMutate *v1.Pod) (bool, func(currentPod *v1.Pod) bool, error),
 	patchResize bool,
 ) (*v1.Pod, error) {
-	args := m.Called(ctx, pod, podMutationFuncs, patchResize)
+	args := m.Called(ctx, podEventPublisher, pod, podMutationFuncs, patchResize)
 	return args.Get(0).(*v1.Pod), args.Error(1)
 }
 
