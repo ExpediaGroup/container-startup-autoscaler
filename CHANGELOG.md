@@ -7,6 +7,7 @@
 
 ### Changed
 - Enhances informer cache synchronization with configurable conditions.
+- Move informer cache synchronization from a poll-based model to an event-based model.
 
 ### Helm Chart
 [1.7.0](charts/container-startup-autoscaler/CHANGELOG.md#170)
