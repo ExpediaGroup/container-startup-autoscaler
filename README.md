@@ -409,6 +409,7 @@ Prefixed with `csa_informercache_`:
 | Metric Name    | Type      | Labels | Description                                                                                                                               |
 |----------------|-----------|--------|-------------------------------------------------------------------------------------------------------------------------------------------|
 | `sync_timeout` | Counter   | None   | Number of informer cache sync timeouts after a pod mutation was performed via the Kubernetes API (may result in CSA status inaccuracies). |
+
 See [below](#informer-cache-sync) for more information on informer cache syncs.
 
 ## Retry
