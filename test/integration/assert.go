@@ -21,7 +21,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 )
@@ -29,7 +29,7 @@ import (
 func assertStartupEnacted(
 	t *testing.T,
 	annotations csaQuantityAnnotations,
-	podStatusAnn map[*v1.Pod]pod.StatusAnnotation,
+	podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation,
 	expectStartupProbe bool,
 	expectReadinessProbe bool,
 	expectStatusScaleCommandedEnacted bool,
@@ -130,7 +130,7 @@ func assertStartupEnacted(
 func assertPostStartupEnacted(
 	t *testing.T,
 	annotations csaQuantityAnnotations,
-	podStatusAnn map[*v1.Pod]pod.StatusAnnotation,
+	podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation,
 	expectStartupProbe bool,
 	expectReadinessProbe bool,
 ) {

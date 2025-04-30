@@ -27,7 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type podBuilder struct {
+type PodBuilder struct {
 	enabledResources            []v1.ResourceName
 	resourcesState              podcommon.StateResources
 	stateStarted                podcommon.StateBool
@@ -39,11 +39,11 @@ type podBuilder struct {
 	nilContainerStatusStarted   bool
 	nilContainerStatusResources bool
 
-	containerCustomizerFunc func(*containerBuilder)
+	containerCustomizerFunc func(*ContainerBuilder)
 }
 
-func NewPodBuilder() *podBuilder {
-	b := &podBuilder{}
+func NewPodBuilder() *PodBuilder {
+	b := &PodBuilder{}
 	b.EnabledResourcesAll()
 	b.ResourcesState(podcommon.StateResourcesStartup)
 	b.StateStarted(podcommon.StateBoolFalse)
@@ -53,125 +53,125 @@ func NewPodBuilder() *podBuilder {
 	return b
 }
 
-func (b *podBuilder) EnabledResources(enabledResources []v1.ResourceName) *podBuilder {
+func (b *PodBuilder) EnabledResources(enabledResources []v1.ResourceName) *PodBuilder {
 	b.enabledResources = enabledResources
 	return b
 }
 
-func (b *podBuilder) EnabledResourcesAll() *podBuilder {
+func (b *PodBuilder) EnabledResourcesAll() *PodBuilder {
 	b.enabledResources = []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory}
 	return b
 }
 
-func (b *podBuilder) EnabledResourcesNone() *podBuilder {
+func (b *PodBuilder) EnabledResourcesNone() *PodBuilder {
 	b.enabledResources = []v1.ResourceName{}
 	return b
 }
 
-func (b *podBuilder) ResourcesState(resourcesState podcommon.StateResources) *podBuilder {
+func (b *PodBuilder) ResourcesState(resourcesState podcommon.StateResources) *PodBuilder {
 	b.resourcesState = resourcesState
 	return b
 }
 
-func (b *podBuilder) StateStarted(stateStarted podcommon.StateBool) *podBuilder {
+func (b *PodBuilder) StateStarted(stateStarted podcommon.StateBool) *PodBuilder {
 	b.stateStarted = stateStarted
 	return b
 }
 
-func (b *podBuilder) StateReady(stateReady podcommon.StateBool) *podBuilder {
+func (b *PodBuilder) StateReady(stateReady podcommon.StateBool) *PodBuilder {
 	b.stateReady = stateReady
 	return b
 }
 
-func (b *podBuilder) ResizeConditions(conditions ...v1.PodCondition) *podBuilder {
+func (b *PodBuilder) ResizeConditions(conditions ...v1.PodCondition) *PodBuilder {
 	b.resizeConditions = conditions
 	return b
 }
 
-func (b *podBuilder) ResizeConditionsNotStartedOrCompletedNoConditions() *podBuilder {
+func (b *PodBuilder) ResizeConditionsNotStartedOrCompletedNoConditions() *PodBuilder {
 	b.resizeConditions = PodResizeConditionsNotStartedOrCompletedNoConditions
 	return b
 }
 
-func (b *podBuilder) ResizeConditionsNotStartedOrCompletedResizeInProgressTrue() *podBuilder {
+func (b *PodBuilder) ResizeConditionsNotStartedOrCompletedResizeInProgressTrue() *PodBuilder {
 	b.resizeConditions = PodResizeConditionsNotStartedOrCompletedResizeInProgressTrue
 	return b
 }
 
-func (b *podBuilder) ResizeConditionsInProgress() *podBuilder {
+func (b *PodBuilder) ResizeConditionsInProgress() *PodBuilder {
 	b.resizeConditions = PodResizeConditionsInProgress
 	return b
 }
 
-func (b *podBuilder) ResizeConditionsDeferred(message string) *podBuilder {
+func (b *PodBuilder) ResizeConditionsDeferred(message string) *PodBuilder {
 	b.resizeConditions = PodResizeConditionsDeferred
 	b.resizeConditions[0].Message = message
 	return b
 }
 
-func (b *podBuilder) ResizeConditionsInfeasible(message string) *podBuilder {
+func (b *PodBuilder) ResizeConditionsInfeasible(message string) *PodBuilder {
 	b.resizeConditions = PodResizeConditionsInfeasible
 	b.resizeConditions[0].Message = message
 	return b
 }
 
-func (b *podBuilder) ResizeConditionsError(message string) *podBuilder {
+func (b *PodBuilder) ResizeConditionsError(message string) *PodBuilder {
 	b.resizeConditions = PodResizeConditionsError
 	b.resizeConditions[0].Message = message
 	return b
 }
 
-func (b *podBuilder) ResizeConditionsUnknownPending() *podBuilder {
+func (b *PodBuilder) ResizeConditionsUnknownPending() *PodBuilder {
 	b.resizeConditions = PodResizeConditionsUnknownPending
 	return b
 }
 
-func (b *podBuilder) ResizeConditionsUnknownInProgress() *podBuilder {
+func (b *PodBuilder) ResizeConditionsUnknownInProgress() *PodBuilder {
 	b.resizeConditions = PodResizeConditionsUnknownInProgress
 	return b
 }
 
-func (b *podBuilder) ResizeConditionsUnknownConditions() *podBuilder {
+func (b *PodBuilder) ResizeConditionsUnknownConditions() *PodBuilder {
 	b.resizeConditions = PodResizeConditionsUnknownConditions
 	return b
 }
 
-func (b *podBuilder) QOSClass(qosClass v1.PodQOSClass) *podBuilder {
+func (b *PodBuilder) QOSClass(qosClass v1.PodQOSClass) *PodBuilder {
 	b.qosClass = qosClass
 	return b
 }
 
-func (b *podBuilder) QOSClassNotPresent() *podBuilder {
+func (b *PodBuilder) QOSClassNotPresent() *PodBuilder {
 	b.qosClass = ""
 	return b
 }
 
-func (b *podBuilder) AdditionalLabels(labels map[string]string) *podBuilder {
+func (b *PodBuilder) AdditionalLabels(labels map[string]string) *PodBuilder {
 	b.additionalLabels = labels
 	return b
 }
 
-func (b *podBuilder) AdditionalAnnotations(annotations map[string]string) *podBuilder {
+func (b *PodBuilder) AdditionalAnnotations(annotations map[string]string) *PodBuilder {
 	b.additionalAnnotations = annotations
 	return b
 }
 
-func (b *podBuilder) NilContainerStatusStarted(nilContainerStatusStarted bool) *podBuilder {
+func (b *PodBuilder) NilContainerStatusStarted(nilContainerStatusStarted bool) *PodBuilder {
 	b.nilContainerStatusStarted = nilContainerStatusStarted
 	return b
 }
 
-func (b *podBuilder) NilContainerStatusResources(nilContainerStatusResources bool) *podBuilder {
+func (b *PodBuilder) NilContainerStatusResources(nilContainerStatusResources bool) *PodBuilder {
 	b.nilContainerStatusResources = nilContainerStatusResources
 	return b
 }
 
-func (b *podBuilder) ContainerCustomizerFunc(containerCustomizerFunc func(*containerBuilder)) *podBuilder {
+func (b *PodBuilder) ContainerCustomizerFunc(containerCustomizerFunc func(*ContainerBuilder)) *PodBuilder {
 	b.containerCustomizerFunc = containerCustomizerFunc
 	return b
 }
 
-func (b *podBuilder) Build() *v1.Pod {
+func (b *PodBuilder) Build() *v1.Pod {
 	p := b.pod()
 
 	if b.nilContainerStatusStarted {
@@ -185,7 +185,7 @@ func (b *podBuilder) Build() *v1.Pod {
 	return p
 }
 
-func (b *podBuilder) pod() *v1.Pod {
+func (b *PodBuilder) pod() *v1.Pod {
 	var labels = make(map[string]string)
 	labels[kubecommon.LabelEnabled] = DefaultLabelEnabledValue
 

@@ -17,6 +17,6 @@ limitations under the License.
 package logging
 
 const (
-	KeyTargetContainerName   = "targetname"
-	KeyTargetContainerStates = "targetstates"
+	keyTargetContainerName   = "targetname"
+	keyTargetContainerStates = "targetstates"
 )

@@ -28,35 +28,35 @@ import (
 	"github.com/tonglil/buflogr"
 )
 
-type ctxBuilder struct {
-	config ctxConfig
+type CtxBuilder struct {
+	config CtxConfig
 }
 
-func NewCtxBuilder(config ctxConfig) *ctxBuilder {
-	return &ctxBuilder{config: config}
+func NewCtxBuilder(config CtxConfig) *CtxBuilder {
+	return &CtxBuilder{config: config}
 }
 
-func (b *ctxBuilder) LogBuffer(logBuffer *bytes.Buffer) *ctxBuilder {
+func (b *CtxBuilder) LogBuffer(logBuffer *bytes.Buffer) *CtxBuilder {
 	b.config.logBuffer = logBuffer
 	return b
 }
 
-func (b *ctxBuilder) StandardRetryAttempts(standardRetryAttempts int) *ctxBuilder {
+func (b *CtxBuilder) StandardRetryAttempts(standardRetryAttempts int) *CtxBuilder {
 	b.config.standardRetryAttempts = standardRetryAttempts
 	return b
 }
 
-func (b *ctxBuilder) StandardRetryDelaySecs(standardRetryDelaySecs int) *ctxBuilder {
+func (b *CtxBuilder) StandardRetryDelaySecs(standardRetryDelaySecs int) *CtxBuilder {
 	b.config.standardRetryDelaySecs = standardRetryDelaySecs
 	return b
 }
 
-func (b *ctxBuilder) TimeoutOverride(timeoutOverride time.Duration) *ctxBuilder {
+func (b *CtxBuilder) TimeoutOverride(timeoutOverride time.Duration) *CtxBuilder {
 	b.config.timeoutOverride = timeoutOverride
 	return b
 }
 
-func (b *ctxBuilder) Build() context.Context {
+func (b *CtxBuilder) Build() context.Context {
 	var c context.Context
 
 	if b.config.logBuffer == nil {

@@ -16,4 +16,4 @@ limitations under the License.
 
 package pod
 
-var KnownVpaAnnotations = []string{"vpaObservedContainers", "vpaUpdates"}
+var knownVpaAnnotations = []string{"vpaObservedContainers", "vpaUpdates"}

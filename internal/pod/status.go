@@ -111,7 +111,7 @@ func (s *status) podMutationFunc(
 	return func(podToMutate *v1.Pod) (bool, func(*v1.Pod) bool, error) {
 		shouldWaitNoConditions := false
 		currentStat, gotStatAnn := s.currentOrEmptyStatus(ctx, podToMutate)
-		statScale := NewEmptyStatusAnnotationScale(scaleConfigs.AllEnabledConfigurationsResourceNames())
+		statScale := podcommon.NewEmptyStatusAnnotationScale(scaleConfigs.AllEnabledConfigurationsResourceNames())
 
 		setTimestamps := func(lastCommanded, lastEnacted, lastFailed string) {
 			statScale.LastCommanded = lastCommanded
@@ -171,7 +171,7 @@ func (s *status) podMutationFunc(
 			panic(fmt.Errorf("scaleState '%s' not supported", scaleState))
 		}
 
-		newStat := NewStatusAnnotation(common.CapitalizeFirstChar(status), statScale, s.formattedNow(timeFormatMilli))
+		newStat := podcommon.NewStatusAnnotation(common.CapitalizeFirstChar(status), statScale, s.formattedNow(timeFormatMilli))
 		if gotStatAnn && newStat.Equal(currentStat) {
 			logging.Infof(ctx, logging.VDebug, "status annotation not changed so will not patch")
 			return false, nil, nil
@@ -186,16 +186,16 @@ func (s *status) podMutationFunc(
 // currentOrEmptyStatus returns either the current unmarshalled status or an empty status depending on whether the
 // status annotation is present and whether it can be unmarshalled. It also returns a boolean indicating whether the
 // status annotation was present in the first place.
-func (s *status) currentOrEmptyStatus(ctx context.Context, pod *v1.Pod) (StatusAnnotation, bool) {
-	stat := NewEmptyStatusAnnotation()
+func (s *status) currentOrEmptyStatus(ctx context.Context, pod *v1.Pod) (podcommon.StatusAnnotation, bool) {
+	stat := podcommon.NewEmptyStatusAnnotation()
 	currentStatAnn, gotStatAnn := pod.Annotations[kubecommon.AnnotationStatus]
 
 	if gotStatAnn {
 		var err error
-		stat, err = StatusAnnotationFromString(currentStatAnn)
+		stat, err = podcommon.StatusAnnotationFromString(currentStatAnn)
 		if err != nil {
 			logging.Errorf(ctx, err, "unable to get status annotation from string (will ignore)")
-			stat = NewEmptyStatusAnnotation()
+			stat = podcommon.NewEmptyStatusAnnotation()
 			gotStatAnn = false
 		}
 	}

@@ -96,7 +96,7 @@ func TestValidationValidate(t *testing.T) {
 				m.UpdateDefaultAndRun(run)
 			},
 			func(m *kubetest.MockPodHelper) {
-				m.On("HasAnnotation", mock.Anything, KnownVpaAnnotations[0]).Return(true, "")
+				m.On("HasAnnotation", mock.Anything, knownVpaAnnotations[0]).Return(true, "")
 				m.ExpectedLabelValueAsDefault()
 			},
 			nil,
@@ -252,7 +252,7 @@ func TestValidationValidate(t *testing.T) {
 				configs,
 			)
 			if tt.wantErrMsg != "" {
-				assert.True(t, errors.As(err, &ValidationError{}))
+				assert.True(t, errors.As(err, &validationError{}))
 				assert.ErrorContains(t, err, tt.wantErrMsg)
 			} else {
 				assert.NoError(t, err)

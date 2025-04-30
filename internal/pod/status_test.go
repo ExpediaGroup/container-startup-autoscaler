@@ -120,7 +120,7 @@ func TestStatusUpdateCore(t *testing.T) {
 		assert.NoError(t, err)
 		ann, gotAnn := got.Annotations[kubecommon.AnnotationStatus]
 		assert.True(t, gotAnn)
-		stat := &StatusAnnotation{}
+		stat := &podcommon.StatusAnnotation{}
 		_ = json.Unmarshal([]byte(ann), stat)
 		assert.Equal(t, "Test", stat.Status)
 		assert.NotEmpty(t, stat.LastUpdated)
@@ -155,7 +155,7 @@ func TestStatusUpdateCore(t *testing.T) {
 		assert.NoError(t, err)
 		ann, gotAnn := got.Annotations[kubecommon.AnnotationStatus]
 		assert.True(t, gotAnn)
-		stat := &StatusAnnotation{}
+		stat := &podcommon.StatusAnnotation{}
 		_ = json.Unmarshal([]byte(ann), stat)
 		assert.Equal(t, "Test", stat.Status)
 		assert.NotEmpty(t, stat.LastUpdated)
@@ -178,9 +178,9 @@ func TestStatusUpdateCore(t *testing.T) {
 			),
 		)
 
-		previousStat := NewStatusAnnotation(
+		previousStat := podcommon.NewStatusAnnotation(
 			"Test",
-			NewEmptyStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}),
+			podcommon.NewEmptyStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}),
 			"",
 		).Json()
 		got, err := s.Update(
@@ -195,7 +195,7 @@ func TestStatusUpdateCore(t *testing.T) {
 		)
 		assert.NoError(t, err)
 
-		stat := &StatusAnnotation{}
+		stat := &podcommon.StatusAnnotation{}
 		_ = json.Unmarshal([]byte(got.Annotations[kubecommon.AnnotationStatus]), stat)
 		assert.Empty(t, stat.LastUpdated)
 	})
@@ -459,7 +459,7 @@ func TestStatusUpdateScaleStatus(t *testing.T) {
 			)
 			assert.NoError(t, err)
 
-			stat := &StatusAnnotation{}
+			stat := &podcommon.StatusAnnotation{}
 			_ = json.Unmarshal([]byte(got.Annotations[kubecommon.AnnotationStatus]), stat)
 			if tt.wantLastScaleCommanded {
 				assert.NotEmpty(t, stat.Scale.LastCommanded)
@@ -597,9 +597,9 @@ func statusAnnotationString(lastCommanded bool, lastEnacted bool, lastFailed boo
 		lastFailedString = now
 	}
 
-	return NewStatusAnnotation(
+	return podcommon.NewStatusAnnotation(
 		"test",
-		NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, lastCommandedString, lastEnactedString, lastFailedString),
+		podcommon.NewStatusAnnotationScale([]v1.ResourceName{v1.ResourceCPU}, lastCommandedString, lastEnactedString, lastFailedString),
 		now,
 	).Json()
 }

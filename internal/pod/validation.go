@@ -67,7 +67,7 @@ func (v *validation) Validate(
 	}
 
 	// Ensure pod is not managed by a VPA (not currently compatible).
-	for _, ann := range KnownVpaAnnotations {
+	for _, ann := range knownVpaAnnotations {
 		has, _ := v.podHelper.HasAnnotation(pod, ann)
 		if has {
 			return nil, v.updateStatusAndGetError(
@@ -121,7 +121,7 @@ func (v *validation) updateStatusAndGetError(
 	cause error,
 	scaleConfigs scalecommon.Configurations,
 ) error {
-	ret := NewValidationError(errMessage, cause)
+	ret := newValidationError(errMessage, cause)
 
 	_, err := v.status.Update(
 		ctx,

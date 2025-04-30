@@ -20,24 +20,24 @@ import (
 	"fmt"
 )
 
-// ValidationError is an error that indicates validation failed. It wraps another error.
-type ValidationError struct {
+// validationError is an error that indicates validation failed. It wraps another error.
+type validationError struct {
 	message string
 	wrapped error
 }
 
-func NewValidationError(message string, toWrap error) error {
+func newValidationError(message string, toWrap error) error {
 	if toWrap == nil {
-		return ValidationError{message: message}
+		return validationError{message: message}
 	}
 
-	return ValidationError{
+	return validationError{
 		message: message,
 		wrapped: toWrap,
 	}
 }
 
-func (e ValidationError) Error() string {
+func (e validationError) Error() string {
 	if e.wrapped == nil {
 		return "validation error: " + e.message
 	}
@@ -45,6 +45,6 @@ func (e ValidationError) Error() string {
 	return fmt.Errorf("validation error: %s: %w", e.message, e.wrapped).Error()
 }
 
-func (e ValidationError) Unwrap() error {
+func (e validationError) Unwrap() error {
 	return e.wrapped
 }

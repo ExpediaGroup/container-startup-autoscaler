@@ -25,8 +25,8 @@ import (
 )
 
 func TestNewValidationError(t *testing.T) {
-	err := NewValidationError("test", errors.New(""))
-	expected := ValidationError{
+	err := newValidationError("test", errors.New(""))
+	expected := validationError{
 		message: "test",
 		wrapped: errors.New(""),
 	}
@@ -37,12 +37,12 @@ func TestValidationErrorError(t *testing.T) {
 	t.Run("Wrapped", func(t *testing.T) {
 		err1 := errors.New("err1")
 		err2 := common.WrapErrorf(err1, "err2")
-		e := NewValidationError("err3", err2)
+		e := newValidationError("err3", err2)
 		assert.Equal(t, "validation error: err3: err2: err1", e.Error())
 	})
 
 	t.Run("NotWrapped", func(t *testing.T) {
-		e := NewValidationError("test", nil)
+		e := newValidationError("test", nil)
 		assert.Equal(t, "validation error: test", e.Error())
 	})
 }
