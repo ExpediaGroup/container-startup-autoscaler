@@ -229,7 +229,6 @@ func (s *status) waitConditionFunc(
 		msgFormat := "evaluating status updated on rv %s - match: %t"
 		logging.Infof(ctx, logging.VTrace, msgFormat, currentPod.ResourceVersion, doesStatusMatch)
 		return doesStatusMatch
-
 	}
 }
 
