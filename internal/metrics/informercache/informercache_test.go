@@ -43,15 +43,6 @@ func TestResetMetrics(t *testing.T) {
 	assert.Equal(t, float64(0), value)
 }
 
-func TestPatchSyncPoll(t *testing.T) {
-	m := SyncPoll().(prometheus.Metric)
-	assert.Contains(
-		t,
-		m.Desc().String(),
-		fmt.Sprintf("%s_%s_%s", metricscommon.Namespace, Subsystem, syncPollName),
-	)
-}
-
 func TestPatchSyncTimeout(t *testing.T) {
 	m := SyncTimeout()
 	assert.Contains(

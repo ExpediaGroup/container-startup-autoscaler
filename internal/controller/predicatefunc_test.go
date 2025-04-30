@@ -18,7 +18,10 @@ package controller
 
 import (
 	"testing"
+	"time"
 
+	csaevent "github.com/ExpediaGroup/container-startup-autoscaler/internal/event"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event/eventcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/reconciler"
 	"github.com/stretchr/testify/assert"
@@ -29,11 +32,53 @@ import (
 )
 
 func TestPredicateCreateFunc(t *testing.T) {
-	assert.True(t, PredicateCreateFunc(event.TypedCreateEvent[*v1.Pod]{}))
+	namespace := "namespace"
+	name := "name"
+	podEventCh := csaevent.DefaultPodEventPublisher.Subscribe(
+		namespace,
+		name,
+		[]eventcommon.PodEventType{eventcommon.PodEventTypeCreate},
+	)
+	pod := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	evt := event.TypedCreateEvent[*v1.Pod]{Object: pod}
+	assert.True(t, PredicateCreateFunc(evt))
+	select {
+	case podEvent := <-podEventCh:
+		assert.Equal(t, eventcommon.PodEventTypeCreate, podEvent.EventType)
+		assert.Same(t, pod, podEvent.Pod)
+	case <-time.After(500 * time.Millisecond):
+		t.Fatalf("event not generated")
+	}
 }
 
 func TestPredicateDeleteFunc(t *testing.T) {
-	assert.False(t, PredicateDeleteFunc(event.TypedDeleteEvent[*v1.Pod]{}))
+	namespace := "namespace"
+	name := "name"
+	podEventCh := csaevent.DefaultPodEventPublisher.Subscribe(
+		namespace,
+		name,
+		[]eventcommon.PodEventType{eventcommon.PodEventTypeDelete},
+	)
+	pod := &v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+	}
+	evt := event.TypedDeleteEvent[*v1.Pod]{Object: pod}
+	assert.False(t, PredicateDeleteFunc(evt))
+	select {
+	case podEvent := <-podEventCh:
+		assert.Equal(t, eventcommon.PodEventTypeDelete, podEvent.EventType)
+		assert.Same(t, pod, podEvent.Pod)
+	case <-time.After(500 * time.Millisecond):
+		t.Fatalf("event not generated")
+	}
 }
 
 func TestPredicateUpdateFunc(t *testing.T) {
@@ -94,6 +139,42 @@ func TestPredicateUpdateFunc(t *testing.T) {
 			ObjectNew: newPod,
 		}
 		assert.True(t, PredicateUpdateFunc(evt))
+	})
+
+	t.Run("Subscriber", func(t *testing.T) {
+		namespace := "namespace"
+		name := "name"
+		podEventCh := csaevent.DefaultPodEventPublisher.Subscribe(
+			namespace,
+			name,
+			[]eventcommon.PodEventType{eventcommon.PodEventTypeUpdate},
+		)
+		oldPod := &v1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            name,
+				Namespace:       namespace,
+				ResourceVersion: "1",
+			},
+		}
+		newPod := &v1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            name,
+				Namespace:       namespace,
+				ResourceVersion: "1",
+			},
+		}
+		evt := event.TypedUpdateEvent[*v1.Pod]{
+			ObjectOld: oldPod,
+			ObjectNew: newPod,
+		}
+		_ = PredicateUpdateFunc(evt)
+		select {
+		case podEvent := <-podEventCh:
+			assert.Equal(t, eventcommon.PodEventTypeUpdate, podEvent.EventType)
+			assert.Same(t, newPod, podEvent.Pod)
+		case <-time.After(500 * time.Millisecond):
+			t.Fatalf("event not generated")
+		}
 	})
 }
 

@@ -18,6 +18,8 @@ package controller
 
 import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
+	csaevent "github.com/ExpediaGroup/container-startup-autoscaler/internal/event"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event/eventcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/metrics/reconciler"
 	"k8s.io/api/core/v1"
@@ -50,16 +52,29 @@ import (
 
 	- See https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/predicate for information on controller-runtime
 	  predicates.
+
+	- All predicate functions publish events to an event publisher, which reconcile logic can subscribe to if there's a
+	  need to observe events during operation.
 */
 
 // PredicateCreateFunc returns whether create events should be reconciled.
-func PredicateCreateFunc(_ event.TypedCreateEvent[*v1.Pod]) bool {
+func PredicateCreateFunc(event event.TypedCreateEvent[*v1.Pod]) bool {
+	csaevent.DefaultPodEventPublisher.Publish(
+		nil,
+		eventcommon.NewPodEvent(eventcommon.PodEventTypeCreate, event.Object),
+	)
+
 	// Never filter.
 	return true
 }
 
 // PredicateDeleteFunc returns whether delete events should be reconciled.
-func PredicateDeleteFunc(_ event.TypedDeleteEvent[*v1.Pod]) bool {
+func PredicateDeleteFunc(event event.TypedDeleteEvent[*v1.Pod]) bool {
+	csaevent.DefaultPodEventPublisher.Publish(
+		nil,
+		eventcommon.NewPodEvent(eventcommon.PodEventTypeDelete, event.Object),
+	)
+
 	// Don't need to reconcile deletes.
 	return false
 }
@@ -68,6 +83,11 @@ func PredicateDeleteFunc(_ event.TypedDeleteEvent[*v1.Pod]) bool {
 func PredicateUpdateFunc(event event.TypedUpdateEvent[*v1.Pod]) bool {
 	oldPod := event.ObjectOld
 	newPod := event.ObjectNew
+
+	csaevent.DefaultPodEventPublisher.Publish(
+		nil,
+		eventcommon.NewPodEvent(eventcommon.PodEventTypeUpdate, newPod),
+	)
 
 	if oldPod.ResourceVersion == newPod.ResourceVersion {
 		// Shouldn't really find ourselves here...

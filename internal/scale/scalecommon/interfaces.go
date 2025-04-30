@@ -134,22 +134,22 @@ type Update interface {
 
 	StartupPodMutationFunc(
 		container *v1.Container,
-	) func(*v1.Pod) (bool, error)
+	) func(podToMutate *v1.Pod) (bool, func(currentPod *v1.Pod) bool, error)
 
 	PostStartupPodMutationFunc(
 		container *v1.Container,
-	) func(*v1.Pod) (bool, error)
+	) func(podToMutate *v1.Pod) (bool, func(currentPod *v1.Pod) bool, error)
 }
 
 // Updates performs operations upon an Update collection.
 type Updates interface {
 	StartupPodMutationFuncAll(
 		container *v1.Container,
-	) []func(*v1.Pod) (bool, error)
+	) []func(podToMutate *v1.Pod) (bool, func(currentPod *v1.Pod) bool, error)
 
 	PostStartupPodMutationFuncAll(
 		container *v1.Container,
-	) []func(*v1.Pod) (bool, error)
+	) []func(podToMutate *v1.Pod) (bool, func(currentPod *v1.Pod) bool, error)
 
 	UpdateFor(
 		resourceName v1.ResourceName,

@@ -19,6 +19,7 @@ package podtest
 import (
 	"context"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event/eventcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"github.com/stretchr/testify/mock"
@@ -53,6 +54,7 @@ func NewMockStatusWithRun(configFunc func(*MockStatus, func()), run func()) *Moc
 
 func (m *MockStatus) Update(
 	ctx context.Context,
+	podEventPublisher eventcommon.PodEventPublisher,
 	pod *v1.Pod,
 	status string,
 	states podcommon.States,
@@ -60,17 +62,17 @@ func (m *MockStatus) Update(
 	scaleConfigs scalecommon.Configurations,
 	failReason string,
 ) (*v1.Pod, error) {
-	args := m.Called(ctx, pod, status, states, statusScaleState, scaleConfigs, failReason)
+	args := m.Called(ctx, podEventPublisher, pod, status, states, statusScaleState, scaleConfigs, failReason)
 	return args.Get(0).(*v1.Pod), args.Error(1)
 }
 
 func (m *MockStatus) UpdateDefault() {
-	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(&v1.Pod{}, nil)
 }
 
 func (m *MockStatus) UpdateDefaultAndRun(run func()) {
-	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+	m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(&v1.Pod{}, nil).
 		Run(func(args mock.Arguments) { run() })
 }

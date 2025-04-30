@@ -19,6 +19,7 @@ package podcommon
 import (
 	"context"
 
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event/eventcommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	v1 "k8s.io/api/core/v1"
 )
@@ -65,6 +66,7 @@ type TargetContainerAction interface {
 type Status interface {
 	Update(
 		ctx context.Context,
+		podEventPublisher eventcommon.PodEventPublisher,
 		pod *v1.Pod,
 		status string,
 		states States,

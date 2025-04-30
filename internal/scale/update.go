@@ -44,48 +44,48 @@ func (u *update) ResourceName() v1.ResourceName {
 }
 
 // StartupPodMutationFunc returns a function that mutates a pod to apply startup resources for the resource.
-func (u *update) StartupPodMutationFunc(container *v1.Container) func(pod *v1.Pod) (bool, error) {
+func (u *update) StartupPodMutationFunc(container *v1.Container) func(*v1.Pod) (bool, func(*v1.Pod) bool, error) {
 	if !u.config.IsEnabled() {
-		return func(pod *v1.Pod) (bool, error) {
-			return false, nil
+		return func(*v1.Pod) (bool, func(*v1.Pod) bool, error) {
+			return false, nil, nil
 		}
 	}
 
-	return func(pod *v1.Pod) (bool, error) {
+	return func(podToMutate *v1.Pod) (bool, func(*v1.Pod) bool, error) {
 		err := u.setResources(
-			pod,
+			podToMutate,
 			container,
 			u.config.Resources().Startup,
 			u.config.Resources().Startup,
 		)
 		if err != nil {
-			return false, common.WrapErrorf(err, "unable to set %s startup resources", u.resourceName)
+			return false, nil, common.WrapErrorf(err, "unable to set %s startup resources", u.resourceName)
 		}
 
-		return true, nil
+		return true, nil, nil
 	}
 }
 
 // PostStartupPodMutationFunc returns a function that mutates a pod to apply post-startup resources for the resource.
-func (u *update) PostStartupPodMutationFunc(container *v1.Container) func(pod *v1.Pod) (bool, error) {
+func (u *update) PostStartupPodMutationFunc(container *v1.Container) func(*v1.Pod) (bool, func(*v1.Pod) bool, error) {
 	if !u.config.IsEnabled() {
-		return func(pod *v1.Pod) (bool, error) {
-			return false, nil
+		return func(*v1.Pod) (bool, func(*v1.Pod) bool, error) {
+			return false, nil, nil
 		}
 	}
 
-	return func(pod *v1.Pod) (bool, error) {
+	return func(podToMutate *v1.Pod) (bool, func(*v1.Pod) bool, error) {
 		err := u.setResources(
-			pod,
+			podToMutate,
 			container,
 			u.config.Resources().PostStartupRequests,
 			u.config.Resources().PostStartupLimits,
 		)
 		if err != nil {
-			return false, common.WrapErrorf(err, "unable to set %s post-startup resources", u.resourceName)
+			return false, nil, common.WrapErrorf(err, "unable to set %s post-startup resources", u.resourceName)
 		}
 
-		return true, nil
+		return true, nil, nil
 	}
 }
 

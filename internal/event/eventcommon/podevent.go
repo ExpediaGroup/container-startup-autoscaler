@@ -14,12 +14,31 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package context
+package eventcommon
+
+import "k8s.io/api/core/v1"
+
+// PodEventType indicates the type of pod event.
+type PodEventType string
 
 const (
-	KeyStandardRetryAttempts  = "rattempts"
-	KeyStandardRetryDelaySecs = "rdelaysecs"
-	KeyTargetContainerName    = "cname"
-	KeyTargetContainerStates  = "cstates"
-	KeyTimeoutOverride        = "toverride"
+	PodEventTypeCreate PodEventType = "create"
+	PodEventTypeDelete PodEventType = "delete"
+	PodEventTypeUpdate PodEventType = "update"
 )
+
+// PodEvent represents a pod event triggered via a Kubernetes watch.
+type PodEvent struct {
+	EventType PodEventType
+	Pod       *v1.Pod
+}
+
+func NewPodEvent(
+	eventType PodEventType,
+	pod *v1.Pod,
+) PodEvent {
+	return PodEvent{
+		EventType: eventType,
+		Pod:       pod,
+	}
+}

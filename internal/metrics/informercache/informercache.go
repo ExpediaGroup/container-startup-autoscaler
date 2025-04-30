@@ -27,30 +27,20 @@ const (
 )
 
 const (
-	syncPollName    = "sync_poll"
 	syncTimeoutName = "sync_timeout"
 )
 
 var (
-	syncPoll = prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: metricscommon.Namespace,
-		Subsystem: Subsystem,
-		Name:      syncPollName,
-		Help:      "Number of informer cache sync polls after a pod mutation was performed via the Kube API",
-		Buckets:   []float64{1, 2, 4, 8, 16, 32, 64},
-	}, []string{})
-
 	syncTimeout = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: metricscommon.Namespace,
 		Subsystem: Subsystem,
 		Name:      syncTimeoutName,
-		Help:      "Number of informer cache sync timeouts after a pod mutation was performed via the Kube API (may result in inconsistent CSA status updates)",
+		Help:      "Number of informer cache sync timeouts after a pod mutation was performed via the Kubernetes API (may result in CSA status inaccuracies)",
 	}, []string{})
 )
 
 // allMetrics must include all metrics defined above.
 var allMetrics = []prometheus.Collector{
-	syncPoll,
 	syncTimeout,
 }
 
@@ -60,10 +50,6 @@ func RegisterMetrics(registry metrics.RegistererGatherer) {
 
 func ResetMetrics() {
 	metricscommon.ResetMetrics(allMetrics)
-}
-
-func SyncPoll() prometheus.Observer {
-	return syncPoll.WithLabelValues()
 }
 
 func SyncTimeout() prometheus.Counter {

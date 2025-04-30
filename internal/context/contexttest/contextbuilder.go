@@ -19,6 +19,7 @@ package contexttest
 import (
 	"bytes"
 	"context"
+	"time"
 
 	context2 "github.com/ExpediaGroup/container-startup-autoscaler/internal/context"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/logging"
@@ -50,6 +51,11 @@ func (b *ctxBuilder) StandardRetryDelaySecs(standardRetryDelaySecs int) *ctxBuil
 	return b
 }
 
+func (b *ctxBuilder) TimeoutOverride(timeoutOverride time.Duration) *ctxBuilder {
+	b.config.timeoutOverride = timeoutOverride
+	return b
+}
+
 func (b *ctxBuilder) Build() context.Context {
 	var c context.Context
 
@@ -61,7 +67,13 @@ func (b *ctxBuilder) Build() context.Context {
 	}
 
 	c = context.WithValue(c, KeyUuid, uuid.New().String())
+	if b.config.standardRetryAttempts == 0 {
+		b.config.standardRetryAttempts = 1
+	}
 	c = context.WithValue(c, context2.KeyStandardRetryAttempts, b.config.standardRetryAttempts)
 	c = context.WithValue(c, context2.KeyStandardRetryDelaySecs, b.config.standardRetryDelaySecs)
+	if b.config.timeoutOverride != 0 {
+		c = context.WithValue(c, context2.KeyTimeoutOverride, b.config.timeoutOverride)
+	}
 	return c
 }

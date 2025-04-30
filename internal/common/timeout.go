@@ -14,12 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package context
+package common
 
 const (
-	KeyStandardRetryAttempts  = "rattempts"
-	KeyStandardRetryDelaySecs = "rdelaysecs"
-	KeyTargetContainerName    = "cname"
-	KeyTargetContainerStates  = "cstates"
-	KeyTimeoutOverride        = "toverride"
+	WaitForCacheUpdateMaxWaitSecs     = 3
+	SubscriberChannelWriteTimeoutSecs = 3
 )

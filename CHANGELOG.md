@@ -2,6 +2,27 @@
 - Based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.8.0
+2025-04-29
+
+### Changed
+- Enhance informer cache synchronization with configurable conditions.
+- Move informer cache synchronization from a poll-based model to an event-based model.
+
+### Helm Chart
+[1.7.0](charts/container-startup-autoscaler/CHANGELOG.md#170)
+
+### Kubernetes Compatibility
+| Kubernetes Version | Compatible? | `In-place Update of Pod Resources` State |
+|:------------------:|:-----------:|:----------------------------------------:|
+|        1.33        |     ✔️      |                   Beta                   |
+|        1.32        |      ❌      |                  Alpha                   |
+|        1.31        |      ❌      |                  Alpha                   |
+|        1.30        |      ❌      |                  Alpha                   |
+|        1.29        |      ❌      |                  Alpha                   |
+|        1.28        |      ❌      |                  Alpha                   |
+|        1.27        |      ❌      |                  Alpha                   |
+
 ## 0.7.0
 2025-04-25
 

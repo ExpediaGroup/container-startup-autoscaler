@@ -19,6 +19,7 @@ package context
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/stretchr/testify/assert"
@@ -96,5 +97,23 @@ func TestTargetContainerStates(t *testing.T) {
 		states := podcommon.NewStatesAllUnknown()
 		ctx := context.WithValue(context.TODO(), KeyTargetContainerStates, states)
 		assert.Equal(t, states, TargetContainerStates(ctx))
+	})
+}
+
+func TestWithTimeoutOverride(t *testing.T) {
+	duration := 1 * time.Second
+	got := WithTimeoutOverride(context.TODO(), duration)
+	assert.Equal(t, duration, got.Value(KeyTimeoutOverride).(time.Duration))
+}
+
+func TestTimeoutOverride(t *testing.T) {
+	t.Run("Nil", func(t *testing.T) {
+		assert.Equal(t, time.Duration(0), TimeoutOverride(context.TODO()))
+	})
+
+	t.Run("NotNil", func(t *testing.T) {
+		duration := 1 * time.Second
+		ctx := context.WithValue(context.TODO(), KeyTimeoutOverride, duration)
+		assert.Equal(t, duration, TimeoutOverride(ctx))
 	})
 }

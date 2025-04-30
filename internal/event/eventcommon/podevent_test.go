@@ -14,12 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package context
+package eventcommon
 
-const (
-	KeyStandardRetryAttempts  = "rattempts"
-	KeyStandardRetryDelaySecs = "rdelaysecs"
-	KeyTargetContainerName    = "cname"
-	KeyTargetContainerStates  = "cstates"
-	KeyTimeoutOverride        = "toverride"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 )
+
+func TestNewPodEvent(t *testing.T) {
+	pod := &v1.Pod{}
+	pe := NewPodEvent(PodEventTypeUpdate, pod)
+
+	expected := PodEvent{
+		EventType: PodEventTypeUpdate,
+		Pod:       pod,
+	}
+	assert.Equal(t, expected, pe)
+}

@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/context/contexttest"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/event"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubetest"
@@ -37,11 +38,13 @@ func TestNewValidation(t *testing.T) {
 	podHelper := kube.NewPodHelper(nil)
 	containerHelper := kube.NewContainerHelper()
 	stat := newStatus(&record.FakeRecorder{}, podHelper)
-	val := newValidation(stat, podHelper, containerHelper)
+	publisher := event.DefaultPodEventPublisher
+	val := newValidation(stat, podHelper, containerHelper, publisher)
 	expected := &validation{
-		status:          stat,
-		podHelper:       podHelper,
-		containerHelper: containerHelper,
+		status:            stat,
+		podHelper:         podHelper,
+		containerHelper:   containerHelper,
+		podEventPublisher: publisher,
 	}
 	assert.Equal(t, expected, val)
 }
@@ -238,6 +241,7 @@ func TestValidationValidate(t *testing.T) {
 				podtest.NewMockStatusWithRun(tt.configStatusMockFunc, run),
 				kubetest.NewMockPodHelper(tt.configPodHelperMockFunc),
 				kubetest.NewMockContainerHelper(tt.configContHelperMockFunc),
+				nil,
 			)
 			configs := scaletest.NewMockConfigurations(tt.configScaleConfigsMockFunc)
 
@@ -270,11 +274,12 @@ func TestValidationValidate(t *testing.T) {
 func TestValidationUpdateStatusAndGetError(t *testing.T) {
 	t.Run("UnableToUpdateStatus", func(t *testing.T) {
 		configStatusMockFunc := func(m *podtest.MockStatus) {
-			m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+			m.On("Update", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 				Return(&v1.Pod{}, errors.New(""))
 		}
 		v := newValidation(
 			podtest.NewMockStatus(configStatusMockFunc),
+			nil,
 			nil,
 			nil,
 		)

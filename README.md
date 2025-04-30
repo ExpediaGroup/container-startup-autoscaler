@@ -362,7 +362,7 @@ Prefixed with `csa_reconciler_`:
 
 | Metric Name                  | Type    | Labels               | Description                                                                                                          |
 |------------------------------|---------|----------------------|----------------------------------------------------------------------------------------------------------------------|
-| `skipped_only_status_change` | Counter | None                 | Number of reconciles that were skipped because only the scaler controller status changed.                            |
+| `skipped_only_status_change` | Counter | None                 | Number of reconciles that were skipped because only the status changed.                                              |
 | `existing_in_progress`       | Counter | None                 | Number of attempted reconciles where one was already in progress for the same namespace/name (results in a requeue). |
 | `failure`                    | Counter | `reason`<sup>1</sup> | Number of reconciles where there was a failure.                                                                      |
 
@@ -406,11 +406,9 @@ See [below](#retry) for more information on retries.
 ### Informer Cache
 Prefixed with `csa_informercache_`:
 
-| Metric Name    | Type      | Labels | Description                                                                                                                                       |
-|----------------|-----------|--------|---------------------------------------------------------------------------------------------------------------------------------------------------|
-| `sync_poll`    | Histogram | None   | Number of informer cache sync polls after a pod mutation was performed via the Kubernetes API.                                                    |
-| `sync_timeout` | Counter   | None   | Number of informer cache sync timeouts after a pod mutation was performed via the Kubernetes API (may result in inconsistent CSA status updates). |
-
+| Metric Name    | Type      | Labels | Description                                                                                                                               |
+|----------------|-----------|--------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| `sync_timeout` | Counter   | None   | Number of informer cache sync timeouts after a pod mutation was performed via the Kubernetes API (may result in CSA status inaccuracies). |
 See [below](#informer-cache-sync) for more information on informer cache syncs.
 
 ## Retry
@@ -423,22 +421,19 @@ version of the pod and reapplies the update, before trying again (subject to ret
 
 ## Informer Cache Sync
 The CSA [status](#status) includes timestamps that CSA uses itself internally, such as for calculating scale durations.
-When status is updated, CSA waits for the updated pod to be reflected in the informer cache before finishing
-the reconciliation to ensure following reconciles have the latest status available to work upon. Without this mechanism,
-the rapid pace of pod updates during resizes can prevent later reconciles from retrieving the latest status. This
-occurs because the informer may not have cached the updated pod in time, resulting in inaccurate status updates.
+When status is updated, CSA waits for the updated pod to be reflected in the local informer cache before finishing
+the reconcile to ensure following reconciles have the latest status available to work upon. Without this mechanism, the
+rapid pace of pod updates during resizes can prevent later reconciles from retrieving the latest status. This occurs
+because the informer may not have cached the updated pod in time, resulting in inaccurate status updates.
 
 The CSA reconciler doesn't allow concurrent reconciles for the same pod, so later reconciles will not start until
 this wait described above has completed.
 
-The informer cache metrics described [above](#informer-cache) provide insight into how quickly the informer cache is
-updated (synced) after the status is updated, and whether any timeouts occur:
+The informer cache metrics described [above](#informer-cache) provide insight into informer cache sync operation after the status
+is updated:
 
-- `patch_sync_poll`: the number of cache polls that were required to confirm the cache was populated with the updated
-  pod. The cache is polled periodically per the `waitForCacheUpdatePollMillis` configuration [here](internal/kube/podhelper.go).
-  Higher values indicate longer cache sync times.
-- `patch_sync_timeout`: the number of times the cache sync timed out per the`waitForCacheUpdateTimeoutMillis`
-  configuration [here](internal/kube/podhelper.go). Timeouts do not result in an error or termination of the
+- `sync_timeout`: the number of times the cache sync timed out per the `WaitForCacheUpdateMaxWaitSecs`
+  configuration [here](internal/common/timeout.go). Timeouts do not result in an error or termination of the
   reconcilation, but may result in inconsistent CSA status updates.  
 
 ## Encountering Unknown Resources

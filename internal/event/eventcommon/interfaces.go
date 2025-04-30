@@ -14,12 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package context
+package eventcommon
 
-const (
-	KeyStandardRetryAttempts  = "rattempts"
-	KeyStandardRetryDelaySecs = "rdelaysecs"
-	KeyTargetContainerName    = "cname"
-	KeyTargetContainerStates  = "cstates"
-	KeyTimeoutOverride        = "toverride"
-)
+import "context"
+
+// PodEventPublisher publishes pod events to subscribers.
+type PodEventPublisher interface {
+	Subscribe(
+		namespace string,
+		name string,
+		eventTypes []PodEventType,
+	) <-chan PodEvent
+
+	Unsubscribe(
+		ch <-chan PodEvent,
+	)
+
+	Publish(
+		ctx context.Context,
+		event PodEvent,
+	)
+}

@@ -89,7 +89,7 @@ func (c *controller) Initialize(runtimeController ...runtimecontroller.Controlle
 
 						if req != nil {
 							log = log.WithValues(
-								"namespace", req.Namespace,
+								"podNamespace", req.Namespace,
 								"name", req.Name,
 							)
 						}
