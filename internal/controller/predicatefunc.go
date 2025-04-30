@@ -57,8 +57,8 @@ import (
 	  need to observe events during operation.
 */
 
-// PredicateCreateFunc returns whether create events should be reconciled.
-func PredicateCreateFunc(event event.TypedCreateEvent[*v1.Pod]) bool {
+// predicateCreateFunc returns whether create events should be reconciled.
+func predicateCreateFunc(event event.TypedCreateEvent[*v1.Pod]) bool {
 	csaevent.DefaultPodEventPublisher.Publish(
 		nil,
 		eventcommon.NewPodEvent(eventcommon.PodEventTypeCreate, event.Object),
@@ -68,8 +68,8 @@ func PredicateCreateFunc(event event.TypedCreateEvent[*v1.Pod]) bool {
 	return true
 }
 
-// PredicateDeleteFunc returns whether delete events should be reconciled.
-func PredicateDeleteFunc(event event.TypedDeleteEvent[*v1.Pod]) bool {
+// predicateDeleteFunc returns whether delete events should be reconciled.
+func predicateDeleteFunc(event event.TypedDeleteEvent[*v1.Pod]) bool {
 	csaevent.DefaultPodEventPublisher.Publish(
 		nil,
 		eventcommon.NewPodEvent(eventcommon.PodEventTypeDelete, event.Object),
@@ -79,8 +79,8 @@ func PredicateDeleteFunc(event event.TypedDeleteEvent[*v1.Pod]) bool {
 	return false
 }
 
-// PredicateUpdateFunc returns whether update events should be reconciled.
-func PredicateUpdateFunc(event event.TypedUpdateEvent[*v1.Pod]) bool {
+// predicateUpdateFunc returns whether update events should be reconciled.
+func predicateUpdateFunc(event event.TypedUpdateEvent[*v1.Pod]) bool {
 	oldPod := event.ObjectOld
 	newPod := event.ObjectNew
 
@@ -137,7 +137,7 @@ func PredicateUpdateFunc(event event.TypedUpdateEvent[*v1.Pod]) bool {
 	return true
 }
 
-// PredicateGenericFunc returns whether generic events should be reconciled.
-func PredicateGenericFunc(_ event.TypedGenericEvent[*v1.Pod]) bool {
+// predicateGenericFunc returns whether generic events should be reconciled.
+func predicateGenericFunc(_ event.TypedGenericEvent[*v1.Pod]) bool {
 	return false
 }

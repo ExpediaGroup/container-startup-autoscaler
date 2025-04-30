@@ -38,10 +38,10 @@ import (
 const Name = "csa"
 
 var onceInstance sync.Once
-var instance *controller
+var instance *Controller
 
-// controller represents the CSA controller itself.
-type controller struct {
+// Controller represents the CSA Controller itself.
+type Controller struct {
 	controllerConfig controllercommon.ControllerConfig
 	runtimeManager   manager.Manager
 
@@ -51,9 +51,9 @@ type controller struct {
 func NewController(
 	controllerConfig controllercommon.ControllerConfig,
 	runtimeManager manager.Manager,
-) *controller {
+) *Controller {
 	onceInstance.Do(func() {
-		instance = &controller{
+		instance = &Controller{
 			controllerConfig: controllerConfig,
 			runtimeManager:   runtimeManager,
 		}
@@ -64,7 +64,7 @@ func NewController(
 
 // Initialize performs the tasks necessary to initialize the controller and register it with the controller-runtime
 // manager. Will only be invoked once. runtimeController parameter is provided for test injection.
-func (c *controller) Initialize(runtimeController ...runtimecontroller.Controller) error {
+func (c *Controller) Initialize(runtimeController ...runtimecontroller.Controller) error {
 	var retErr error
 
 	c.onceInit.Do(func() {
@@ -113,10 +113,10 @@ func (c *controller) Initialize(runtimeController ...runtimecontroller.Controlle
 				&v1.Pod{},
 				&handler.TypedEnqueueRequestForObject[*v1.Pod]{},
 				predicate.TypedFuncs[*v1.Pod]{
-					CreateFunc:  PredicateCreateFunc,
-					DeleteFunc:  PredicateDeleteFunc,
-					UpdateFunc:  PredicateUpdateFunc,
-					GenericFunc: PredicateGenericFunc,
+					CreateFunc:  predicateCreateFunc,
+					DeleteFunc:  predicateDeleteFunc,
+					UpdateFunc:  predicateUpdateFunc,
+					GenericFunc: predicateGenericFunc,
 				},
 			),
 		); err != nil {

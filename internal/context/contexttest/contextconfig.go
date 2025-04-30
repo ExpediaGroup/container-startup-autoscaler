@@ -23,27 +23,27 @@ import (
 
 const KeyUuid = "uuid"
 
-type ctxConfig struct {
+type CtxConfig struct {
 	logBuffer              *bytes.Buffer
 	standardRetryAttempts  int
 	standardRetryDelaySecs int
 	timeoutOverride        time.Duration
 }
 
-func NewCtxConfig() ctxConfig {
-	return ctxConfig{}
+func NewCtxConfig() CtxConfig {
+	return CtxConfig{}
 }
 
-func NewNoRetryCtxConfig(logBuffer *bytes.Buffer) ctxConfig {
-	return ctxConfig{
+func NewNoRetryCtxConfig(logBuffer *bytes.Buffer) CtxConfig {
+	return CtxConfig{
 		logBuffer:              logBuffer,
 		standardRetryAttempts:  1,
 		standardRetryDelaySecs: 0,
 	}
 }
 
-func NewOneRetryCtxConfig(logBuffer *bytes.Buffer) ctxConfig {
-	return ctxConfig{
+func NewOneRetryCtxConfig(logBuffer *bytes.Buffer) CtxConfig {
+	return CtxConfig{
 		logBuffer:              logBuffer,
 		standardRetryAttempts:  2,
 		standardRetryDelaySecs: 0,

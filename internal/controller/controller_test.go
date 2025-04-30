@@ -170,7 +170,7 @@ func TestNewController(t *testing.T) {
 		conf := controllercommon.ControllerConfig{KubeConfig: "test1"}
 		runtimeManager := newMockRuntimeManager(func(*mockRuntimeManager) {})
 		cont := NewController(conf, runtimeManager)
-		expected := &controller{
+		expected := &Controller{
 			controllerConfig: conf,
 			runtimeManager:   runtimeManager,
 		}
@@ -217,7 +217,7 @@ func TestControllerInitialize(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &controller{
+			c := &Controller{
 				controllerConfig: controllercommon.ControllerConfig{},
 				runtimeManager:   newMockRuntimeManager(tt.configManagerMockFunc),
 			}

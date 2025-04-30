@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-// containerStartupAutoscalerReconciler is the reconcile.Reconciler implementation that controller-runtime is
+// containerStartupAutoscalerReconciler is the reconcile.Reconciler implementation that Controller-runtime is
 // configured to use.
 type containerStartupAutoscalerReconciler struct {
 	pod              *pod.Pod

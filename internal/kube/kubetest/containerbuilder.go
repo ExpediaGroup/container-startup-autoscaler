@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-type containerBuilder struct {
+type ContainerBuilder struct {
 	enabledResources []v1.ResourceName
 	resourcesState   podcommon.StateResources
 	startupProbe     bool
@@ -32,59 +32,59 @@ type containerBuilder struct {
 	nilLimits        bool
 }
 
-func NewContainerBuilder() *containerBuilder {
-	b := &containerBuilder{}
+func NewContainerBuilder() *ContainerBuilder {
+	b := &ContainerBuilder{}
 	b.EnabledResourcesAll()
 	b.ResourcesState(podcommon.StateResourcesStartup)
 	return b
 }
 
-func (b *containerBuilder) EnabledResources(enabledResources []v1.ResourceName) *containerBuilder {
+func (b *ContainerBuilder) EnabledResources(enabledResources []v1.ResourceName) *ContainerBuilder {
 	b.enabledResources = enabledResources
 	return b
 }
 
-func (b *containerBuilder) EnabledResourcesAll() *containerBuilder {
+func (b *ContainerBuilder) EnabledResourcesAll() *ContainerBuilder {
 	b.enabledResources = []v1.ResourceName{v1.ResourceCPU, v1.ResourceMemory}
 	return b
 }
 
-func (b *containerBuilder) EnabledResourcesNone() *containerBuilder {
+func (b *ContainerBuilder) EnabledResourcesNone() *ContainerBuilder {
 	b.enabledResources = []v1.ResourceName{}
 	return b
 }
 
-func (b *containerBuilder) ResourcesState(resourcesState podcommon.StateResources) *containerBuilder {
+func (b *ContainerBuilder) ResourcesState(resourcesState podcommon.StateResources) *ContainerBuilder {
 	b.resourcesState = resourcesState
 	return b
 }
 
-func (b *containerBuilder) StartupProbe(startupProbe bool) *containerBuilder {
+func (b *ContainerBuilder) StartupProbe(startupProbe bool) *ContainerBuilder {
 	b.startupProbe = startupProbe
 	return b
 }
 
-func (b *containerBuilder) ReadinessProbe(readinessProbe bool) *containerBuilder {
+func (b *ContainerBuilder) ReadinessProbe(readinessProbe bool) *ContainerBuilder {
 	b.readinessProbe = readinessProbe
 	return b
 }
 
-func (b *containerBuilder) NilResizePolicy(nilResizePolicy bool) *containerBuilder {
+func (b *ContainerBuilder) NilResizePolicy(nilResizePolicy bool) *ContainerBuilder {
 	b.nilResizePolicy = nilResizePolicy
 	return b
 }
 
-func (b *containerBuilder) NilRequests(nilRequests bool) *containerBuilder {
+func (b *ContainerBuilder) NilRequests(nilRequests bool) *ContainerBuilder {
 	b.nilRequests = nilRequests
 	return b
 }
 
-func (b *containerBuilder) NilLimits(nilLimits bool) *containerBuilder {
+func (b *ContainerBuilder) NilLimits(nilLimits bool) *ContainerBuilder {
 	b.nilLimits = nilLimits
 	return b
 }
 
-func (b *containerBuilder) Build() *v1.Container {
+func (b *ContainerBuilder) Build() *v1.Container {
 	c := b.container()
 
 	if b.nilResizePolicy {
@@ -102,7 +102,7 @@ func (b *containerBuilder) Build() *v1.Container {
 	return c
 }
 
-func (b *containerBuilder) container() *v1.Container {
+func (b *ContainerBuilder) container() *v1.Container {
 	cpuRequests, cpuLimits, memoryRequests, memoryLimits := quantities(b.enabledResources, b.resourcesState)
 
 	var startupProbe *v1.Probe

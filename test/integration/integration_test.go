@@ -21,7 +21,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
+	"github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"github.com/stretchr/testify/require"
 	"k8s.io/api/core/v1"
 )
@@ -107,16 +107,16 @@ func TestDeploymentNonStartupAdmittedFlowStartupProbeCpu(t *testing.T) {
 			config.removeReadinessProbes()
 			return config.deploymentJson(), replicas
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, true, false, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, true, false, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
 		},
 	)
@@ -199,16 +199,16 @@ func TestDeploymentStartupAdmittedFlowStartupProbeCpu(t *testing.T) {
 			config.removeReadinessProbes()
 			return config.deploymentJson(), replicas
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, true, false, false)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, true, false, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
 		},
 	)
@@ -291,16 +291,16 @@ func TestDeploymentNonStartupAdmittedFlowReadinessProbeCpu(t *testing.T) {
 			config.removeStartupProbes()
 			return config.deploymentJson(), replicas
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, false, true, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, false, true, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
 		},
 	)
@@ -383,16 +383,16 @@ func TestDeploymentStartupAdmittedFlowReadinessProbeCpu(t *testing.T) {
 			config.removeStartupProbes()
 			return config.deploymentJson(), replicas
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, false, true, false)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, false, true, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
 		},
 	)
@@ -599,16 +599,16 @@ func TestStatefulSetFlowStartupProbeCpu(t *testing.T) {
 			config.removeReadinessProbes()
 			return config.statefulSetJson(), replicas
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, true, false, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, true, false, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
 		},
 	)
@@ -630,16 +630,16 @@ func TestStatefulSetFlowReadinessProbeCpu(t *testing.T) {
 			config.removeStartupProbes()
 			return config.statefulSetJson(), replicas
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, false, true, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, false, true, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
 		},
 	)
@@ -662,16 +662,16 @@ func TestDaemonSetFlowStartupProbeCpu(t *testing.T) {
 			config.removeReadinessProbes()
 			return config.daemonSetJson(), 1 // 1 node.
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, true, false, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, true, false, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, true, false)
 		},
 	)
@@ -692,16 +692,16 @@ func TestDaemonSetFlowReadinessProbeCpu(t *testing.T) {
 			config.removeStartupProbes()
 			return config.daemonSetJson(), 1
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, false, true, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertStartupEnacted(t, annotations, podStatusAnn, false, true, true)
 		},
-		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]pod.StatusAnnotation) {
+		func(t *testing.T, annotations csaQuantityAnnotations, podStatusAnn map[*v1.Pod]podcommon.StatusAnnotation) {
 			assertPostStartupEnacted(t, annotations, podStatusAnn, false, true)
 		},
 	)
@@ -737,7 +737,7 @@ func TestValidationFailure(t *testing.T) {
 	for _, statusAnn := range podStatusAnn {
 		require.Contains(t, statusAnn.Status, "cpu post-startup requests (150m) is greater than startup value (100m)")
 		require.NotEmpty(t, statusAnn.LastUpdated)
-		expectedScale := pod.StatusAnnotationScale{
+		expectedScale := podcommon.StatusAnnotationScale{
 			EnabledForResources: []v1.ResourceName{v1.ResourceCPU},
 			LastCommanded:       "",
 			LastEnacted:         "",
@@ -793,10 +793,10 @@ func testWorkflow(
 	namespace string,
 	annotations csaQuantityAnnotations,
 	workloadJsonReplicasFunc func(csaQuantityAnnotations) (string, int),
-	assertStartupEnactedFunc func(*testing.T, csaQuantityAnnotations, map[*v1.Pod]pod.StatusAnnotation),
-	assertPostStartupEnactedFunc func(*testing.T, csaQuantityAnnotations, map[*v1.Pod]pod.StatusAnnotation),
-	assertStartupEnactedRestartFunc func(*testing.T, csaQuantityAnnotations, map[*v1.Pod]pod.StatusAnnotation),
-	assertPostStartupEnactedRestartFunc func(*testing.T, csaQuantityAnnotations, map[*v1.Pod]pod.StatusAnnotation),
+	assertStartupEnactedFunc func(*testing.T, csaQuantityAnnotations, map[*v1.Pod]podcommon.StatusAnnotation),
+	assertPostStartupEnactedFunc func(*testing.T, csaQuantityAnnotations, map[*v1.Pod]podcommon.StatusAnnotation),
+	assertStartupEnactedRestartFunc func(*testing.T, csaQuantityAnnotations, map[*v1.Pod]podcommon.StatusAnnotation),
+	assertPostStartupEnactedRestartFunc func(*testing.T, csaQuantityAnnotations, map[*v1.Pod]podcommon.StatusAnnotation),
 ) {
 	_ = kubeDeleteNamespace(t, namespace)
 	maybeLogErrAndFailNow(t, kubeCreateNamespace(t, namespace))

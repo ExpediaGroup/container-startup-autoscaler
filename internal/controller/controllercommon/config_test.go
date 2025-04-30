@@ -40,17 +40,17 @@ func TestControllerConfigInitFlags(t *testing.T) {
 		config := ControllerConfig{}
 		cmd := &cobra.Command{
 			Run: func(_ *cobra.Command, _ []string) {
-				assert.Equal(t, FlagKubeConfigDefault, config.KubeConfig)
-				assert.Equal(t, FlagLeaderElectionEnabledDefault, config.LeaderElectionEnabled)
-				assert.Equal(t, FlagLeaderElectionResourceNamespaceDefault, config.LeaderElectionResourceNamespace)
-				assert.Equal(t, FlagCacheSyncPeriodMinsDefault, config.CacheSyncPeriodMins)
-				assert.Equal(t, FlagGracefulShutdownTimeoutSecsDefault, config.GracefulShutdownTimeoutSecs)
-				assert.Equal(t, FlagRequeueDurationSecsDefault, config.RequeueDurationSecs)
-				assert.Equal(t, FlagMaxConcurrentReconcilesDefault, config.MaxConcurrentReconciles)
-				assert.Equal(t, FlagStandardRetryAttemptsDefault, config.StandardRetryAttempts)
-				assert.Equal(t, FlagStandardRetryDelaySecsDefault, config.StandardRetryDelaySecs)
-				assert.Equal(t, FlagLogVDefault, config.LogV)
-				assert.Equal(t, FlagLogAddCallerDefault, config.LogAddCaller)
+				assert.Equal(t, flagKubeConfigDefault, config.KubeConfig)
+				assert.Equal(t, flagLeaderElectionEnabledDefault, config.LeaderElectionEnabled)
+				assert.Equal(t, flagLeaderElectionResourceNamespaceDefault, config.LeaderElectionResourceNamespace)
+				assert.Equal(t, flagCacheSyncPeriodMinsDefault, config.CacheSyncPeriodMins)
+				assert.Equal(t, flagGracefulShutdownTimeoutSecsDefault, config.GracefulShutdownTimeoutSecs)
+				assert.Equal(t, flagRequeueDurationSecsDefault, config.RequeueDurationSecs)
+				assert.Equal(t, flagMaxConcurrentReconcilesDefault, config.MaxConcurrentReconciles)
+				assert.Equal(t, flagStandardRetryAttemptsDefault, config.StandardRetryAttempts)
+				assert.Equal(t, flagStandardRetryDelaySecsDefault, config.StandardRetryDelaySecs)
+				assert.Equal(t, flagLogVDefault, config.LogV)
+				assert.Equal(t, flagLogAddCallerDefault, config.LogAddCaller)
 			},
 		}
 		config.InitFlags(cmd)
@@ -66,7 +66,7 @@ func TestControllerConfigInitFlags(t *testing.T) {
 		}
 		config.InitFlags(cmd)
 		cmd.SetArgs([]string{
-			fmt.Sprintf("--%s=test", FlagKubeConfigName),
+			fmt.Sprintf("--%s=test", flagKubeConfigName),
 		})
 		_ = cmd.Execute()
 	})

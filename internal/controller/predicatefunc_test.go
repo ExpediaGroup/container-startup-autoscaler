@@ -46,7 +46,7 @@ func TestPredicateCreateFunc(t *testing.T) {
 		},
 	}
 	evt := event.TypedCreateEvent[*v1.Pod]{Object: pod}
-	assert.True(t, PredicateCreateFunc(evt))
+	assert.True(t, predicateCreateFunc(evt))
 	select {
 	case podEvent := <-podEventCh:
 		assert.Equal(t, eventcommon.PodEventTypeCreate, podEvent.EventType)
@@ -71,7 +71,7 @@ func TestPredicateDeleteFunc(t *testing.T) {
 		},
 	}
 	evt := event.TypedDeleteEvent[*v1.Pod]{Object: pod}
-	assert.False(t, PredicateDeleteFunc(evt))
+	assert.False(t, predicateDeleteFunc(evt))
 	select {
 	case podEvent := <-podEventCh:
 		assert.Equal(t, eventcommon.PodEventTypeDelete, podEvent.EventType)
@@ -89,7 +89,7 @@ func TestPredicateUpdateFunc(t *testing.T) {
 			ObjectOld: oldPod,
 			ObjectNew: newPod,
 		}
-		assert.False(t, PredicateUpdateFunc(evt))
+		assert.False(t, predicateUpdateFunc(evt))
 	})
 
 	t.Run("Deletion", func(t *testing.T) {
@@ -101,7 +101,7 @@ func TestPredicateUpdateFunc(t *testing.T) {
 			ObjectOld: oldPod,
 			ObjectNew: newPod,
 		}
-		assert.False(t, PredicateUpdateFunc(evt))
+		assert.False(t, predicateUpdateFunc(evt))
 	})
 
 	t.Run("StatusMissingOldNew", func(t *testing.T) {
@@ -111,7 +111,7 @@ func TestPredicateUpdateFunc(t *testing.T) {
 			ObjectOld: oldPod,
 			ObjectNew: newPod,
 		}
-		assert.True(t, PredicateUpdateFunc(evt))
+		assert.True(t, predicateUpdateFunc(evt))
 	})
 
 	t.Run("OnlyStatusChanged", func(t *testing.T) {
@@ -123,7 +123,7 @@ func TestPredicateUpdateFunc(t *testing.T) {
 			ObjectOld: oldPod,
 			ObjectNew: newPod,
 		}
-		assert.False(t, PredicateUpdateFunc(evt))
+		assert.False(t, predicateUpdateFunc(evt))
 		metricVal, _ := testutil.GetCounterMetricValue(reconciler.SkippedOnlyStatusChange())
 		assert.Equal(t, float64(1), metricVal)
 	})
@@ -138,7 +138,7 @@ func TestPredicateUpdateFunc(t *testing.T) {
 			ObjectOld: oldPod,
 			ObjectNew: newPod,
 		}
-		assert.True(t, PredicateUpdateFunc(evt))
+		assert.True(t, predicateUpdateFunc(evt))
 	})
 
 	t.Run("Subscriber", func(t *testing.T) {
@@ -167,7 +167,7 @@ func TestPredicateUpdateFunc(t *testing.T) {
 			ObjectOld: oldPod,
 			ObjectNew: newPod,
 		}
-		_ = PredicateUpdateFunc(evt)
+		_ = predicateUpdateFunc(evt)
 		select {
 		case podEvent := <-podEventCh:
 			assert.Equal(t, eventcommon.PodEventTypeUpdate, podEvent.EventType)
@@ -179,5 +179,5 @@ func TestPredicateUpdateFunc(t *testing.T) {
 }
 
 func TestPredicateGenericFunc(t *testing.T) {
-	assert.False(t, PredicateGenericFunc(event.TypedGenericEvent[*v1.Pod]{}))
+	assert.False(t, predicateGenericFunc(event.TypedGenericEvent[*v1.Pod]{}))
 }

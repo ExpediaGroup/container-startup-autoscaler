@@ -355,10 +355,10 @@ func assertLog(t *testing.T, ctx context.Context, config wantLogRxConfig) {
 	assert.Regexp(t, fmt.Sprintf("\"message\":\"%s\"", config.wantMsgRx), log)
 
 	if config.wantTargetNameRx != "" {
-		assert.Regexp(t, fmt.Sprintf("\"%s\":\"%s\"", KeyTargetContainerName, config.wantTargetNameRx), log)
+		assert.Regexp(t, fmt.Sprintf("\"%s\":\"%s\"", keyTargetContainerName, config.wantTargetNameRx), log)
 	}
 
 	if config.wantTargetStates {
-		assert.Regexp(t, fmt.Sprintf("\"%s\":\\{.+?\\}", KeyTargetContainerStates), log)
+		assert.Regexp(t, fmt.Sprintf("\"%s\":\\{.+?\\}", keyTargetContainerStates), log)
 	}
 }

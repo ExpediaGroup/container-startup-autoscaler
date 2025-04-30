@@ -135,12 +135,12 @@ func configuredLogger(ctx context.Context) logr.Logger {
 
 		targetName := ccontext.TargetContainerName(ctx)
 		if targetName != "" {
-			logger = logger.WithValues(KeyTargetContainerName, targetName)
+			logger = logger.WithValues(keyTargetContainerName, targetName)
 		}
 
 		states := ccontext.TargetContainerStates(ctx)
 		if states != (podcommon.States{}) {
-			logger = logger.WithValues(KeyTargetContainerStates, states)
+			logger = logger.WithValues(keyTargetContainerStates, states)
 		}
 	}
 

@@ -27,7 +27,7 @@ import (
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube/kubecommon"
-	csapod "github.com/ExpediaGroup/container-startup-autoscaler/internal/pod"
+	csapod "github.com/ExpediaGroup/container-startup-autoscaler/internal/pod/podcommon"
 	"k8s.io/api/core/v1"
 )
 

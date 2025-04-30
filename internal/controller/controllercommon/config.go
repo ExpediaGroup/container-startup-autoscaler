@@ -24,53 +24,53 @@ import (
 )
 
 const (
-	FlagKubeConfigName    = "kubeconfig"
-	FlagKubeConfigDesc    = "absolute path to the cluster kubeconfig file (uses in-cluster configuration if not supplied)"
-	FlagKubeConfigDefault = ""
+	flagKubeConfigName    = "kubeconfig"
+	flagKubeConfigDesc    = "absolute path to the cluster kubeconfig file (uses in-cluster configuration if not supplied)"
+	flagKubeConfigDefault = ""
 
-	FlagLeaderElectionEnabledName    = "leader-election-enabled"
-	FlagLeaderElectionEnabledDesc    = "whether to enable leader election"
-	FlagLeaderElectionEnabledDefault = true
+	flagLeaderElectionEnabledName    = "leader-election-enabled"
+	flagLeaderElectionEnabledDesc    = "whether to enable leader election"
+	flagLeaderElectionEnabledDefault = true
 
-	FlagLeaderElectionResourceNamespaceName    = "leader-election-resource-namespace"
-	FlagLeaderElectionResourceNamespaceDesc    = "the namespace to create resources in if leader election is enabled (uses current namespace if not supplied)"
-	FlagLeaderElectionResourceNamespaceDefault = ""
+	flagLeaderElectionResourceNamespaceName    = "leader-election-resource-namespace"
+	flagLeaderElectionResourceNamespaceDesc    = "the namespace to create resources in if leader election is enabled (uses current namespace if not supplied)"
+	flagLeaderElectionResourceNamespaceDefault = ""
 
-	FlagCacheSyncPeriodMinsName    = "cache-sync-period-mins"
-	FlagCacheSyncPeriodMinsDesc    = "how frequently the informer should re-sync"
-	FlagCacheSyncPeriodMinsDefault = 60
+	flagCacheSyncPeriodMinsName    = "cache-sync-period-mins"
+	flagCacheSyncPeriodMinsDesc    = "how frequently the informer should re-sync"
+	flagCacheSyncPeriodMinsDefault = 60
 
-	FlagGracefulShutdownTimeoutSecsName    = "graceful-shutdown-timeout-secs"
-	FlagGracefulShutdownTimeoutSecsDesc    = "how long to allow busy workers to complete upon shutdown"
-	FlagGracefulShutdownTimeoutSecsDefault = 10
+	flagGracefulShutdownTimeoutSecsName    = "graceful-shutdown-timeout-secs"
+	flagGracefulShutdownTimeoutSecsDesc    = "how long to allow busy workers to complete upon shutdown"
+	flagGracefulShutdownTimeoutSecsDefault = 10
 
-	FlagRequeueDurationSecsName    = "requeue-duration-secs"
-	FlagRequeueDurationSecsDesc    = "how long to wait before requeuing a reconcile"
-	FlagRequeueDurationSecsDefault = 1
+	flagRequeueDurationSecsName    = "requeue-duration-secs"
+	flagRequeueDurationSecsDesc    = "how long to wait before requeuing a reconcile"
+	flagRequeueDurationSecsDefault = 1
 
-	FlagMaxConcurrentReconcilesName    = "max-concurrent-reconciles"
-	FlagMaxConcurrentReconcilesDesc    = "the maximum number of concurrent reconciles"
-	FlagMaxConcurrentReconcilesDefault = 10
+	flagMaxConcurrentReconcilesName    = "max-concurrent-reconciles"
+	flagMaxConcurrentReconcilesDesc    = "the maximum number of concurrent reconciles"
+	flagMaxConcurrentReconcilesDefault = 10
 
-	FlagStandardRetryAttemptsName    = "standard-retry-attempts"
-	FlagStandardRetryAttemptsDesc    = "the maximum number of attempts for a standard retry"
-	FlagStandardRetryAttemptsDefault = 3
+	flagStandardRetryAttemptsName    = "standard-retry-attempts"
+	flagStandardRetryAttemptsDesc    = "the maximum number of attempts for a standard retry"
+	flagStandardRetryAttemptsDefault = 3
 
-	FlagStandardRetryDelaySecsName    = "standard-retry-delay-secs"
-	FlagStandardRetryDelaySecsDesc    = "the number of seconds to wait between standard retry attempts"
-	FlagStandardRetryDelaySecsDefault = 1
+	flagStandardRetryDelaySecsName    = "standard-retry-delay-secs"
+	flagStandardRetryDelaySecsDesc    = "the number of seconds to wait between standard retry attempts"
+	flagStandardRetryDelaySecsDefault = 1
 
-	FlagScaleWhenUnknownResourcesName    = "scale-when-unknown-resources"
-	FlagScaleWhenUnknownResourcesDesc    = "whether to scale when unknown resources (i.e. other than those specified within annotations) are encountered"
-	FlagScaleWhenUnknownResourcesDefault = false
+	flagScaleWhenUnknownResourcesName    = "scale-when-unknown-resources"
+	flagScaleWhenUnknownResourcesDesc    = "whether to scale when unknown resources (i.e. other than those specified within annotations) are encountered"
+	flagScaleWhenUnknownResourcesDefault = false
 
-	FlagLogVName    = "log-v"
-	FlagLogVDesc    = "log verbosity level (0: info, 1: debug, 2: trace) - 2 used if invalid"
-	FlagLogVDefault = 0
+	flagLogVName    = "log-v"
+	flagLogVDesc    = "log verbosity level (0: info, 1: debug, 2: trace) - 2 used if invalid"
+	flagLogVDefault = 0
 
-	FlagLogAddCallerName    = "log-add-caller"
-	FlagLogAddCallerDesc    = "whether to include the caller within logging output"
-	FlagLogAddCallerDefault = false
+	flagLogAddCallerName    = "log-add-caller"
+	flagLogAddCallerDesc    = "whether to include the caller within logging output"
+	flagLogAddCallerDefault = false
 )
 
 // ControllerConfig represents the configuration of the CSA controller.
@@ -106,79 +106,79 @@ func NewControllerConfig() ControllerConfig {
 func (c *ControllerConfig) InitFlags(command *cobra.Command) {
 	command.Flags().StringVar(
 		&c.KubeConfig,
-		FlagKubeConfigName, FlagKubeConfigDefault, FlagKubeConfigDesc,
+		flagKubeConfigName, flagKubeConfigDefault, flagKubeConfigDesc,
 	)
 
 	command.Flags().BoolVar(
 		&c.LeaderElectionEnabled,
-		FlagLeaderElectionEnabledName, FlagLeaderElectionEnabledDefault, FlagLeaderElectionEnabledDesc,
+		flagLeaderElectionEnabledName, flagLeaderElectionEnabledDefault, flagLeaderElectionEnabledDesc,
 	)
 
 	command.Flags().StringVar(
 		&c.LeaderElectionResourceNamespace,
-		FlagLeaderElectionResourceNamespaceName, FlagLeaderElectionResourceNamespaceDefault, FlagLeaderElectionResourceNamespaceDesc,
+		flagLeaderElectionResourceNamespaceName, flagLeaderElectionResourceNamespaceDefault, flagLeaderElectionResourceNamespaceDesc,
 	)
 
 	command.Flags().IntVar(
 		&c.CacheSyncPeriodMins,
-		FlagCacheSyncPeriodMinsName, FlagCacheSyncPeriodMinsDefault, FlagCacheSyncPeriodMinsDesc,
+		flagCacheSyncPeriodMinsName, flagCacheSyncPeriodMinsDefault, flagCacheSyncPeriodMinsDesc,
 	)
 
 	command.Flags().IntVar(
 		&c.GracefulShutdownTimeoutSecs,
-		FlagGracefulShutdownTimeoutSecsName, FlagGracefulShutdownTimeoutSecsDefault, FlagGracefulShutdownTimeoutSecsDesc,
+		flagGracefulShutdownTimeoutSecsName, flagGracefulShutdownTimeoutSecsDefault, flagGracefulShutdownTimeoutSecsDesc,
 	)
 
 	command.Flags().IntVar(
 		&c.RequeueDurationSecs,
-		FlagRequeueDurationSecsName, FlagRequeueDurationSecsDefault, FlagRequeueDurationSecsDesc,
+		flagRequeueDurationSecsName, flagRequeueDurationSecsDefault, flagRequeueDurationSecsDesc,
 	)
 
 	command.Flags().IntVar(
 		&c.MaxConcurrentReconciles,
-		FlagMaxConcurrentReconcilesName, FlagMaxConcurrentReconcilesDefault, FlagMaxConcurrentReconcilesDesc,
+		flagMaxConcurrentReconcilesName, flagMaxConcurrentReconcilesDefault, flagMaxConcurrentReconcilesDesc,
 	)
 
 	command.Flags().IntVar(
 		&c.StandardRetryAttempts,
-		FlagStandardRetryAttemptsName, FlagStandardRetryAttemptsDefault, FlagStandardRetryAttemptsDesc,
+		flagStandardRetryAttemptsName, flagStandardRetryAttemptsDefault, flagStandardRetryAttemptsDesc,
 	)
 
 	command.Flags().IntVar(
 		&c.StandardRetryDelaySecs,
-		FlagStandardRetryDelaySecsName, FlagStandardRetryDelaySecsDefault, FlagStandardRetryDelaySecsDesc,
+		flagStandardRetryDelaySecsName, flagStandardRetryDelaySecsDefault, flagStandardRetryDelaySecsDesc,
 	)
 
 	command.Flags().BoolVar(
 		&c.ScaleWhenUnknownResources,
-		FlagScaleWhenUnknownResourcesName, FlagScaleWhenUnknownResourcesDefault, FlagScaleWhenUnknownResourcesDesc,
+		flagScaleWhenUnknownResourcesName, flagScaleWhenUnknownResourcesDefault, flagScaleWhenUnknownResourcesDesc,
 	)
 
 	command.Flags().IntVar(
 		&c.LogV,
-		FlagLogVName, FlagLogVDefault, FlagLogVDesc,
+		flagLogVName, flagLogVDefault, flagLogVDesc,
 	)
 
 	command.Flags().BoolVar(
 		&c.LogAddCaller,
-		FlagLogAddCallerName, FlagLogAddCallerDefault, FlagLogAddCallerDesc,
+		flagLogAddCallerName, flagLogAddCallerDefault, flagLogAddCallerDesc,
 	)
 }
 
 // Log logs the configuration of the CSA controller.
 func (c *ControllerConfig) Log() {
-	logging.Infof(nil, logging.VInfo, "(config) %s: %s", FlagKubeConfigName, c.KubeConfig)
-	logging.Infof(nil, logging.VInfo, "(config) %s: %t", FlagLeaderElectionEnabledName, c.LeaderElectionEnabled)
-	logging.Infof(nil, logging.VInfo, "(config) %s: %s", FlagLeaderElectionResourceNamespaceName, c.LeaderElectionResourceNamespace)
-	logging.Infof(nil, logging.VInfo, "(config) %s: %d", FlagCacheSyncPeriodMinsName, c.CacheSyncPeriodMins)
-	logging.Infof(nil, logging.VInfo, "(config) %s: %d", FlagGracefulShutdownTimeoutSecsName, c.GracefulShutdownTimeoutSecs)
-	logging.Infof(nil, logging.VInfo, "(config) %s: %d", FlagRequeueDurationSecsName, c.RequeueDurationSecs)
-	logging.Infof(nil, logging.VInfo, "(config) %s: %d", FlagMaxConcurrentReconcilesName, c.MaxConcurrentReconciles)
-	logging.Infof(nil, logging.VInfo, "(config) %s: %d", FlagStandardRetryAttemptsName, c.StandardRetryAttempts)
-	logging.Infof(nil, logging.VInfo, "(config) %s: %d", FlagStandardRetryDelaySecsName, c.StandardRetryDelaySecs)
-	logging.Infof(nil, logging.VInfo, "(config) %s: %t", FlagScaleWhenUnknownResourcesName, c.ScaleWhenUnknownResources)
-	logging.Infof(nil, logging.VInfo, "(config) %s: %d", FlagLogVName, c.LogV)
-	logging.Infof(nil, logging.VInfo, "(config) %s: %t", FlagLogAddCallerName, c.LogAddCaller)
+	logging.Infof(nil, logging.VInfo, "(config) %s: %s", flagKubeConfigName, c.KubeConfig)
+	logging.Infof(nil, logging.VInfo, "(config) %s: %t", flagLeaderElectionEnabledName, c.LeaderElectionEnabled)
+	logging.Infof(nil, logging.VInfo, "(config) %s: %s", flagLeaderElectionResourceNamespaceName, c.LeaderElectionResourceNamespace)
+	logging.Infof(nil, logging.VInfo, "(config) %s: %d", flagCacheSyncPeriodMinsName, c.CacheSyncPeriodMins)
+	logging.Infof(nil, logging.VInfo, "(config) %s: %d", flagGracefulShutdownTimeoutSecsName, c.GracefulShutdownTimeoutSecs)
+	logging.Infof(nil, logging.VInfo, "(config) %s: %d", flagRequeueDurationSecsName, c.RequeueDurationSecs)
+	logging.Infof(nil, logging.VInfo, "(config) %s: %d", flagMaxConcurrentReconcilesName, c.MaxConcurrentReconciles)
+	logging.Infof(nil, logging.VInfo, "(config) %s: %d", flagStandardRetryAttemptsName, c.StandardRetryAttempts)
+	logging.Infof(nil, logging.VInfo, "(config) %s: %d", flagStandardRetryDelaySecsName, c.StandardRetryDelaySecs)
+	logging.Infof(nil, logging.VInfo, "(config) %s: %t", flagScaleWhenUnknownResourcesName, c.ScaleWhenUnknownResources)
+	logging.Infof(nil, logging.VInfo, "(config) %s: %d", flagLogVName, c.LogV)
+	logging.Infof(nil, logging.VInfo, "(config) %s: %t", flagLogAddCallerName, c.LogAddCaller)
 }
 
 // CacheSyncPeriodMinsDuration returns the cache sync period in minutes as a time.Duration.
