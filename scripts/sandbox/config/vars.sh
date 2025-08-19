@@ -19,7 +19,7 @@
 kind_cluster_name="csa-sandbox-cluster"
 
 # shellcheck disable=SC2034
-kind_kube_version="v1.33.0"
+kind_kube_version="v1.34.0-rc.1" # TODO(wt) update to v1.34.0 when available
 # shellcheck disable=SC2034
 kind_node_docker_tag="kindest/node:$kind_kube_version"
 
