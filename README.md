@@ -1,8 +1,8 @@
 # container-startup-autoscaler 🚀
 container-startup-autoscaler (CSA) is a Kubernetes [controller](https://kubernetes.io/docs/concepts/architecture/controller/)
-that modifies the CPU and/or memory<sup>1</sup> resources of containers based on whether they're starting up, according
-to the startup/post-startup settings you provide. CSA works at the pod level and is agnostic to how the pod is managed;
-it works with deployments, statefulsets, daemonsets and other workload management APIs.
+that modifies the CPU and/or memory resources of containers based on whether they're starting up, according to the
+startup/post-startup settings you provide. CSA works at the pod level and is agnostic to how the pod is managed; it
+works with deployments, statefulsets, daemonsets and other workload management APIs.
 
 ![An overview diagram of CSA showing when target containers are scaled](assets/images/overview.png "CSA overview diagram")
 
@@ -13,9 +13,6 @@ feature, which is currently in beta state as of Kubernetes 1.34 and therefore re
 feature gate to be enabled. The feature implementation, along with the corresponding implementation of CSA, is likely
 to change until it reaches stable status. See [CHANGELOG.md](CHANGELOG.md) for details of CSA versions and Kubernetes version
 compatibility.
-
-<sup>1</sup> CSA support for memory-based scaling is currently disabled since `In-place Update of Pod Resources`
-currently [forbids memory downsizing](https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/1287-in-place-update-pod-resources/README.md#memory-limit-decreases).
 
 > [!CAUTION]
 > CSA should currently only be used for preview purposes on [local](#running-locally) or otherwise non-production
@@ -197,7 +194,7 @@ To enable CPU scaling, all the following annotations must be present:
 | `csa.expediagroup.com/cpu-post-startup-requests`    | `"250m"`<sup>1</sup> | Post-startup CPU `requests`.                              |
 | `csa.expediagroup.com/cpu-post-startup-limits`      | `"250m"`<sup>1</sup> | Post-startup CPU `limits`.                                |
 
-To enable memory scaling, all the following annotations must be present:<sup>2</sup>
+To enable memory scaling, all the following annotations must be present:
 
 | Name                                                | Example Value        | Description                                               |
 |-----------------------------------------------------|----------------------|-----------------------------------------------------------|
@@ -209,10 +206,6 @@ At least one of CPU or memory scaling must be configured.
 
 <sup>1</sup> Any CPU/memory form listed [here](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-units-in-kubernetes)
 can be used.
-
-<sup>2</sup> CSA support for memory-based scaling is currently disabled since `In-place Update of Pod Resources`
-currently [forbids memory downsizing](https://github.com/kubernetes/enhancements/blob/master/keps/sig-node/1287-in-place-update-pod-resources/README.md#memory-limit-decreases).
-Memory scaling annotations are currently ignored.
 
 ## Probes
 CSA needs to know when the target container is starting up and therefore requires you to specify an appropriately
@@ -566,7 +559,7 @@ A number of environment variable-based configuration items are available:
 | Name                     | Default | Description                                                                                                                          |
 |--------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------|
 | `KUBE_VERSION`           | -       | The _major.minor_ version of Kubernetes to run tests against e.g. `1.34`.                                                            |
-| `MAX_PARALLELISM`        | `5`     | The maximum number of tests that can run in parallel.                                                                                |
+| `MAX_PARALLELISM`        | `6`     | The maximum number of tests that can run in parallel.                                                                                |
 | `EXTRA_CA_CERT_PATH`     | -       | See below.                                                                                                                           |
 | `REUSE_CLUSTER`          | `false` | Whether to reuse an existing CSA kind cluster (if it already exists). `KUBE_VERSION` has no effect if an existing cluster is reused. |
 | `INSTALL_METRICS_SERVER` | `false` | Whether to install metrics-server.                                                                                                   |
