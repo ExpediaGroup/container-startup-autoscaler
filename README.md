@@ -516,10 +516,14 @@ spec:
 ```
 
 ## Container Scaling Considerations
-Please consider carefully whether it's appropriate to scale memory during execution of your container. Memory
-management differs between runtimes, and it's not necessarily possible to change any runtime configuration (e.g.
-limits) set at the point of admission without restarting the container. Some runtimes may also default memory management
-settings based on available resources, which may no longer be optimal when memory is scaled. 
+Please consider carefully whether it's appropriate to scale memory during execution of your container:
+- Memory management differs between runtimes, and it's not necessarily possible to change any runtime configuration
+  (e.g. limits) set at the point of admission without restarting the container.
+- Some runtimes may also default memory management settings based on available resources, which may no longer be
+  optimal when memory is scaled. 
+- Kubernetes contains safeguards to avoid OOM kills when downscaling memory i.e. when CSA applies post-startup
+  memory resources (if configured). If the current memory usage is higher than the desired post-startup value,
+  Kubernetes will not perform the downscale and report an error. This error will appear in the CSA status.
 
 In addition, some languages/frameworks may default configuration of concurrency mechanisms (e.g. thread pools) based
 on available CPU resources - this should be taken into consideration if applicable. 
