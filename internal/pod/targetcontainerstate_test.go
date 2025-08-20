@@ -688,15 +688,6 @@ func TestTargetContainerStateStateResize(t *testing.T) {
 			podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
 		},
 		{
-			"UnknownPodResizeInProgressConditionState",
-			func(m *kubetest.MockPodHelper) {
-				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsUnknownInProgress)
-
-			},
-			"unknown pod resize in progress condition state",
-			podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
-		},
-		{
 			"UnexpectedPodResizeConditions",
 			func(m *kubetest.MockPodHelper) {
 				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsUnknownConditions)
@@ -733,6 +724,24 @@ func TestTargetContainerStateStateResize(t *testing.T) {
 			podcommon.NewResizeState(podcommon.StateResizeInfeasible, "message"),
 		},
 		{
+			"StateResizeErrorMissingMem1",
+			func(m *kubetest.MockPodHelper) {
+				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsErrorInProgress1)
+
+			},
+			"",
+			podcommon.NewResizeState(podcommon.StateResizeInProgress, "kubelet is awaiting memory utilization for downsizing"),
+		},
+		{
+			"StateResizeErrorMissingMem2",
+			func(m *kubetest.MockPodHelper) {
+				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsErrorInProgress2)
+
+			},
+			"",
+			podcommon.NewResizeState(podcommon.StateResizeInProgress, "kubelet is awaiting memory utilization for downsizing"),
+		},
+		{
 			"StateResizeError",
 			func(m *kubetest.MockPodHelper) {
 				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsError)
@@ -749,15 +758,6 @@ func TestTargetContainerStateStateResize(t *testing.T) {
 			},
 			"",
 			podcommon.NewResizeState(podcommon.StateResizeInProgress, ""),
-		},
-		{
-			"StateResizeNotStartedOrCompletedResizeInProgressTrue",
-			func(m *kubetest.MockPodHelper) {
-				m.On("ResizeConditions", mock.Anything).Return(kubetest.PodResizeConditionsNotStartedOrCompletedResizeInProgressTrue)
-
-			},
-			"",
-			podcommon.NewResizeState(podcommon.StateResizeNotStartedOrCompleted, ""),
 		},
 	}
 	for _, tt := range tests {

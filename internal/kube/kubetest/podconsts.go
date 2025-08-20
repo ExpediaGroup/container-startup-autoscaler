@@ -35,17 +35,17 @@ const (
 )
 
 var (
-	PodResizeConditionsNotStartedOrCompletedNoConditions         []corev1.PodCondition
-	PodResizeConditionsNotStartedOrCompletedResizeInProgressTrue = []corev1.PodCondition{
-		{
-			Type:   corev1.PodResizeInProgress,
-			Status: corev1.ConditionTrue,
-		},
-	}
+	PodResizeConditionsNotStartedOrCompletedNoConditions []corev1.PodCondition
+	//PodResizeConditionsNotStartedOrCompletedResizeInProgressTrue = []corev1.PodCondition{
+	//	{
+	//		Type:   corev1.PodResizeInProgress,
+	//		Status: corev1.ConditionTrue,
+	//	},
+	//}
 	PodResizeConditionsInProgress = []corev1.PodCondition{
 		{
 			Type:   corev1.PodResizeInProgress,
-			Status: corev1.ConditionFalse,
+			Status: corev1.ConditionTrue,
 		},
 	}
 	PodResizeConditionsDeferred = []corev1.PodCondition{
@@ -62,10 +62,26 @@ var (
 			Message: "message",
 		},
 	}
+	PodResizeConditionsErrorInProgress1 = []corev1.PodCondition{
+		{
+			Type:    corev1.PodResizeInProgress,
+			Status:  corev1.ConditionTrue,
+			Reason:  corev1.PodReasonError,
+			Message: "prefix: missing pod memory usage",
+		},
+	}
+	PodResizeConditionsErrorInProgress2 = []corev1.PodCondition{
+		{
+			Type:    corev1.PodResizeInProgress,
+			Status:  corev1.ConditionTrue,
+			Reason:  corev1.PodReasonError,
+			Message: "prefix: missing container \"pod\" memory usage",
+		},
+	}
 	PodResizeConditionsError = []corev1.PodCondition{
 		{
 			Type:    corev1.PodResizeInProgress,
-			Status:  corev1.ConditionFalse,
+			Status:  corev1.ConditionTrue,
 			Reason:  corev1.PodReasonError,
 			Message: "message",
 		},
@@ -74,12 +90,6 @@ var (
 		{
 			Type:   corev1.PodResizePending,
 			Reason: "unknownreason",
-		},
-	}
-	PodResizeConditionsUnknownInProgress = []corev1.PodCondition{
-		{
-			Type:   corev1.PodResizeInProgress,
-			Status: corev1.ConditionUnknown,
 		},
 	}
 	PodResizeConditionsUnknownConditions = []corev1.PodCondition{

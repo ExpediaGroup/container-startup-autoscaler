@@ -100,8 +100,8 @@ const (
 )
 
 const (
-	echoServerDefaultProbeInitialDelaySeconds = 20 // TODO(wt) try reducing to 15/10 when v1.34.0 available
-	echoServerProbePeriodSeconds              = 1
+	echoServerDefaultProbeInitialDelaySeconds = 10
+	echoServerProbePeriodSeconds              = 2
 	echoServerProbeFailureThreshold           = echoServerDefaultProbeInitialDelaySeconds
 )
 
@@ -131,5 +131,5 @@ var (
 
 // Tests ---------------------------------------------------------------------------------------------------------------
 const (
-	testsDefaultWaitStatusTimeoutSecs = 300 // TODO(wt) try reducing to 60 when v1.34.0 available
+	testsDefaultWaitStatusTimeoutSecs = 300 // TODO(wt) try reducing to 60/echoServerDefaultProbeInitialDelaySeconds * 2 when v1.34.0 available (awaiting memory stats)
 )
