@@ -338,16 +338,14 @@ func (a *targetContainerAction) processConfigEnacted(
 		// Examine additional status later that will confirm whether not started or completed.
 
 	case podcommon.StateResizeInProgress:
-		suffix := ""
-		if states.Resize.Message != "" {
-			suffix = fmt.Sprintf(" (%s)", states.Resize.Message)
-		}
-		logMsg := fmt.Sprintf("%s scale not yet completed - in progress%s", states.Resources.HumanReadable(), suffix)
+		baseMsg := fmt.Sprintf("%s scale not yet completed - in progress", states.Resources.HumanReadable())
+		logMsg := a.maybeSuffixResizeMessage(baseMsg, states.Resize.Message)
 		a.updateStatusInProgressAndLogInfo(ctx, logging.VInfo, pod, logMsg, states, scaleConfigs, true)
 		return nil
 
 	case podcommon.StateResizeDeferred:
-		msg := fmt.Sprintf("%s scale not yet completed - deferred (%s)", states.Resources.HumanReadable(), states.Resize.Message)
+		baseMsg := fmt.Sprintf("%s scale not yet completed - deferred", states.Resources.HumanReadable())
+		msg := a.maybeSuffixResizeMessage(baseMsg, states.Resize.Message)
 		a.updateStatusAndLogInfo(ctx, logging.VInfo, pod, msg, states, podcommon.StatusScaleStateNotApplicable, scaleConfigs, "")
 		return nil
 
@@ -361,7 +359,8 @@ func (a *targetContainerAction) processConfigEnacted(
 			scaleState = podcommon.StatusScaleStateUpFailed
 		}
 
-		msg := fmt.Sprintf("%s scale failed - infeasible (%s)", states.Resources.HumanReadable(), states.Resize.Message)
+		baseMsg := fmt.Sprintf("%s scale failed - infeasible", states.Resources.HumanReadable())
+		msg := a.maybeSuffixResizeMessage(baseMsg, states.Resize.Message)
 		a.updateStatus(ctx, pod, msg, states, scaleState, scaleConfigs, "infeasible")
 		return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
 
@@ -375,7 +374,8 @@ func (a *targetContainerAction) processConfigEnacted(
 			scaleState = podcommon.StatusScaleStateUpFailed
 		}
 
-		msg := fmt.Sprintf("%s scale failed - error (%s)", states.Resources.HumanReadable(), states.Resize.Message)
+		baseMsg := fmt.Sprintf("%s scale failed - error", states.Resources.HumanReadable())
+		msg := a.maybeSuffixResizeMessage(baseMsg, states.Resize.Message)
 		a.updateStatus(ctx, pod, msg, states, scaleState, scaleConfigs, "error")
 		return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
 
@@ -425,6 +425,18 @@ func (a *targetContainerAction) processConfigEnacted(
 	msg := states.Resources.HumanReadable() + " resources enacted"
 	a.updateStatusAndLogInfo(ctx, logging.VInfo, pod, msg, states, scaleState, scaleConfigs, "")
 	return nil
+}
+
+// maybeSuffixResizeMessage appends the resize message to the base message if the resize message is not empty.
+func (a *targetContainerAction) maybeSuffixResizeMessage(
+	baseMessage string,
+	resizeMessage string,
+) string {
+	if resizeMessage != "" {
+		return fmt.Sprintf("%s (%s)", baseMessage, resizeMessage)
+	}
+
+	return baseMessage
 }
 
 // containerResourceConfig returns a human-readable string representing current container resource configuration, for
