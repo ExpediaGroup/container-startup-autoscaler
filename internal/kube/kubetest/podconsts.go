@@ -36,13 +36,7 @@ const (
 
 var (
 	PodResizeConditionsNotStartedOrCompletedNoConditions []corev1.PodCondition
-	//PodResizeConditionsNotStartedOrCompletedResizeInProgressTrue = []corev1.PodCondition{
-	//	{
-	//		Type:   corev1.PodResizeInProgress,
-	//		Status: corev1.ConditionTrue,
-	//	},
-	//}
-	PodResizeConditionsInProgress = []corev1.PodCondition{
+	PodResizeConditionsInProgress                        = []corev1.PodCondition{
 		{
 			Type:   corev1.PodResizeInProgress,
 			Status: corev1.ConditionTrue,

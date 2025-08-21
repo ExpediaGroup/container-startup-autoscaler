@@ -257,6 +257,6 @@ func (c *configuration) checkStored() {
 // checkValidated panics if Validate has not been invoked.
 func (c *configuration) checkValidated() {
 	if !c.hasValidated {
-		panic(errors.New("Validate() hasn't been invoked first"))
+		panic(errors.New("validate() hasn't been invoked first"))
 	}
 }
