@@ -23,3 +23,4 @@ nodes:
         apiVersion: kubelet.config.k8s.io/v1beta1
         kind: KubeletConfiguration
         housekeepingInterval: "2s"
+        syncFrequency: "2s"

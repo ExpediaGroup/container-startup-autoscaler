@@ -269,6 +269,8 @@ func (s targetContainerState) stateResize(pod *v1.Pod) (podcommon.ResizeState, e
 
 	if condition.Type == v1.PodResizeInProgress {
 		if condition.Reason == v1.PodReasonError {
+			// TODO(wt-later) matching messages is brittle but no other way of detecting this condition. Ref:
+			// 	Ref: https://github.com/kubernetes/kubernetes/blob/f47e9696d7237f1011d23c9b55f6947e60526179/pkg/kubelet/kuberuntime/kuberuntime_manager.go
 			if missingMemRegex.MatchString(condition.Message) {
 				// kubelet is awaiting memory utilization for downsizing - treat as in progress with message.
 				return podcommon.NewResizeState(

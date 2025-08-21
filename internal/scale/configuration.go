@@ -176,7 +176,7 @@ func (c *configuration) Validate(container *v1.Container) error {
 		return common.WrapErrorf(err, annParseErrFmt, c.annotationPostStartupLimitsName, c.rawResources.PostStartupLimits)
 	}
 
-	// TODO(wt) QoS class is currently immutable so post-startup resources must also be 'guaranteed'. See
+	// TODO(wt-later) QoS class is currently immutable so post-startup resources must also be 'guaranteed'. See
 	//  https://github.com/kubernetes/enhancements/tree/master/keps/sig-node/1287-in-place-update-pod-resources#qos-class
 	if !postStartupRequestsQuantity.Equal(postStartupLimitsQuantity) {
 		return fmt.Errorf(
