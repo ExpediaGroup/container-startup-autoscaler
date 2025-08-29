@@ -32,7 +32,7 @@ const (
 )
 
 var kubeVersionToFullVersion = map[string]string{
-	"1.34": "v1.34.0-rc.2", // TODO(wt) update to v1.34.0 when available
+	"1.34": "v1.34.0",
 	// Some older versions are not supported by 'kind build node-image' as the server tgzs don't include the 'version'
 	// file and fail.
 }
@@ -131,5 +131,5 @@ var (
 
 // Tests ---------------------------------------------------------------------------------------------------------------
 const (
-	testsDefaultWaitStatusTimeoutSecs = 300 // TODO(wt) try reducing to 60/echoServerDefaultProbeInitialDelaySeconds * 2 when v1.34.0 available (awaiting memory stats)
+	testsDefaultWaitStatusTimeoutSecs = 300
 )

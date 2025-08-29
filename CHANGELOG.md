@@ -3,7 +3,7 @@
 - This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.9.0
-2025-08-TODO(wt)
+2025-08-29
 
 ### Added
 - Support for Kubernetes 1.34.
