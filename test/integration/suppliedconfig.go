@@ -35,7 +35,7 @@ type suppliedConfigStruct struct {
 
 var suppliedConfig = suppliedConfigStruct{
 	kubeVersion:          "",
-	maxParallelism:       "5",
+	maxParallelism:       "6",
 	extraCaCertPath:      "",
 	reuseCluster:         false,
 	installMetricsServer: false,

@@ -802,7 +802,7 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 		wantLogMsg           string
 	}{
 		{
-			"ScaleNotYetCompletedInProgress",
+			"ScaleNotYetCompletedInProgressNoMessage",
 			func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
 			podcommon.States{
 				Resize: podcommon.NewResizeState(podcommon.StateResizeInProgress, ""),
@@ -811,6 +811,17 @@ func TestTargetContainerActionProcessConfigEnacted(t *testing.T) {
 			"",
 			true,
 			"scale not yet completed - in progress",
+		},
+		{
+			"ScaleNotYetCompletedInProgressMessage",
+			func(m *podtest.MockStatus, run func()) { m.UpdateDefaultAndRun(run) },
+			podcommon.States{
+				Resize: podcommon.NewResizeState(podcommon.StateResizeInProgress, "message"),
+			},
+			"",
+			"",
+			true,
+			"scale not yet completed - in progress (message)",
 		},
 		{
 			"ScaleNotYetCompletedDeferred",

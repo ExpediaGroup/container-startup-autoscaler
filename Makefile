@@ -44,7 +44,7 @@ test-run-int: ## Runs integration tests for a specific major.minor version of Ku
 .PHONY: test-run-int-verbose
 test-run-int-verbose: ## Runs integration tests for a specific major.minor version of Kube, with verbose logging
 	@if [ -z "${KUBE_VERSION}" ]; then \
-		echo "KUBE_VERSION is required - run 'make test-run-int KUBE_VERSION=x.y'"; \
+		echo "KUBE_VERSION is required - run 'make test-run-int-verbose KUBE_VERSION=x.y'"; \
 		exit 1; \
 	fi
 	go test -count=1 -timeout ${INT_TESTS_TIMEOUT} -v ./test/integration/...

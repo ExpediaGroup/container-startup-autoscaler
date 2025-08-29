@@ -49,7 +49,7 @@ func NewConfigurations(podHelper kubecommon.PodHelper, containerHelper kubecommo
 			scalecommon.AnnotationMemoryStartup,
 			scalecommon.AnnotationMemoryPostStartupRequests,
 			scalecommon.AnnotationMemoryPostStartupLimits,
-			false,
+			true,
 			podHelper,
 			containerHelper,
 		),

@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/common"
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/kube"
@@ -30,6 +31,8 @@ import (
 	"github.com/ExpediaGroup/container-startup-autoscaler/internal/scale/scalecommon"
 	"k8s.io/api/core/v1"
 )
+
+var missingMemRegex = regexp.MustCompile(`missing pod memory usage|missing container .+ memory usage`)
 
 // targetContainerState is the default implementation of podcommon.TargetContainerState.
 type targetContainerState struct {
@@ -223,7 +226,8 @@ func (s targetContainerState) stateStatusResources(
 
 // stateResize returns the resize state for the pod.
 func (s targetContainerState) stateResize(pod *v1.Pod) (podcommon.ResizeState, error) {
-	// Reference: https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/kubelet.go
+	// Reference: callers of SetPodResize*Condition in
+	// https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/status/status_manager.go
 
 	// Both resize conditions are potentially transient.
 	resizeConditions := s.podHelper.ResizeConditions(pod)
@@ -249,9 +253,8 @@ func (s targetContainerState) stateResize(pod *v1.Pod) (podcommon.ResizeState, e
 		condition = resizeConditions[0]
 	}
 
+	// condition.Status is always ConditionTrue for both PodResizePending and PodResizeInProgress.
 	if condition.Type == v1.PodResizePending {
-		// condition.Status is always ConditionTrue.
-
 		if condition.Reason == v1.PodReasonDeferred {
 			return podcommon.NewResizeState(podcommon.StateResizeDeferred, condition.Message), nil
 		}
@@ -265,24 +268,23 @@ func (s targetContainerState) stateResize(pod *v1.Pod) (podcommon.ResizeState, e
 	}
 
 	if condition.Type == v1.PodResizeInProgress {
-		if condition.Status == v1.ConditionFalse && condition.Reason == v1.PodReasonError {
+		if condition.Reason == v1.PodReasonError {
+			// TODO(wt-later) matching messages is brittle but no other way of detecting this condition. Ref:
+			// 	Ref: https://github.com/kubernetes/kubernetes/blob/master/pkg/kubelet/kuberuntime/kuberuntime_manager.go
+			if missingMemRegex.MatchString(condition.Message) {
+				// kubelet is awaiting memory utilization for downsizing - treat as in progress with message.
+				return podcommon.NewResizeState(
+					podcommon.StateResizeInProgress,
+					"kubelet is awaiting memory utilization for downsizing",
+				), nil
+			}
+
 			// An error has occurred when resizing.
 			return podcommon.NewResizeState(podcommon.StateResizeError, condition.Message), nil
 		}
 
-		// TODO(wt) never observed this condition...
-		if condition.Status == v1.ConditionFalse {
-			// The resize is in progress.
-			return podcommon.NewResizeState(podcommon.StateResizeInProgress, ""), nil
-		}
-
-		if condition.Status == v1.ConditionTrue {
-			// The resize has completed successfully (will be cleared!).
-			return podcommon.NewResizeState(podcommon.StateResizeNotStartedOrCompleted, ""), nil
-		}
-
-		return podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),
-			fmt.Errorf("unknown pod resize in progress condition state (%#v)", condition)
+		// The resize is in progress.
+		return podcommon.NewResizeState(podcommon.StateResizeInProgress, ""), nil
 	}
 
 	return podcommon.NewResizeState(podcommon.StateResizeUnknown, ""),

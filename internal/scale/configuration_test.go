@@ -146,7 +146,7 @@ func TestConfigurationResources(t *testing.T) {
 				false,
 				scalecommon.Resources{},
 			},
-			"Validate() hasn't been invoked first",
+			"validate() hasn't been invoked first",
 			scalecommon.Resources{},
 		},
 		{

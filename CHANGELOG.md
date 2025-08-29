@@ -2,6 +2,33 @@
 - Based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.9.0
+2025-08-29
+
+### Added
+- Support for Kubernetes 1.34.
+  - Re-enabled memory-based scaling since `In-place Update of Pod Resources` now allows memory downsizing.
+    - CSA _in progress_ status message explicitly reflects when kubelet is awaiting memory utilization for downsizing.
+
+### Changed
+- Upgrades Go to 1.24.6.
+- Upgrades all dependencies.
+
+### Helm Chart
+[1.8.0](charts/container-startup-autoscaler/CHANGELOG.md#180)
+
+### Kubernetes Compatibility
+| Kubernetes Version | Compatible? | `In-place Update of Pod Resources` State |
+|:------------------:|:-----------:|:----------------------------------------:|
+|        1.34        |     ✔️      |                   Beta                   |
+|        1.33        |      ❌      |                   Beta                   |
+|        1.32        |      ❌      |                  Alpha                   |
+|        1.31        |      ❌      |                  Alpha                   |
+|        1.30        |      ❌      |                  Alpha                   |
+|        1.29        |      ❌      |                  Alpha                   |
+|        1.28        |      ❌      |                  Alpha                   |
+|        1.27        |      ❌      |                  Alpha                   |
+
 ## 0.8.0
 2025-04-29
 

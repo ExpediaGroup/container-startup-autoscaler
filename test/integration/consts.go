@@ -32,7 +32,7 @@ const (
 )
 
 var kubeVersionToFullVersion = map[string]string{
-	"1.33": "v1.33.0",
+	"1.34": "v1.34.0",
 	// Some older versions are not supported by 'kind build node-image' as the server tgzs don't include the 'version'
 	// file and fail.
 }
@@ -101,7 +101,7 @@ const (
 
 const (
 	echoServerDefaultProbeInitialDelaySeconds = 10
-	echoServerProbePeriodSeconds              = 1
+	echoServerProbePeriodSeconds              = 2
 	echoServerProbeFailureThreshold           = echoServerDefaultProbeInitialDelaySeconds
 )
 
@@ -131,5 +131,5 @@ var (
 
 // Tests ---------------------------------------------------------------------------------------------------------------
 const (
-	testsDefaultWaitStatusTimeoutSecs = echoServerDefaultProbeInitialDelaySeconds * 2
+	testsDefaultWaitStatusTimeoutSecs = 300
 )

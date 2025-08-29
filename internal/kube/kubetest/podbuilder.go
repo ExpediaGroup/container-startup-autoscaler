@@ -93,11 +93,6 @@ func (b *PodBuilder) ResizeConditionsNotStartedOrCompletedNoConditions() *PodBui
 	return b
 }
 
-func (b *PodBuilder) ResizeConditionsNotStartedOrCompletedResizeInProgressTrue() *PodBuilder {
-	b.resizeConditions = PodResizeConditionsNotStartedOrCompletedResizeInProgressTrue
-	return b
-}
-
 func (b *PodBuilder) ResizeConditionsInProgress() *PodBuilder {
 	b.resizeConditions = PodResizeConditionsInProgress
 	return b
@@ -123,11 +118,6 @@ func (b *PodBuilder) ResizeConditionsError(message string) *PodBuilder {
 
 func (b *PodBuilder) ResizeConditionsUnknownPending() *PodBuilder {
 	b.resizeConditions = PodResizeConditionsUnknownPending
-	return b
-}
-
-func (b *PodBuilder) ResizeConditionsUnknownInProgress() *PodBuilder {
-	b.resizeConditions = PodResizeConditionsUnknownInProgress
 	return b
 }
 

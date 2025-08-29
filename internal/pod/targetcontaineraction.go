@@ -338,12 +338,14 @@ func (a *targetContainerAction) processConfigEnacted(
 		// Examine additional status later that will confirm whether not started or completed.
 
 	case podcommon.StateResizeInProgress:
-		msg := states.Resources.HumanReadable() + " scale not yet completed - in progress"
-		a.updateStatusInProgressAndLogInfo(ctx, logging.VInfo, pod, msg, states, scaleConfigs)
+		baseMsg := fmt.Sprintf("%s scale not yet completed - in progress", states.Resources.HumanReadable())
+		logMsg := a.maybeSuffixResizeMessage(baseMsg, states.Resize.Message)
+		a.updateStatusInProgressAndLogInfo(ctx, logging.VInfo, pod, logMsg, states, scaleConfigs, true)
 		return nil
 
 	case podcommon.StateResizeDeferred:
-		msg := fmt.Sprintf("%s scale not yet completed - deferred (%s)", states.Resources.HumanReadable(), states.Resize.Message)
+		baseMsg := fmt.Sprintf("%s scale not yet completed - deferred", states.Resources.HumanReadable())
+		msg := a.maybeSuffixResizeMessage(baseMsg, states.Resize.Message)
 		a.updateStatusAndLogInfo(ctx, logging.VInfo, pod, msg, states, podcommon.StatusScaleStateNotApplicable, scaleConfigs, "")
 		return nil
 
@@ -357,7 +359,8 @@ func (a *targetContainerAction) processConfigEnacted(
 			scaleState = podcommon.StatusScaleStateUpFailed
 		}
 
-		msg := fmt.Sprintf("%s scale failed - infeasible (%s)", states.Resources.HumanReadable(), states.Resize.Message)
+		baseMsg := fmt.Sprintf("%s scale failed - infeasible", states.Resources.HumanReadable())
+		msg := a.maybeSuffixResizeMessage(baseMsg, states.Resize.Message)
 		a.updateStatus(ctx, pod, msg, states, scaleState, scaleConfigs, "infeasible")
 		return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
 
@@ -371,7 +374,8 @@ func (a *targetContainerAction) processConfigEnacted(
 			scaleState = podcommon.StatusScaleStateUpFailed
 		}
 
-		msg := fmt.Sprintf("%s scale failed - error (%s)", states.Resources.HumanReadable(), states.Resize.Message)
+		baseMsg := fmt.Sprintf("%s scale failed - error", states.Resources.HumanReadable())
+		msg := a.maybeSuffixResizeMessage(baseMsg, states.Resize.Message)
 		a.updateStatus(ctx, pod, msg, states, scaleState, scaleConfigs, "error")
 		return fmt.Errorf("%s (%s)", msg, a.containerResourceConfig(targetContainer, scaleConfigs))
 
@@ -384,8 +388,8 @@ func (a *targetContainerAction) processConfigEnacted(
 	case podcommon.StateStatusResourcesIncomplete:
 		// Target container current CPU and/or memory resources are missing. Update status, log and return with the
 		// expectation that the missing items become available in the future.
-		msg := "target container current cpu and/or memory resources currently missing"
-		a.updateStatusInProgressAndLogInfo(ctx, logging.VDebug, pod, msg, states, scaleConfigs)
+		logMsg := "target container current cpu and/or memory resources currently missing"
+		a.updateStatusInProgressAndLogInfo(ctx, logging.VDebug, pod, logMsg, states, scaleConfigs, false)
 		return nil
 
 	case podcommon.StateStatusResourcesContainerResourcesMatch: // Want this, but here so we can panic on default below.
@@ -393,15 +397,15 @@ func (a *targetContainerAction) processConfigEnacted(
 	case podcommon.StateStatusResourcesContainerResourcesMismatch:
 		// Target container current CPU and/or memory resources don't match target container's 'requests'. Update
 		// status, log and return with the expectation that they match in the future.
-		msg := "target container current cpu and/or memory resources currently don't match target container's 'requests'"
-		a.updateStatusInProgressAndLogInfo(ctx, logging.VDebug, pod, msg, states, scaleConfigs)
+		logMsg := "target container current cpu and/or memory resources currently don't match target container's 'requests'"
+		a.updateStatusInProgressAndLogInfo(ctx, logging.VDebug, pod, logMsg, states, scaleConfigs, false)
 		return nil
 
 	case podcommon.StateStatusResourcesUnknown:
 		// Target container current CPU and/or memory resources are unknown. Update status, log and return with the
 		// expectation that they become known in the future.
-		msg := "target container current cpu and/or memory resources currently unknown"
-		a.updateStatusInProgressAndLogInfo(ctx, logging.VDebug, pod, msg, states, scaleConfigs)
+		logMsg := "target container current cpu and/or memory resources currently unknown"
+		a.updateStatusInProgressAndLogInfo(ctx, logging.VDebug, pod, logMsg, states, scaleConfigs, false)
 		return nil
 
 	default:
@@ -421,6 +425,18 @@ func (a *targetContainerAction) processConfigEnacted(
 	msg := states.Resources.HumanReadable() + " resources enacted"
 	a.updateStatusAndLogInfo(ctx, logging.VInfo, pod, msg, states, scaleState, scaleConfigs, "")
 	return nil
+}
+
+// maybeSuffixResizeMessage appends the resize message to the base message if the resize message is not empty.
+func (a *targetContainerAction) maybeSuffixResizeMessage(
+	baseMessage string,
+	resizeMessage string,
+) string {
+	if resizeMessage != "" {
+		return fmt.Sprintf("%s (%s)", baseMessage, resizeMessage)
+	}
+
+	return baseMessage
 }
 
 // containerResourceConfig returns a human-readable string representing current container resource configuration, for
@@ -457,14 +473,14 @@ func (a *targetContainerAction) updateStatusAndLogInfo(
 	ctx context.Context,
 	v logging.V,
 	pod *v1.Pod,
-	message string,
+	msg string,
 	states podcommon.States,
 	scaleState podcommon.StatusScaleState,
 	scaleConfigs scalecommon.Configurations,
 	failReason string,
 ) {
-	a.updateStatus(ctx, pod, message, states, scaleState, scaleConfigs, failReason)
-	logging.Infof(ctx, v, message)
+	a.updateStatus(ctx, pod, msg, states, scaleState, scaleConfigs, failReason)
+	logging.Infof(ctx, v, msg)
 }
 
 // updateStatusInProgressAndLogInfo updates status when in progress and logs an info message.
@@ -472,18 +488,26 @@ func (a *targetContainerAction) updateStatusInProgressAndLogInfo(
 	ctx context.Context,
 	v logging.V,
 	pod *v1.Pod,
-	logMessage string,
+	logMsg string,
 	states podcommon.States,
 	scaleConfigs scalecommon.Configurations,
+	useLogMsgForStatus bool,
 ) {
+	var statusMsg string
+	if useLogMsgForStatus {
+		statusMsg = logMsg
+	} else {
+		statusMsg = states.Resources.HumanReadable() + " scale not yet completed - in progress"
+	}
+
 	a.updateStatus(
 		ctx,
 		pod,
-		states.Resources.HumanReadable()+" scale not yet completed - in progress",
+		statusMsg,
 		states,
 		podcommon.StatusScaleStateNotApplicable,
 		scaleConfigs,
 		"",
 	)
-	logging.Infof(ctx, v, logMessage)
+	logging.Infof(ctx, v, logMsg)
 }
